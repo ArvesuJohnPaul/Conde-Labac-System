@@ -1,10 +1,10 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Brgy. Conde Labac — Audit Logs</title>
-    <link rel="icon" type="image/x-icon" href="../../img/conde_labac_icon.ico" />
+    <title>Brgy. Conde Labac � Audit Logs</title>
+    <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/shared.css" />
@@ -13,12 +13,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   </head>
   <body>
-    <!-- ═══ APP SHELL ═══ -->
+    <!-- --- APP SHELL --- -->
     <div id="app" style="display:none">
       <!-- NAVBAR -->
       <nav class="navbar" id="main-navbar">
         <a href="../index.html" class="nav-logo">
-          <img src="../../img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
+          <img src="../img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
           <span class="nav-brand">C.A.R.E.S.<br />Barangay Conde Labac</span>
         </a>
         <ul class="nav-links" id="app-nav-links">
@@ -39,23 +39,23 @@
       <nav id="sidebar" class="hidden">
         <div class="sidebar-head">
           <div class="sidebar-brand">
-            <div class="brand-seal"><img src="../../img/conde%20labac%20logo.png" alt="Conde Labac Seal" /></div>
-            <div class="brand-name">Brgy. Conde Labac MIS <span>Batangas City · PHILIPPINES</span></div>
+            <div class="brand-seal"><img src="../img/conde%20labac%20logo.png" alt="Conde Labac Seal" /></div>
+            <div class="brand-name">Brgy. Conde Labac MIS <span>Batangas City � PHILIPPINES</span></div>
           </div>
         </div>
         <div class="sidebar-section-label">Core Services</div>
-        <div class="nav-item" onclick="nav(this,'dashboard')"><span class="nav-icon">◈</span> Dashboard</div>
-        <div class="nav-item" onclick="nav(this,'residency')"><span class="nav-icon">🏘️</span> Barangay Residency</div>
-        <div class="nav-item" onclick="nav(this,'certificates')"><span class="nav-icon">📄</span> Certificate Processing<span class="nav-badge" id="cert-badge">7</span></div>
-        <div class="nav-item" onclick="nav(this,'incidents')"><span class="nav-icon">🚨</span> Blotter / Incidents<span class="nav-badge" id="inc-badge">3</span></div>
-        <div class="nav-item" onclick="nav(this,'feedback')"><span class="nav-icon">💬</span> Feedback</div>
-        <div class="nav-item" onclick="nav(this,'gis')"><span class="nav-icon">🗺️</span> GIS Mapping</div>
-        <div class="nav-item" onclick="nav(this,'accounts')"><span class="nav-icon">🔑</span> Account Claiming<span class="nav-badge" id="acc-badge">12</span></div>
-        <div class="nav-item" onclick="nav(this,'analytics')"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item" onclick="nav(this,'dashboard')"><span class="nav-icon">?</span> Dashboard</div>
+        <div class="nav-item" onclick="nav(this,'residency')"><span class="nav-icon">???</span> Barangay Residency</div>
+        <div class="nav-item" onclick="nav(this,'certificates')"><span class="nav-icon">??</span> Certificate Processing<span class="nav-badge" id="cert-badge">7</span></div>
+        <div class="nav-item" onclick="nav(this,'incidents')"><span class="nav-icon">??</span> Blotter / Incidents<span class="nav-badge" id="inc-badge">3</span></div>
+        <div class="nav-item" onclick="nav(this,'feedback')"><span class="nav-icon">??</span> Feedback</div>
+        <div class="nav-item" onclick="nav(this,'gis')"><span class="nav-icon">???</span> GIS Mapping</div>
+        <div class="nav-item" onclick="nav(this,'accounts')"><span class="nav-icon">??</span> Account Claiming<span class="nav-badge" id="acc-badge">12</span></div>
+        <div class="nav-item" onclick="nav(this,'analytics')"><span class="nav-icon">??</span> Analytics</div>
         <div class="sidebar-section-label">Administration</div>
-        <div class="nav-item" onclick="nav(this,'users')"><span class="nav-icon">⊞</span> User Management</div>
-        <div class="nav-item" onclick="nav(this,'audit')"><span class="nav-icon">≡</span> Audit Logs</div>
-        <div class="nav-item" onclick="nav(this,'archive')"><span class="nav-icon">⊟</span> Archive</div>
+        <div class="nav-item" onclick="nav(this,'users')"><span class="nav-icon">?</span> User Management</div>
+        <div class="nav-item" onclick="nav(this,'audit')"><span class="nav-icon">=</span> Audit Logs</div>
+        <div class="nav-item" onclick="nav(this,'archive')"><span class="nav-icon">?</span> Archive</div>
         <div class="sidebar-footer">
           <div class="user-pill">
             <div class="user-avatar" id="sidebar-avatar">JD</div>
@@ -63,7 +63,7 @@
               <div class="user-name" id="sidebar-user">Juan D. Administrator</div>
               <div class="user-role" id="sidebar-role">System Admin</div>
             </div>
-            <button class="logout-btn" onclick="doLogout()" title="Logout">⏻</button>
+            <button class="logout-btn" onclick="doLogout()" title="Logout">?</button>
           </div>
         </div>
       </nav>
@@ -77,22 +77,22 @@
           </div>
           <div class="topbar-right">
             <div class="topbar-date" id="topbar-date"></div>
-            <button class="topbar-notif-btn" onclick="toggleNotif()">🔔<div id="notif-dot" class="topbar-notif-dot"></div></button>
+            <button class="topbar-notif-btn" onclick="toggleNotif()">??<div id="notif-dot" class="topbar-notif-dot"></div></button>
           </div>
         </div>
         <div id="page-content"></div>
       </div>
     </div>
 
-    <!-- ═══ SERVICE MODALS ═══ -->
+    <!-- --- SERVICE MODALS --- -->
     <div class="modal-backdrop" id="modal-residency" onclick="closeServiceModal('residency',event)">
       <div class="modal-box modal-lg">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">🏘️</div>Barangay Residency — Resident Search</div><button class="modal-close" onclick="closeServiceModal('residency')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">???</div>Barangay Residency � Resident Search</div><button class="modal-close" onclick="closeServiceModal('residency')">?</button></div>
         <div class="modal-body">
           <p class="modal-help-text">Search for registered residents in the Barangay Conde Labac system. Lookups are logged per RA 10173.</p>
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat"><label class="form-label">Full Name</label><input class="form-control" id="res-search-name" placeholder="e.g. Santos, Pedro" oninput="filterResidents()" /></div>
-            <div class="form-group form-group-flat"><label class="form-label">Purok / Zone</label><select class="form-control" id="res-search-purok" onchange="filterResidents()"><option value="">All Puroks</option><option>Purok 1 — Sitio Maliwanag</option><option>Purok 2 — Sitio Masagana</option><option>Purok 3 — Sitio Malinis</option><option>Purok 4 — Sitio Mapayapa</option><option>Purok 5 — Sitio Bagong Pag-Asa</option></select></div>
+            <div class="form-group form-group-flat"><label class="form-label">Purok / Zone</label><select class="form-control" id="res-search-purok" onchange="filterResidents()"><option value="">All Puroks</option><option>Purok 1 � Sitio Maliwanag</option><option>Purok 2 � Sitio Masagana</option><option>Purok 3 � Sitio Malinis</option><option>Purok 4 � Sitio Mapayapa</option><option>Purok 5 � Sitio Bagong Pag-Asa</option></select></div>
           </div>
           <div class="form-row form-row-roomy">
             <div class="form-group form-group-flat"><label class="form-label">Category</label><select class="form-control" id="res-search-cat" onchange="filterResidents()"><option value="">All Categories</option><option>Senior Citizen</option><option>PWD</option><option>4Ps Beneficiary</option><option>Solo Parent</option></select></div>
@@ -100,41 +100,41 @@
           </div>
           <div id="resident-results"></div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('residency')">Close</button><button class="btn btn-primary" onclick="exportResidents()">⬇ Export Results</button></div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('residency')">Close</button><button class="btn btn-primary" onclick="exportResidents()">? Export Results</button></div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="modal-certificates" onclick="closeServiceModal('certificates',event)">
       <div class="modal-box modal-lg">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">📄</div>Certificate Issuance — Request Form</div><button class="modal-close" onclick="closeServiceModal('certificates')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">??</div>Certificate Issuance � Request Form</div><button class="modal-close" onclick="closeServiceModal('certificates')">?</button></div>
         <div class="modal-body">
-          <p class="modal-help-text-lg">Select the certificate type, fill in the required information, and submit your request. Processing typically takes 1–3 working days.</p>
+          <p class="modal-help-text-lg">Select the certificate type, fill in the required information, and submit your request. Processing typically takes 1�3 working days.</p>
           <label class="form-label">Select Certificate Type</label>
           <div class="cert-type-grid" id="cert-type-grid">
-            <div class="cert-type-card selected" onclick="selectCert(this,'Barangay Clearance')"><span class="cert-icon">📋</span><div class="cert-name">Barangay Clearance</div></div>
-            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Indigency')"><span class="cert-icon">🏷️</span><div class="cert-name">Certificate of Indigency</div></div>
-            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Residency')"><span class="cert-icon">🏠</span><div class="cert-name">Certificate of Residency</div></div>
-            <div class="cert-type-card" onclick="selectCert(this,'Business Clearance')"><span class="cert-icon">💼</span><div class="cert-name">Business Clearance</div></div>
-            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Good Moral')"><span class="cert-icon">⭐</span><div class="cert-name">Good Moral Certificate</div></div>
-            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Solo Parent')"><span class="cert-icon">👩‍👧</span><div class="cert-name">Solo Parent Certificate</div></div>
+            <div class="cert-type-card selected" onclick="selectCert(this,'Barangay Clearance')"><span class="cert-icon">??</span><div class="cert-name">Barangay Clearance</div></div>
+            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Indigency')"><span class="cert-icon">???</span><div class="cert-name">Certificate of Indigency</div></div>
+            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Residency')"><span class="cert-icon">??</span><div class="cert-name">Certificate of Residency</div></div>
+            <div class="cert-type-card" onclick="selectCert(this,'Business Clearance')"><span class="cert-icon">??</span><div class="cert-name">Business Clearance</div></div>
+            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Good Moral')"><span class="cert-icon">?</span><div class="cert-name">Good Moral Certificate</div></div>
+            <div class="cert-type-card" onclick="selectCert(this,'Certificate of Solo Parent')"><span class="cert-icon">?????</span><div class="cert-name">Solo Parent Certificate</div></div>
           </div>
           <div id="cert-selected-badge" class="cert-selected-badge"><span class="badge badge-gold">Selected: Barangay Clearance</span></div>
           <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input class="form-control" placeholder="Juan" id="cert-fname" /></div><div class="form-group"><label class="form-label">Last Name</label><input class="form-control" placeholder="Santos" id="cert-lname" /></div></div>
-          <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="cert-dob" /></div><div class="form-group"><label class="form-label">Purok / Address</label><select class="form-control" id="cert-purok"><option>Purok 1 — Sitio Maliwanag</option><option>Purok 2 — Sitio Masagana</option><option>Purok 3 — Sitio Malinis</option><option>Purok 4 — Sitio Mapayapa</option><option>Purok 5 — Sitio Bagong Pag-Asa</option></select></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="cert-dob" /></div><div class="form-group"><label class="form-label">Purok / Address</label><select class="form-control" id="cert-purok"><option>Purok 1 � Sitio Maliwanag</option><option>Purok 2 � Sitio Masagana</option><option>Purok 3 � Sitio Malinis</option><option>Purok 4 � Sitio Mapayapa</option><option>Purok 5 � Sitio Bagong Pag-Asa</option></select></div></div>
           <div class="form-group"><label class="form-label">Purpose / Reason for Request</label><textarea class="form-control" id="cert-purpose" placeholder="e.g. For employment purposes, scholarship application, etc."></textarea></div>
           <div class="form-row"><div class="form-group"><label class="form-label">Contact Number</label><input class="form-control" placeholder="09XXXXXXXXX" type="tel" id="cert-contact" /></div><div class="form-group"><label class="form-label">Preferred Pickup Date</label><input class="form-control" type="date" id="cert-pickup" /></div></div>
-          <div class="alert alert-info"><span class="alert-icon">ℹ</span> You will receive an SMS notification once your certificate is ready for pickup at the barangay hall.</div>
+          <div class="alert alert-info"><span class="alert-icon">?</span> You will receive an SMS notification once your certificate is ready for pickup at the barangay hall.</div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('certificates')">Cancel</button><button class="btn btn-gold" onclick="submitCertificate()">📤 Submit Request</button></div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('certificates')">Cancel</button><button class="btn btn-gold" onclick="submitCertificate()">?? Submit Request</button></div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="modal-incidents" onclick="closeServiceModal('incidents',event)">
       <div class="modal-box modal-lg">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">🚨</div>Blotter Report — File an Incident</div><button class="modal-close" onclick="closeServiceModal('incidents')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">??</div>Blotter Report � File an Incident</div><button class="modal-close" onclick="closeServiceModal('incidents')">?</button></div>
         <div class="modal-body">
-          <div class="alert alert-warning"><span class="alert-icon">⚠</span> For life-threatening emergencies, call <strong>911</strong> or the local police at <strong>(043) 702-4011</strong> immediately.</div>
-          <div class="form-row"><div class="form-group"><label class="form-label">Incident Type</label><select class="form-control" id="inc-type"><option>Noise Complaint</option><option>Property Dispute</option><option>Physical Altercation</option><option>Theft / Robbery</option><option>Vandalism</option><option>Domestic Disturbance</option><option>Flooding / Natural Hazard</option><option>Other</option></select></div><div class="form-group"><label class="form-label">Severity Level</label><select class="form-control" id="inc-severity"><option value="low">Low — Minor disturbance</option><option value="medium" selected>Medium — Needs attention</option><option value="high">High — Urgent response needed</option><option value="critical">Critical — Immediate danger</option></select></div></div>
+          <div class="alert alert-warning"><span class="alert-icon">?</span> For life-threatening emergencies, call <strong>911</strong> or the local police at <strong>(043) 702-4011</strong> immediately.</div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Incident Type</label><select class="form-control" id="inc-type"><option>Noise Complaint</option><option>Property Dispute</option><option>Physical Altercation</option><option>Theft / Robbery</option><option>Vandalism</option><option>Domestic Disturbance</option><option>Flooding / Natural Hazard</option><option>Other</option></select></div><div class="form-group"><label class="form-label">Severity Level</label><select class="form-control" id="inc-severity"><option value="low">Low � Minor disturbance</option><option value="medium" selected>Medium � Needs attention</option><option value="high">High � Urgent response needed</option><option value="critical">Critical � Immediate danger</option></select></div></div>
           <div class="form-row"><div class="form-group"><label class="form-label">Date of Incident</label><input class="form-control" type="date" id="inc-date" /></div><div class="form-group"><label class="form-label">Time of Incident</label><input class="form-control" type="time" id="inc-time" /></div></div>
           <div class="form-group"><label class="form-label">Location / Address</label><input class="form-control" id="inc-location" placeholder="e.g. Purok 3, near the basketball court" /></div>
           <div class="form-group"><label class="form-label">Complainant Full Name</label><input class="form-control" id="inc-complainant" placeholder="Your full name" /></div>
@@ -142,39 +142,39 @@
           <div class="form-group"><label class="form-label">Detailed Narration of Incident</label><textarea class="form-control textarea-tall" id="inc-narration" placeholder="Describe what happened in detail..."></textarea></div>
           <div class="form-group"><label class="form-label">Witness Names (optional)</label><input class="form-control" id="inc-witnesses" placeholder="e.g. Maria Cruz, Jose Reyes" /></div>
           <div class="form-group"><label class="form-label">Contact Number</label><input class="form-control" type="tel" id="inc-contact" placeholder="09XXXXXXXXX" /></div>
-          <div class="alert alert-info"><span class="alert-icon">ℹ</span> Your blotter report will be assigned a case number. You will be contacted by a barangay official within 24 hours.</div>
+          <div class="alert alert-info"><span class="alert-icon">?</span> Your blotter report will be assigned a case number. You will be contacted by a barangay official within 24 hours.</div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('incidents')">Cancel</button><button class="btn btn-danger btn-danger-strong" onclick="submitBlotter()">🚨 Submit Blotter Report</button></div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('incidents')">Cancel</button><button class="btn btn-danger btn-danger-strong" onclick="submitBlotter()">?? Submit Blotter Report</button></div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="modal-feedback" onclick="closeServiceModal('feedback',event)">
       <div class="modal-box">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">💬</div>Resident Feedback</div><button class="modal-close" onclick="closeServiceModal('feedback')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">??</div>Resident Feedback</div><button class="modal-close" onclick="closeServiceModal('feedback')">?</button></div>
         <div class="modal-body">
           <p class="modal-help-text-lg">Your feedback helps the barangay improve its services. All submissions are confidential and reviewed monthly by barangay officials.</p>
           <div class="form-group"><label class="form-label">Category</label><select class="form-control" id="fb-category"><option>Barangay Services</option><option>Cleanliness &amp; Sanitation</option><option>Peace &amp; Order</option><option>Infrastructure</option><option>Barangay Officials</option><option>Health Services</option><option>Other</option></select></div>
-          <div class="form-group"><label class="form-label">Overall Satisfaction</label><div class="star-rating" id="star-rating"><span class="star active" onclick="setRating(1)">★</span><span class="star active" onclick="setRating(2)">★</span><span class="star active" onclick="setRating(3)">★</span><span class="star active" onclick="setRating(4)">★</span><span class="star" onclick="setRating(5)">★</span></div><div id="rating-label" class="rating-label">4 out of 5 — Good</div></div>
+          <div class="form-group"><label class="form-label">Overall Satisfaction</label><div class="star-rating" id="star-rating"><span class="star active" onclick="setRating(1)">?</span><span class="star active" onclick="setRating(2)">?</span><span class="star active" onclick="setRating(3)">?</span><span class="star active" onclick="setRating(4)">?</span><span class="star" onclick="setRating(5)">?</span></div><div id="rating-label" class="rating-label">4 out of 5 � Good</div></div>
           <div class="form-group"><label class="form-label">Your Comment or Suggestion</label><textarea class="form-control textarea-medium" id="fb-comment" placeholder="Share your experience, suggestions, or concerns..."></textarea></div>
           <div class="form-group"><label class="form-label">Your Name (optional)</label><input class="form-control" id="fb-name" placeholder="Leave blank to submit anonymously" /></div>
           <div class="form-group"><label class="form-label">Contact (optional)</label><input class="form-control" id="fb-contact" placeholder="Email or phone number" /></div>
-          <div class="alert alert-success"><span class="alert-icon">✓</span> Feedback is reviewed by the Barangay Chairperson and department heads during monthly meetings.</div>
+          <div class="alert alert-success"><span class="alert-icon">?</span> Feedback is reviewed by the Barangay Chairperson and department heads during monthly meetings.</div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('feedback')">Cancel</button><button class="btn btn-gold" onclick="submitFeedback()">💬 Submit Feedback</button></div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('feedback')">Cancel</button><button class="btn btn-gold" onclick="submitFeedback()">?? Submit Feedback</button></div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="modal-gis" onclick="closeServiceModal('gis',event)">
       <div class="modal-box modal-xl">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">🗺️</div>GIS Map — Barangay Conde Labac</div><button class="modal-close" onclick="closeServiceModal('gis')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">???</div>GIS Map � Barangay Conde Labac</div><button class="modal-close" onclick="closeServiceModal('gis')">?</button></div>
         <div class="modal-body">
           <div class="gis-filter-row">
             <button class="btn btn-sm btn-outline gis-filter-btn active" onclick="setGisLayer(this,'all')">All Layers</button>
-            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'households')">🏠 Households</button>
-            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'hazard')">⚠ Hazard Zones</button>
-            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'seniors')">👴 Senior Citizens</button>
-            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'pwd')">♿ PWD</button>
-            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'4ps')">🏷 4Ps Beneficiaries</button>
+            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'households')">?? Households</button>
+            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'hazard')">? Hazard Zones</button>
+            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'seniors')">?? Senior Citizens</button>
+            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'pwd')">? PWD</button>
+            <button class="btn btn-sm btn-outline gis-filter-btn" onclick="setGisLayer(this,'4ps')">?? 4Ps Beneficiaries</button>
           </div>
           <div class="gis-modal-map" id="gis-map-container"><div class="gis-leaflet-map" id="gis-map-modal"></div></div>
           <div class="gis-legend">
@@ -182,18 +182,18 @@
             <div class="gis-legend-item"><div class="gis-dot gis-dot-seniors"></div>Senior Citizen</div>
             <div class="gis-legend-item"><div class="gis-dot gis-dot-flood"></div>Flood Zone</div>
             <div class="gis-legend-item"><div class="gis-dot gis-dot-landslide"></div>Landslide Risk</div>
-            <div class="gis-legend-item">🏠 Barangay Hall</div>
+            <div class="gis-legend-item">?? Barangay Hall</div>
             <div class="gis-legend-item">+ Health Center</div>
           </div>
-          <div class="alert alert-info alert-spacing-top"><span class="alert-icon">ℹ</span> This map is for reference only. For precise coordinates, contact the barangay GIS officer.</div>
+          <div class="alert alert-info alert-spacing-top"><span class="alert-icon">?</span> This map is for reference only. For precise coordinates, contact the barangay GIS officer.</div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('gis')">Close</button><button class="btn btn-primary" onclick="alert('Full GIS system requires login with internet access.')">🔗 Open Full GIS System</button></div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeServiceModal('gis')">Close</button><button class="btn btn-primary" onclick="alert('Full GIS system requires login with internet access.')">?? Open Full GIS System</button></div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="modal-accounts" onclick="closeServiceModal('accounts',event)">
       <div class="modal-box modal-lg">
-        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">🔑</div>Account Claiming — Create Your Account</div><button class="modal-close" onclick="closeServiceModal('accounts')">✕</button></div>
+        <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">??</div>Account Claiming � Create Your Account</div><button class="modal-close" onclick="closeServiceModal('accounts')">?</button></div>
         <div class="modal-body">
           <div class="acc-steps" id="acc-steps">
             <div class="acc-step active" id="step-1-dot">1</div>
@@ -206,34 +206,34 @@
           <div id="acc-step-1">
             <p class="acc-step-help">We will search for your pre-existing record in the barangay database to link your account.</p>
             <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input class="form-control" id="acc-fname" placeholder="Juan" /></div><div class="form-group"><label class="form-label">Last Name</label><input class="form-control" id="acc-lname" placeholder="Santos" /></div></div>
-            <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="acc-dob" /></div><div class="form-group"><label class="form-label">Purok / Zone</label><select class="form-control" id="acc-purok"><option>Purok 1 — Sitio Maliwanag</option><option>Purok 2 — Sitio Masagana</option><option>Purok 3 — Sitio Malinis</option><option>Purok 4 — Sitio Mapayapa</option><option>Purok 5 — Sitio Bagong Pag-Asa</option></select></div></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="acc-dob" /></div><div class="form-group"><label class="form-label">Purok / Zone</label><select class="form-control" id="acc-purok"><option>Purok 1 � Sitio Maliwanag</option><option>Purok 2 � Sitio Masagana</option><option>Purok 3 � Sitio Malinis</option><option>Purok 4 � Sitio Mapayapa</option><option>Purok 5 � Sitio Bagong Pag-Asa</option></select></div></div>
             <div class="form-group"><label class="form-label">Mother's Maiden Name</label><input class="form-control" id="acc-mother" placeholder="For identity verification" /></div>
             <div id="acc-verify-result" class="is-hidden"></div>
           </div>
           <div id="acc-step-2" class="is-hidden">
-            <div class="alert alert-success alert-mb"><span class="alert-icon">✓</span><strong>Record found!</strong> We found a matching resident record. Please set your login credentials below.</div>
+            <div class="alert alert-success alert-mb"><span class="alert-icon">?</span><strong>Record found!</strong> We found a matching resident record. Please set your login credentials below.</div>
             <div class="form-group"><label class="form-label">Email Address</label><input class="form-control" type="email" id="acc-email" placeholder="your@email.com" /></div>
             <div class="form-group"><label class="form-label">Mobile Number</label><input class="form-control" type="tel" id="acc-mobile" placeholder="09XXXXXXXXX" /></div>
             <div class="form-group"><label class="form-label">Password</label><input class="form-control" type="password" id="acc-pass" placeholder="Minimum 8 characters" /></div>
             <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-control" type="password" id="acc-pass2" placeholder="Re-enter password" /></div>
-            <div class="alert alert-info"><span class="alert-icon">ℹ</span> Your account will be linked to your existing barangay record and activated within 24 hours.</div>
+            <div class="alert alert-info"><span class="alert-icon">?</span> Your account will be linked to your existing barangay record and activated within 24 hours.</div>
           </div>
           <div id="acc-step-3" class="acc-step-complete is-hidden">
-            <div class="acc-success-icon">✓</div>
+            <div class="acc-success-icon">?</div>
             <h3 class="acc-success-title">Account Request Submitted!</h3>
-            <p class="acc-success-copy">Your account claiming request has been received. A barangay official will review and activate your account within 1–2 working days.</p>
+            <p class="acc-success-copy">Your account claiming request has been received. A barangay official will review and activate your account within 1�2 working days.</p>
             <div class="acc-ref-box"><div class="acc-ref-label">Reference Number</div><div class="acc-ref-number" id="acc-ref-num">ACC-2025-0048</div></div>
           </div>
         </div>
         <div class="modal-footer" id="acc-footer">
           <button class="btn btn-outline" onclick="closeServiceModal('accounts')">Cancel</button>
-          <button class="btn btn-gold" id="acc-next-btn" onclick="accNextStep()">Verify Identity →</button>
+          <button class="btn btn-gold" id="acc-next-btn" onclick="accNextStep()">Verify Identity ?</button>
         </div>
       </div>
     </div>
 
     <!-- TOAST -->
-    <div id="toast" class="toast"><span id="toast-icon">✓</span><span id="toast-msg">Success</span></div>
+    <div id="toast" class="toast"><span id="toast-icon">?</span><span id="toast-msg">Success</span></div>
 
     <!-- SCRIPTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
