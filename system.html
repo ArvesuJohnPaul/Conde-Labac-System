@@ -68,8 +68,11 @@
       let currentRole = "Admin";
 
       function getSession() {
-        try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
-        catch (e) { return null; }
+        try {
+          return JSON.parse(localStorage.getItem(SESSION_KEY));
+        } catch (e) {
+          return null;
+        }
       }
 
       function setSession(session) {
@@ -77,20 +80,33 @@
       }
 
       function selectRole(el, role) {
-        document.querySelectorAll(".role-chip").forEach((c) => c.classList.remove("active"));
+        document
+          .querySelectorAll(".role-chip")
+          .forEach((c) => c.classList.remove("active"));
         el.classList.add("active");
         currentRole = role;
       }
 
       function doLogin() {
-        const user = document.getElementById("login-user").value.trim() || "User";
-        const names    = { Admin: "Juan D. Administrator", Officer: "Maria R. Officer", Resident: "Pedro S. Santos" };
+        const user =
+          document.getElementById("login-user").value.trim() || "User";
+        const names = {
+          Admin: "Juan D. Administrator",
+          Officer: "Maria R. Officer",
+          Resident: "Pedro S. Santos",
+        };
         const initials = { Admin: "JD", Officer: "MR", Resident: "PS" };
         const displayName = names[currentRole];
-        const init        = initials[currentRole];
-        const shortName   = displayName.split(" ").slice(0, 2).join(" ");
+        const init = initials[currentRole];
+        const shortName = displayName.split(" ").slice(0, 2).join(" ");
 
-        setSession({ role: currentRole, displayName, shortName, initials: init, user });
+        setSession({
+          role: currentRole,
+          displayName,
+          shortName,
+          initials: init,
+          user,
+        });
 
         if (currentRole === "Resident") {
           window.location.href = "index.html";
