@@ -1,0 +1,129 @@
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    var(--sidebar-blue) 0%,
+    var(--primary-blue) 100%
+  );
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+}
+
+.login-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 40px 30px;
+  text-align: center;
+}
+
+.login-logo {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.login-title {
+  color: var(--primary-blue);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.login-form {
+  text-align: left;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-gray);
+}
+
+.login-divider span {
+  padding: 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.role-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.role-btn {
+  padding: 12px;
+  border: 2px solid var(--border-gray);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 13px;
+  text-align: center;
+}
+
+.role-btn:hover {
+  border-color: var(--primary-blue);
+  background-color: rgba(30, 58, 95, 0.05);
+}
+
+.role-btn.active {
+  background-color: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgot-password a {
+  color: var(--primary-blue);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+.demo-credentials {
+  background: rgba(244, 163, 0, 0.1);
+  border: 1px solid var(--golden-yellow);
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 25px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.demo-credentials strong {
+  color: var(--primary-blue);
+}
+
+.demo-credentials p {
+  margin: 5px 0;
+}

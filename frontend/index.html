@@ -1,0 +1,1758 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>C.A.R.E.S. | Barangay Conde Labac, Batangas City</title>
+    <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+    />
+    <link rel="stylesheet" href="css/shared.css" />
+    <link rel="stylesheet" href="css/landing.css" />
+  </head>
+  <body>
+    <!-- ═══ SHARED NAVBAR ═══ -->
+    <nav class="navbar">
+      <a href="index.html" class="nav-logo">
+        <img
+          src="../img/conde%20labac%20logo.png"
+          onerror="
+            this.style.display = 'none';
+            this.nextElementSibling.classList.remove('is-hidden');
+            this.nextElementSibling.style.display = 'flex';
+          "
+          alt="Conde Labac Seal"
+        />
+        <div class="nav-logo-fallback is-hidden">⚜</div>
+        <span class="nav-brand">C.A.R.E.S.<br />Barangay Conde Labac</span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#features">Services</a></li>
+        <li id="nav-mis-li" class="is-hidden">
+          <a href="system.html">MIS</a>
+        </li>
+        <li><a href="#sdg">SDG</a></li>
+        <li><a href="#tech">Tech</a></li>
+        <li><a href="#team">Team</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a href="system.html" class="btn-nav-signin" id="nav-signin">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+          Sign In
+        </a>
+        <div class="nav-user-pill is-hidden" id="nav-user-pill">
+          <div class="nav-user-avatar" id="nav-avatar">JD</div>
+          <span class="nav-user-name" id="nav-user-name">Juan D.</span>
+          <button class="nav-logout-btn" onclick="signOut()">Sign Out</button>
+        </div>
+        <button
+          class="nav-toggle"
+          id="nav-toggle"
+          aria-label="Toggle navigation"
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="hero">
+      <div class="hero-grid"></div>
+      <div class="hero-diagonal"></div>
+      <div class="hero-orb orb-1"></div>
+      <div class="hero-orb orb-2"></div>
+      <div class="hero-orb orb-3"></div>
+
+      <div class="hero-shell">
+        <div class="hero-inner">
+          <!-- Left -->
+          <div class="hero-left">
+            <div class="hero-eyebrow">
+              Official Digital Portal · Batangas City
+            </div>
+            <h1 class="hero-title">
+              <span class="hero-title-cares">
+                <span class="accent-blue">C.</span
+                ><span class="accent-blue">A.</span
+                ><span class="accent-red">R.</span
+                ><span class="accent-yellow">E.</span
+                ><span class="accent-yellow">S.</span>
+              </span>
+              <br />
+              <span class="accent-blue">C</span>ONDE L<span class="accent-blue"
+                >A</span
+              >BAC <span class="accent-red">R</span
+              ><span class="accent-yellow">E</span>SIDENTS<br />
+              <span class="accent-yellow">S</span>YSTEM
+            </h1>
+            <p class="hero-subtitle">
+              A cloud-based platform that digitizes administrative processes,
+              enables spatial mapping of households and hazard zones, and
+              delivers AI-powered predictive analytics for evidence-based
+              governance in Barangay Conde Labac, Batangas City.
+            </p>
+
+            <div class="hero-btns">
+              <a
+                href="system.html"
+                class="btn-primary-hero"
+                id="access-system-btn"
+                >Access System →</a
+              >
+              <a href="#features" class="btn-outline-hero">Explore Services</a>
+            </div>
+          </div>
+
+          <!-- Right -->
+          <div class="hero-right">
+            <div class="logo-showcase">
+              <div class="logo-ring-outer"></div>
+              <div class="logo-ring-mid"></div>
+              <div class="logo-glow"></div>
+              <img
+                src="../img/conde%20labac%20logo.png"
+                alt="Conde Labac Seal"
+                class="logo-img"
+              />
+            </div>
+            <div class="logo-info">
+              <div class="logo-info-title">Brgy. Conde Labac</div>
+              <div class="logo-info-sub">Batangas City · PHILIPPINES</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="hero-stats">
+          <div class="stat-box">
+            <span class="stat-num">5,612</span>
+            <span class="stat-label">Registered Residents</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">1,248</span>
+            <span class="stat-label">Households</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">Region IV-A</span>
+            <span class="stat-label">Batangas City</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">24/7</span>
+            <span class="stat-label">Digital Portal</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT ═══ -->
+    <section id="about">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Overview</div>
+          <h2 class="section-title">
+            A Smarter Barangay.<br />Built from the Ground Up.
+          </h2>
+          <p class="section-desc">
+            Replacing paper-based governance with a unified, intelligent
+            platform — from certificate issuance to real-time GIS hazard mapping
+            and AI decision support.
+          </p>
+        </div>
+
+        <div class="about-grid reveal">
+          <div class="about-left">
+            <div class="about-cards-stack">
+              <div class="about-card">
+                <div class="about-card-header">
+                  <div class="about-badge">📋</div>
+                  <div class="about-card-title">The Problem</div>
+                </div>
+                <p class="about-card-text">
+                  Barangay Conde Labac relied entirely on physical logbooks and
+                  handwritten forms. Records were prone to loss from fire and
+                  flooding, lacked cross-referencing, and made it impossible to
+                  identify vulnerable populations during emergencies.
+                </p>
+              </div>
+              <div class="about-card">
+                <div class="about-card-header">
+                  <div class="about-badge blue-bg">🗺️</div>
+                  <div class="about-card-title">The Solution</div>
+                </div>
+                <p class="about-card-text">
+                  C.A.R.E.S. integrates resident records, certificate
+                  processing, incident management, GIS mapping, and AI-powered
+                  analytics into a single, secure, cloud-accessible platform —
+                  shifting the barangay from reactive to proactive governance.
+                </p>
+              </div>
+              <div class="about-card">
+                <div class="about-card-header">
+                  <div class="about-badge red-bg">⚡</div>
+                  <div class="about-card-title">Development Approach</div>
+                </div>
+                <p class="about-card-text">
+                  Built using the Agile methodology with iterative sprint
+                  cycles, incorporating continuous stakeholder feedback from
+                  barangay officials and staff throughout development.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="about-right">
+            <div class="about-stat">
+              <div class="about-stat-num">100%</div>
+              <p class="about-stat-label">
+                <strong>Digital Transition</strong>From paper forms to a unified
+                digital platform — eliminating manual errors and redundant data
+                entry across all barangay processes.
+              </p>
+            </div>
+            <div class="about-stat">
+              <div class="about-stat-num">3×</div>
+              <p class="about-stat-label">
+                <strong>Faster Certificate Processing</strong>Automated
+                workflows reduce issuance time from hours to minutes through an
+                integrated database pipeline.
+              </p>
+            </div>
+            <div class="about-stat">
+              <div class="about-stat-num">GIS</div>
+              <p class="about-stat-label">
+                <strong>Spatial Decision Support</strong>Geotag households,
+                identify hazard-prone zones, and visualize vulnerable
+                populations — PWDs, elderly, 4Ps — on a live map.
+              </p>
+            </div>
+            <div class="about-stat">
+              <div class="about-stat-num">RA</div>
+              <p class="about-stat-label">
+                <strong>Data Privacy Compliant</strong>System architecture
+                designed in compliance with RA 10173 (Data Privacy Act) with
+                role-based access control and full audit logging.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section id="features">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Services We Offer</div>
+          <h2 class="section-title">
+            Access Barangay Services<br />in a Few Clicks
+          </h2>
+          <p class="section-desc">
+            Submit requests, file reports, and explore barangay resources using
+            the service popups below.
+          </p>
+        </div>
+
+        <div class="services-grid reveal">
+          <div
+            class="service-card sc-blue"
+            onclick="openServicePopup('residency')"
+          >
+            <div class="service-icon-wrap">🏘️</div>
+            <div>
+              <div class="service-title">Barangay Residency</div>
+              <div class="service-desc">
+                Search resident records, household details, and purok listings
+                within Barangay Conde Labac.
+              </div>
+            </div>
+            <div class="service-arrow">Search residents →</div>
+          </div>
+
+          <div
+            class="service-card sc-gold"
+            onclick="openServicePopup('certificates')"
+          >
+            <div class="service-icon-wrap">📄</div>
+            <div>
+              <div class="service-title">Certificate Issuance</div>
+              <div class="service-desc">
+                Request clearances, indigency, residency, and other barangay
+                certificates in minutes.
+              </div>
+            </div>
+            <div class="service-arrow">Request certificate →</div>
+          </div>
+
+          <div
+            class="service-card sc-red"
+            onclick="openServicePopup('incidents')"
+          >
+            <div class="service-icon-wrap">🚨</div>
+            <div>
+              <div class="service-title">Blotter Reporting</div>
+              <div class="service-desc">
+                File incident reports for disputes, hazards, or emergencies
+                happening in the barangay.
+              </div>
+            </div>
+            <div class="service-arrow">File a report →</div>
+          </div>
+
+          <div
+            class="service-card sc-green"
+            onclick="openServicePopup('feedback')"
+          >
+            <div class="service-icon-wrap">💬</div>
+            <div>
+              <div class="service-title">Resident Feedback</div>
+              <div class="service-desc">
+                Share your comments or suggestions so officials can improve
+                barangay services.
+              </div>
+            </div>
+            <div class="service-arrow">Give feedback →</div>
+          </div>
+
+          <div class="service-card sc-purple" onclick="openServicePopup('gis')">
+            <div class="service-icon-wrap">🗺️</div>
+            <div>
+              <div class="service-title">GIS Map</div>
+              <div class="service-desc">
+                Explore the barangay map with puroks, hazard zones, and key
+                landmarks.
+              </div>
+            </div>
+            <div class="service-arrow">View map →</div>
+          </div>
+
+          <div
+            class="service-card sc-teal"
+            onclick="openServicePopup('accounts')"
+          >
+            <div class="service-icon-wrap">🔑</div>
+            <div>
+              <div class="service-title">Account Claiming</div>
+              <div class="service-desc">
+                Verify your identity and claim your account for personalized
+                services and request tracking.
+              </div>
+            </div>
+            <div class="service-arrow">Claim account →</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SDG ═══ -->
+    <section id="sdg">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Alignment</div>
+          <h2 class="section-title">Sustainable Development Goals</h2>
+          <p class="section-desc">
+            C.A.R.E.S. directly contributes to two United Nations SDGs,
+            embedding global development targets into local governance
+            innovation.
+          </p>
+        </div>
+        <div class="sdg-grid reveal">
+          <div class="sdg-card sdg-11" data-num="11">
+            <div class="sdg-num">SDG Goal 11</div>
+            <div class="sdg-title">Sustainable Cities & Communities</div>
+            <p class="sdg-desc">
+              By enabling data-driven decision-making, hazard mapping, and
+              population monitoring, C.A.R.E.S. supports inclusive and resilient
+              local governance — making Conde Labac safer and better-managed for
+              all residents.
+            </p>
+          </div>
+          <div class="sdg-card sdg-16" data-num="16">
+            <div class="sdg-num">SDG Goal 16</div>
+            <div class="sdg-title">Peace, Justice & Strong Institutions</div>
+            <p class="sdg-desc">
+              C.A.R.E.S. strengthens local institutional capacity through
+              transparent record-keeping, traceable blotter management, and
+              comprehensive audit logging — promoting accountable, inclusive
+              governance at the barangay level.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TECH STACK ═══ -->
+    <section id="tech">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Technology</div>
+          <h2 class="section-title">
+            Built on a Modern,<br />Production-Grade Stack
+          </h2>
+          <p class="section-desc">
+            Every layer of C.A.R.E.S. is purpose-selected for performance,
+            security, and long-term maintainability in a government context.
+          </p>
+        </div>
+        <div class="tech-grid reveal">
+          <div class="tech-card">
+            <span class="tech-icon">⚙️</span>
+            <div class="tech-name">Laravel 11</div>
+            <div class="tech-role">PHP Backend Framework</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">🐘</span>
+            <div class="tech-name">PostgreSQL</div>
+            <div class="tech-role">Relational Database</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">🗺️</span>
+            <div class="tech-name">PostGIS</div>
+            <div class="tech-role">Geospatial Extension</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">🌿</span>
+            <div class="tech-name">Leaflet.js</div>
+            <div class="tech-role">Interactive Mapping</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">🎨</span>
+            <div class="tech-name">Tailwind CSS</div>
+            <div class="tech-role">Utility-First Styling</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">⚡</span>
+            <div class="tech-name">Alpine.js</div>
+            <div class="tech-role">Reactive UI Layer</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">🔐</span>
+            <div class="tech-name">Laravel Sanctum</div>
+            <div class="tech-role">API Authentication</div>
+          </div>
+          <div class="tech-card">
+            <span class="tech-icon">☁️</span>
+            <div class="tech-name">Cloud Hosting</div>
+            <div class="tech-role">Scalable Deployment</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TEAM ═══ -->
+    <section id="team">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Developers</div>
+          <h2 class="section-title">Meet the Team</h2>
+          <p class="section-desc">
+            A dedicated team of BSIT students from Batangas State University —
+            College of Informatics and Computing Sciences.
+          </p>
+        </div>
+        <div class="team-grid reveal">
+          <div class="team-card">
+            <div class="team-avatar">A</div>
+            <div class="team-name">Arvesu</div>
+            <div class="team-role">System Developer</div>
+            <p class="team-desc">
+              Designed and developed the overall software architecture, core
+              functionalities, and integration of the system.
+            </p>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar">B</div>
+            <div class="team-name">Bacani</div>
+            <div class="team-role">Barangay Research Analyst</div>
+            <p class="team-desc">
+              Conducted the comprehensive barangay research, localized needs
+              assessment, and data collection.
+            </p>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar">B</div>
+            <div class="team-name">Balmes</div>
+            <div class="team-role">Research & Paper Study</div>
+            <p class="team-desc">
+              Dedicated to the academic paper study of the system, research
+              documentation, and theoretical analysis.
+            </p>
+          </div>
+        </div>
+        <div class="team-note-wrap reveal">
+          <p class="team-note">
+            BatStateU · College of Informatics and Computing Sciences · AY
+            2025–2026
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════ SERVICE MODALS ═══════════════════════════════ -->
+
+    <!-- ── ACCESS DENIED MODAL ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-access-denied"
+      onclick="closeServiceModal('access-denied', event)"
+    >
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">🔒</div>
+            Access Denied
+          </div>
+          <button
+            class="modal-close"
+            onclick="closeServiceModal('access-denied')"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠</span>
+            <strong>Permission Restricted</strong>
+          </div>
+          <p class="modal-muted-text">
+            Resident accounts do not have permission to log into the Barangay
+            Management Information System (MIS).
+          </p>
+          <p class="modal-muted-text">
+            Please explore our resident services below to request certificates,
+            file blotter reports, or view the GIS map.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('access-denied')"
+          >
+            Close
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="
+              closeServiceModal('access-denied');
+              window.location.hash = '#features';
+            "
+          >
+            View Services ↓
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 1. BARANGAY RESIDENCY ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-residency"
+      onclick="closeServiceModal('residency', event)"
+    >
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">🏘️</div>
+            Barangay Residency — Resident Search
+          </div>
+          <button class="modal-close" onclick="closeServiceModal('residency')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-help-text">
+            Search for registered residents in the Barangay Conde Labac system.
+            Lookups are logged per RA 10173.
+          </p>
+          <div class="form-row form-row-tight">
+            <div class="form-group form-group-flat">
+              <label class="form-label">Full Name</label>
+              <input
+                class="form-control"
+                id="res-search-name"
+                placeholder="e.g. Santos, Pedro"
+                oninput="filterResidents()"
+              />
+            </div>
+            <div class="form-group form-group-flat">
+              <label class="form-label">Purok / Zone</label>
+              <select
+                class="form-control"
+                id="res-search-purok"
+                onchange="filterResidents()"
+              >
+                <option value="">All Puroks</option>
+                <option>Purok 1 — Sitio Maliwanag</option>
+                <option>Purok 2 — Sitio Masagana</option>
+                <option>Purok 3 — Sitio Malinis</option>
+                <option>Purok 4 — Sitio Mapayapa</option>
+                <option>Purok 5 — Sitio Bagong Pag-Asa</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row form-row-roomy">
+            <div class="form-group form-group-flat">
+              <label class="form-label">Category</label>
+              <select
+                class="form-control"
+                id="res-search-cat"
+                onchange="filterResidents()"
+              >
+                <option value="">All Categories</option>
+                <option>Senior Citizen</option>
+                <option>PWD</option>
+                <option>4Ps Beneficiary</option>
+                <option>Solo Parent</option>
+              </select>
+            </div>
+            <div class="form-group form-group-flat">
+              <label class="form-label">Status</label>
+              <select
+                class="form-control"
+                id="res-search-status"
+                onchange="filterResidents()"
+              >
+                <option value="">All Statuses</option>
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Deceased</option>
+              </select>
+            </div>
+          </div>
+          <div id="resident-results">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('residency')"
+          >
+            Close
+          </button>
+          <button class="btn btn-primary" onclick="exportResidents()">
+            ⬇ Export Results
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. CERTIFICATE ISSUANCE ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-certificates"
+      onclick="closeServiceModal('certificates', event)"
+    >
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">📄</div>
+            Certificate Issuance — Request Form
+          </div>
+          <button
+            class="modal-close"
+            onclick="closeServiceModal('certificates')"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-help-text-lg">
+            Select the certificate type, fill in the required information, and
+            submit your request. Processing typically takes 1–3 working days.
+          </p>
+
+          <label class="form-label">Select Certificate Type</label>
+          <div class="cert-type-grid" id="cert-type-grid">
+            <div
+              class="cert-type-card selected"
+              onclick="selectCert(this, 'Barangay Clearance')"
+            >
+              <span class="cert-icon">📋</span>
+              <div class="cert-name">Barangay Clearance</div>
+            </div>
+            <div
+              class="cert-type-card"
+              onclick="selectCert(this, 'Certificate of Indigency')"
+            >
+              <span class="cert-icon">🏷️</span>
+              <div class="cert-name">Certificate of Indigency</div>
+            </div>
+            <div
+              class="cert-type-card"
+              onclick="selectCert(this, 'Certificate of Residency')"
+            >
+              <span class="cert-icon">🏠</span>
+              <div class="cert-name">Certificate of Residency</div>
+            </div>
+            <div
+              class="cert-type-card"
+              onclick="selectCert(this, 'Business Clearance')"
+            >
+              <span class="cert-icon">💼</span>
+              <div class="cert-name">Business Clearance</div>
+            </div>
+            <div
+              class="cert-type-card"
+              onclick="selectCert(this, 'Certificate of Good Moral')"
+            >
+              <span class="cert-icon">⭐</span>
+              <div class="cert-name">Good Moral Certificate</div>
+            </div>
+            <div
+              class="cert-type-card"
+              onclick="selectCert(this, 'Certificate of Solo Parent')"
+            >
+              <span class="cert-icon">👩‍👧</span>
+              <div class="cert-name">Solo Parent Certificate</div>
+            </div>
+          </div>
+
+          <div id="cert-selected-badge" class="cert-selected-badge">
+            <span class="badge badge-gold">Selected: Barangay Clearance</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input class="form-control" placeholder="Juan" id="cert-fname" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input
+                class="form-control"
+                placeholder="Santos"
+                id="cert-lname"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date of Birth</label>
+              <input class="form-control" type="date" id="cert-dob" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Purok / Address</label>
+              <select class="form-control" id="cert-purok">
+                <option>Purok 1 — Sitio Maliwanag</option>
+                <option>Purok 2 — Sitio Masagana</option>
+                <option>Purok 3 — Sitio Malinis</option>
+                <option>Purok 4 — Sitio Mapayapa</option>
+                <option>Purok 5 — Sitio Bagong Pag-Asa</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Purpose / Reason for Request</label>
+            <textarea
+              class="form-control"
+              id="cert-purpose"
+              placeholder="e.g. For employment purposes, scholarship application, etc."
+            ></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact Number</label>
+              <input
+                class="form-control"
+                placeholder="09XXXXXXXXX"
+                type="tel"
+                id="cert-contact"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferred Pickup Date</label>
+              <input class="form-control" type="date" id="cert-pickup" />
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <span class="alert-icon">ℹ</span> You will receive an SMS
+            notification once your certificate is ready for pickup at the
+            barangay hall.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('certificates')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-gold" onclick="submitCertificate()">
+            📤 Submit Request
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. BLOTTER REPORTING ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-incidents"
+      onclick="closeServiceModal('incidents', event)"
+    >
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">🚨</div>
+            Blotter Report — File an Incident
+          </div>
+          <button class="modal-close" onclick="closeServiceModal('incidents')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠</span> For life-threatening emergencies,
+            call <strong>911</strong> or the local police at
+            <strong>(043) 702-4011</strong> immediately.
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Incident Type</label>
+              <select class="form-control" id="inc-type">
+                <option>Noise Complaint</option>
+                <option>Property Dispute</option>
+                <option>Physical Altercation</option>
+                <option>Theft / Robbery</option>
+                <option>Vandalism</option>
+                <option>Domestic Disturbance</option>
+                <option>Flooding / Natural Hazard</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Severity Level</label>
+              <select class="form-control" id="inc-severity">
+                <option value="low">Low — Minor disturbance</option>
+                <option value="medium" selected>
+                  Medium — Needs attention
+                </option>
+                <option value="high">High — Urgent response needed</option>
+                <option value="critical">Critical — Immediate danger</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date of Incident</label>
+              <input class="form-control" type="date" id="inc-date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time of Incident</label>
+              <input class="form-control" type="time" id="inc-time" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location / Address</label>
+            <input
+              class="form-control"
+              id="inc-location"
+              placeholder="e.g. Purok 3, near the basketball court"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Complainant Full Name</label>
+            <input
+              class="form-control"
+              id="inc-complainant"
+              placeholder="Your full name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Respondent / Subject (if known)</label>
+            <input
+              class="form-control"
+              id="inc-respondent"
+              placeholder="Name or description of the other party (optional)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Detailed Narration of Incident</label>
+            <textarea
+              class="form-control textarea-tall"
+              id="inc-narration"
+              placeholder="Describe what happened in detail — include sequence of events, persons involved, and any witnesses..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Witness Names (optional)</label>
+            <input
+              class="form-control"
+              id="inc-witnesses"
+              placeholder="e.g. Maria Cruz, Jose Reyes"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Number</label>
+            <input
+              class="form-control"
+              type="tel"
+              id="inc-contact"
+              placeholder="09XXXXXXXXX"
+            />
+          </div>
+
+          <div class="alert alert-info">
+            <span class="alert-icon">ℹ</span> Your blotter report will be
+            assigned a case number. You will be contacted by a barangay official
+            within 24 hours.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('incidents')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-danger btn-danger-strong"
+            onclick="submitBlotter()"
+          >
+            🚨 Submit Blotter Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. FEEDBACK ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-feedback"
+      onclick="closeServiceModal('feedback', event)"
+    >
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">💬</div>
+            Resident Feedback
+          </div>
+          <button class="modal-close" onclick="closeServiceModal('feedback')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-help-text-lg">
+            Your feedback helps the barangay improve its services. All
+            submissions are confidential and reviewed monthly by barangay
+            officials.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-control" id="fb-category">
+              <option>Barangay Services</option>
+              <option>Cleanliness &amp; Sanitation</option>
+              <option>Peace &amp; Order</option>
+              <option>Infrastructure</option>
+              <option>Barangay Officials</option>
+              <option>Health Services</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Overall Satisfaction</label>
+            <div class="star-rating" id="star-rating">
+              <span class="star active" onclick="setRating(1)">★</span>
+              <span class="star active" onclick="setRating(2)">★</span>
+              <span class="star active" onclick="setRating(3)">★</span>
+              <span class="star active" onclick="setRating(4)">★</span>
+              <span class="star" onclick="setRating(5)">★</span>
+            </div>
+            <div id="rating-label" class="rating-label">4 out of 5 — Good</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Your Comment or Suggestion</label>
+            <textarea
+              class="form-control textarea-medium"
+              id="fb-comment"
+              placeholder="Share your experience, suggestions, or concerns about barangay services..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Your Name (optional)</label>
+            <input
+              class="form-control"
+              id="fb-name"
+              placeholder="Leave blank to submit anonymously"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact (optional)</label>
+            <input
+              class="form-control"
+              id="fb-contact"
+              placeholder="Email or phone number"
+            />
+          </div>
+
+          <div class="alert alert-success">
+            <span class="alert-icon">✓</span> Feedback is reviewed by the
+            Barangay Chairperson and department heads during monthly meetings.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('feedback')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-gold" onclick="submitFeedback()">
+            💬 Submit Feedback
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 5. GIS MAP ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-gis"
+      onclick="closeServiceModal('gis', event)"
+    >
+      <div class="modal-box modal-xl">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">🗺️</div>
+            GIS Map — Barangay Conde Labac
+          </div>
+          <button class="modal-close" onclick="closeServiceModal('gis')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="gis-filter-row">
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn active"
+              onclick="setGisLayer(this, 'all')"
+            >
+              All Layers
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'households')"
+            >
+              🏠 Households
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'hazard')"
+            >
+              ⚠ Hazard Zones
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'seniors')"
+            >
+              👴 Senior Citizens
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'pwd')"
+            >
+              ♿ PWD
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, '4ps')"
+            >
+              🏷 4Ps Beneficiaries
+            </button>
+          </div>
+
+          <div class="gis-modal-map" id="gis-map-container">
+            <div class="gis-leaflet-map" id="gis-map-modal"></div>
+          </div>
+
+          <div class="gis-legend">
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-households"></div>
+              Household
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-seniors"></div>
+              Senior Citizen
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-flood"></div>
+              Flood Zone
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-landslide"></div>
+              Landslide Risk
+            </div>
+            <div class="gis-legend-item">🏠 Barangay Hall</div>
+            <div class="gis-legend-item">+ Health Center</div>
+          </div>
+
+          <div class="alert alert-info alert-spacing-top">
+            <span class="alert-icon">ℹ</span> This map is for reference only.
+            For precise coordinates, contact the barangay GIS officer.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeServiceModal('gis')">
+            Close
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="
+              alert('Full GIS system requires login with internet access.')
+            "
+          >
+            🔗 Open Full GIS System
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 6. ACCOUNT CLAIMING ── -->
+    <div
+      class="modal-backdrop"
+      id="modal-accounts"
+      onclick="closeServiceModal('accounts', event)"
+    >
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">🔑</div>
+            Account Claiming — Create Your Account
+          </div>
+          <button class="modal-close" onclick="closeServiceModal('accounts')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="acc-steps" id="acc-steps">
+            <div class="acc-step active" id="step-1-dot">1</div>
+            <div class="acc-step-line" id="step-line-1"></div>
+            <div class="acc-step" id="step-2-dot">2</div>
+            <div class="acc-step-line" id="step-line-2"></div>
+            <div class="acc-step" id="step-3-dot">3</div>
+          </div>
+          <div class="acc-step-labels">
+            <span>Verify Identity</span><span>Set Credentials</span
+            ><span>Confirmation</span>
+          </div>
+
+          <div id="acc-step-1">
+            <p class="acc-step-help">
+              We'll search for your pre-existing record in the barangay database
+              to link your account. Your data must already be registered with
+              the barangay.
+            </p>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input class="form-control" id="acc-fname" placeholder="Juan" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <input
+                  class="form-control"
+                  id="acc-lname"
+                  placeholder="Santos"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Date of Birth</label>
+                <input class="form-control" type="date" id="acc-dob" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Purok / Zone</label>
+                <select class="form-control" id="acc-purok">
+                  <option>Purok 1 — Sitio Maliwanag</option>
+                  <option>Purok 2 — Sitio Masagana</option>
+                  <option>Purok 3 — Sitio Malinis</option>
+                  <option>Purok 4 — Sitio Mapayapa</option>
+                  <option>Purok 5 — Sitio Bagong Pag-Asa</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mother's Maiden Name</label>
+              <input
+                class="form-control"
+                id="acc-mother"
+                placeholder="For identity verification"
+              />
+            </div>
+            <div id="acc-verify-result" class="is-hidden"></div>
+          </div>
+
+          <div id="acc-step-2" class="is-hidden">
+            <div class="alert alert-success alert-mb">
+              <span class="alert-icon">✓</span>
+              <strong>Record found!</strong> We found a matching resident
+              record. Please set your login credentials below.
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input
+                class="form-control"
+                type="email"
+                id="acc-email"
+                placeholder="your@email.com"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mobile Number</label>
+              <input
+                class="form-control"
+                type="tel"
+                id="acc-mobile"
+                placeholder="09XXXXXXXXX"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input
+                class="form-control"
+                type="password"
+                id="acc-pass"
+                placeholder="Minimum 8 characters"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <input
+                class="form-control"
+                type="password"
+                id="acc-pass2"
+                placeholder="Re-enter password"
+              />
+            </div>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ</span> Your account will be linked to
+              your existing barangay record. A barangay official will verify and
+              activate it within 24 hours.
+            </div>
+          </div>
+
+          <div id="acc-step-3" class="acc-step-complete is-hidden">
+            <div class="acc-success-icon">✓</div>
+            <h3 class="acc-success-title">Account Request Submitted!</h3>
+            <p class="acc-success-copy">
+              Your account claiming request has been received. A barangay
+              official will review and activate your account within 1–2 working
+              days. You will receive an SMS confirmation.
+            </p>
+            <div class="acc-ref-box">
+              <div class="acc-ref-label">Reference Number</div>
+              <div class="acc-ref-number" id="acc-ref-num">ACC-2025-0048</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" id="acc-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeServiceModal('accounts')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-gold"
+            id="acc-next-btn"
+            onclick="accNextStep()"
+          >
+            Verify Identity →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUCCESS TOAST ── -->
+    <div id="toast" class="toast">
+      <span id="toast-icon">✓</span>
+      <span id="toast-msg">Success</span>
+    </div>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer>
+      <div class="footer-logo">
+        <img
+          src="../img/conde%20labac%20logo.png"
+          alt="Conde Labac Seal"
+          class="footer-logo-img"
+        />
+        <div class="footer-title">C.A.R.E.S. · Barangay Conde Labac</div>
+      </div>
+      <p class="footer-text">
+        GIS-Enabled Integrated Barangay Management and Decision Support
+        System<br />
+        Capstone Project · AY 2025–2026
+      </p>
+      <div class="footer-bar">
+        <span>Arvesu</span><span class="f-sep">·</span> <span>Bacani</span
+        ><span class="f-sep">·</span> <span>Balmes</span
+        ><span class="f-sep">·</span>
+        <span>BatStateU CICS</span>
+      </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const accessBtn = document.getElementById("access-system-btn");
+        if (accessBtn) {
+          accessBtn.addEventListener("click", function (e) {
+            const session = getSession();
+            if (session && session.role === "Resident") {
+              e.preventDefault();
+              document
+                .getElementById("modal-access-denied")
+                .classList.add("open");
+            }
+          });
+        }
+      });
+      // Scroll reveal
+      const reveals = document.querySelectorAll(".reveal");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+              entry.target.style.transitionDelay = i * 0.08 + "s";
+              entry.target.classList.add("visible");
+            }
+          });
+        },
+        { threshold: 0.1 },
+      );
+      reveals.forEach((el) => observer.observe(el));
+
+      // Active nav highlight on scroll
+      const sections = document.querySelectorAll("section[id]");
+      const navLinks = document.querySelectorAll(".nav-links a");
+      window.addEventListener("scroll", () => {
+        let current = "";
+        sections.forEach((sec) => {
+          if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
+        });
+        navLinks.forEach((link) => {
+          link.style.color =
+            link.getAttribute("href") === "#" + current ? "var(--yellow)" : "";
+        });
+      });
+
+      // Mobile nav toggle
+      const toggle = document.getElementById("nav-toggle");
+      const links = document.getElementById("nav-links");
+      toggle.addEventListener("click", () => links.classList.toggle("open"));
+      links
+        .querySelectorAll("a")
+        .forEach((a) =>
+          a.addEventListener("click", () => links.classList.remove("open")),
+        );
+
+      const SESSION_KEY = "ibmdss.session";
+
+      function getSession() {
+        try {
+          return JSON.parse(localStorage.getItem(SESSION_KEY));
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function clearSession() {
+        localStorage.removeItem(SESSION_KEY);
+      }
+
+      function applySessionToNav(session) {
+        const signin = document.getElementById("nav-signin");
+        const userPill = document.getElementById("nav-user-pill");
+        const misLi = document.getElementById("nav-mis-li");
+
+        if (!session) {
+          signin.style.display = "inline-flex";
+          userPill.classList.add("is-hidden");
+          misLi.classList.add("is-hidden");
+          return;
+        }
+
+        signin.style.display = "none";
+        userPill.classList.remove("is-hidden");
+        document.getElementById("nav-user-name").textContent =
+          session.shortName || session.displayName || "User";
+        document.getElementById("nav-avatar").textContent =
+          session.initials || "U";
+
+        const isStaff = session.role === "Admin" || session.role === "Officer";
+        if (isStaff) {
+          misLi.classList.remove("is-hidden");
+        } else {
+          misLi.classList.add("is-hidden");
+        }
+      }
+
+      function signOut() {
+        clearSession();
+        applySessionToNav(null);
+      }
+
+      applySessionToNav(getSession());
+
+      let accStep = 1;
+      let selectedCert = "Barangay Clearance";
+      let feedbackRating = 4;
+
+      const gisMaps = {};
+      const gisHouseholds = [
+        { lat: 13.8784, lng: 121.0832, name: "Household #001", zone: "A" },
+        { lat: 13.8794, lng: 121.0842, name: "Household #002", zone: "B" },
+        { lat: 13.8774, lng: 121.0822, name: "Household #003", zone: "C" },
+      ];
+
+      function initGisMap(targetId) {
+        const el = document.getElementById(targetId);
+        if (!el || typeof L === "undefined") return;
+
+        if (!gisMaps[targetId]) {
+          const map = L.map(targetId).setView([13.8784, 121.0832], 15);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+            maxZoom: 19,
+          }).addTo(map);
+
+          gisHouseholds.forEach((h) => {
+            L.marker([h.lat, h.lng])
+              .bindPopup(`<strong>${h.name}</strong><br>Zone ${h.zone}`)
+              .addTo(map);
+          });
+
+          L.marker([13.8784, 121.0832])
+            .bindPopup("Conde Labac, Batangas City - Barangay Center")
+            .openPopup()
+            .addTo(map);
+
+          gisMaps[targetId] = map;
+        }
+
+        setTimeout(() => {
+          gisMaps[targetId]?.invalidateSize();
+        }, 50);
+      }
+
+      function showToast(msg, icon = "✓") {
+        const t = document.getElementById("toast");
+        document.getElementById("toast-msg").textContent = msg;
+        document.getElementById("toast-icon").textContent = icon;
+        t.style.transform = "translateY(0)";
+        t.style.opacity = "1";
+        setTimeout(() => {
+          t.style.transform = "translateY(100px)";
+          t.style.opacity = "0";
+        }, 3500);
+      }
+
+      function openServicePopup(service) {
+        document.getElementById("modal-" + service).classList.add("open");
+        if (service === "residency") renderResidentResults("");
+        if (service === "gis") {
+          setTimeout(() => initGisMap("gis-map-modal"), 120);
+        }
+      }
+
+      function closeServiceModal(service, e) {
+        if (e && e.target !== document.getElementById("modal-" + service))
+          return;
+        document.getElementById("modal-" + service).classList.remove("open");
+      }
+
+      const RESIDENTS_DATA = [
+        {
+          name: "Santos, Pedro J.",
+          age: 34,
+          purok: "Purok 1",
+          household: "HH-0042",
+          cat: "",
+          status: "Active",
+        },
+        {
+          name: "dela Cruz, Maria L.",
+          age: 67,
+          purok: "Purok 2",
+          household: "HH-0081",
+          cat: "Senior Citizen",
+          status: "Active",
+        },
+        {
+          name: "Reyes, Jose B.",
+          age: 45,
+          purok: "Purok 3",
+          household: "HH-0156",
+          cat: "4Ps Beneficiary",
+          status: "Active",
+        },
+        {
+          name: "Aquino, Ana M.",
+          age: 29,
+          purok: "Purok 1",
+          household: "HH-0033",
+          cat: "Solo Parent",
+          status: "Active",
+        },
+        {
+          name: "Bautista, Carlos F.",
+          age: 52,
+          purok: "Purok 4",
+          household: "HH-0204",
+          cat: "PWD",
+          status: "Active",
+        },
+        {
+          name: "Villanueva, Rosa T.",
+          age: 78,
+          purok: "Purok 5",
+          household: "HH-0312",
+          cat: "Senior Citizen",
+          status: "Active",
+        },
+        {
+          name: "Garcia, Luis N.",
+          age: 38,
+          purok: "Purok 2",
+          household: "HH-0098",
+          cat: "",
+          status: "Active",
+        },
+        {
+          name: "Mendoza, Elena P.",
+          age: 44,
+          purok: "Purok 3",
+          household: "HH-0177",
+          cat: "4Ps Beneficiary",
+          status: "Inactive",
+        },
+        {
+          name: "Santos, Juan R.",
+          age: 22,
+          purok: "Purok 1",
+          household: "HH-0044",
+          cat: "",
+          status: "Active",
+        },
+        {
+          name: "Cruz, Nora T.",
+          age: 61,
+          purok: "Purok 5",
+          household: "HH-0298",
+          cat: "Senior Citizen",
+          status: "Active",
+        },
+      ];
+
+      function filterResidents() {
+        const nameQ =
+          document.getElementById("res-search-name")?.value.toLowerCase() || "";
+        const purokQ = document.getElementById("res-search-purok")?.value || "";
+        const catQ = document.getElementById("res-search-cat")?.value || "";
+        const statusQ =
+          document.getElementById("res-search-status")?.value || "";
+        const filtered = RESIDENTS_DATA.filter((r) => {
+          return (
+            (!nameQ || r.name.toLowerCase().includes(nameQ)) &&
+            (!purokQ || r.purok === purokQ.split(" — ")[0] || purokQ === "") &&
+            (!catQ || r.cat === catQ) &&
+            (!statusQ || r.status === statusQ)
+          );
+        });
+        renderResidentResults(filtered);
+      }
+
+      function renderResidentResults(filtered) {
+        const list = Array.isArray(filtered) ? filtered : RESIDENTS_DATA;
+        const container = document.getElementById("resident-results");
+        if (!container) return;
+        if (list.length === 0) {
+          container.innerHTML =
+            '<div class="resident-empty">No residents found matching your search criteria.</div>';
+          return;
+        }
+        container.innerHTML =
+          `<div class="resident-summary">Showing ${list.length} result${list.length !== 1 ? "s" : ""}</div>` +
+          list
+            .map(
+              (r) => `
+      <div class="resident-card">
+        <div class="resident-avatar-sm">${r.name.split(",")[1]?.trim()[0] || "?"}${r.name.split(",")[0][0]}</div>
+        <div class="resident-info">
+          <h4>${r.name}</h4>
+          <p>${r.age} yrs · ${r.purok} · ${r.household}${r.cat ? " · " + r.cat : ""}</p>
+        </div>
+        <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
+      </div>`,
+            )
+            .join("");
+      }
+
+      function exportResidents() {
+        showToast("Exporting results as CSV...", "⬇");
+      }
+
+      function selectCert(el, certName) {
+        document
+          .querySelectorAll(".cert-type-card")
+          .forEach((c) => c.classList.remove("selected"));
+        el.classList.add("selected");
+        selectedCert = certName;
+        document.getElementById("cert-selected-badge").innerHTML =
+          `<span class="badge badge-gold">Selected: ${certName}</span>`;
+      }
+
+      function submitCertificate() {
+        const fname = document.getElementById("cert-fname").value.trim();
+        const lname = document.getElementById("cert-lname").value.trim();
+        if (!fname || !lname) {
+          alert("Please enter your first and last name.");
+          return;
+        }
+        closeServiceModal("certificates");
+        showToast(
+          `${selectedCert} request submitted! Ref: CERT-2025-088`,
+          "📄",
+        );
+      }
+
+      function submitBlotter() {
+        const narration = document.getElementById("inc-narration").value.trim();
+        if (!narration) {
+          alert("Please provide a narration of the incident.");
+          return;
+        }
+        closeServiceModal("incidents");
+        showToast("Blotter report submitted! Case No: INC-2025-042", "🚨");
+      }
+
+      const ratingLabels = [
+        "",
+        "Very Poor",
+        "Poor",
+        "Average",
+        "Good",
+        "Excellent",
+      ];
+      function setRating(n) {
+        feedbackRating = n;
+        document.querySelectorAll(".star").forEach((s, i) => {
+          s.classList.toggle("active", i < n);
+        });
+        document.getElementById("rating-label").textContent =
+          `${n} out of 5 — ${ratingLabels[n]}`;
+      }
+
+      function submitFeedback() {
+        const comment = document.getElementById("fb-comment").value.trim();
+        if (!comment) {
+          alert("Please enter a comment or suggestion.");
+          return;
+        }
+        closeServiceModal("feedback");
+        showToast("Feedback submitted! Thank you for your input.", "💬");
+      }
+
+      function setGisLayer(el, layer) {
+        document
+          .querySelectorAll(".gis-filter-btn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        const labels = {
+          all: "All layers shown",
+          households: "Household markers shown",
+          hazard: "Hazard zones highlighted",
+          seniors: "Senior citizen locations shown",
+          pwd: "PWD household markers shown",
+          "4ps": "4Ps beneficiary households shown",
+        };
+        showToast(labels[layer] || "Layer updated", "🗺️");
+      }
+
+      function accNextStep() {
+        if (accStep === 1) {
+          const fname = document.getElementById("acc-fname").value.trim();
+          const lname = document.getElementById("acc-lname").value.trim();
+          if (!fname || !lname) {
+            alert("Please fill in your name to continue.");
+            return;
+          }
+          document.getElementById("acc-step-1").style.display = "none";
+          document.getElementById("acc-step-2").style.display = "";
+          document.getElementById("step-1-dot").style.background = "#22c55e";
+          document.getElementById("step-1-dot").textContent = "✓";
+          document.getElementById("step-2-dot").style.background =
+            "var(--navy)";
+          document.getElementById("step-2-dot").style.color = "#fff";
+          document.getElementById("step-line-1").style.background = "#22c55e";
+          document.getElementById("acc-next-btn").textContent =
+            "Create Account →";
+          accStep = 2;
+        } else if (accStep === 2) {
+          const email = document.getElementById("acc-email").value.trim();
+          const pass = document.getElementById("acc-pass").value;
+          const pass2 = document.getElementById("acc-pass2").value;
+          if (!email) {
+            alert("Please enter your email address.");
+            return;
+          }
+          if (pass !== pass2) {
+            alert("Passwords do not match.");
+            return;
+          }
+          if (pass.length < 8) {
+            alert("Password must be at least 8 characters.");
+            return;
+          }
+          document.getElementById("acc-step-2").style.display = "none";
+          document.getElementById("acc-step-3").style.display = "";
+          document.getElementById("step-2-dot").style.background = "#22c55e";
+          document.getElementById("step-2-dot").textContent = "✓";
+          document.getElementById("step-3-dot").style.background =
+            "var(--navy)";
+          document.getElementById("step-3-dot").style.color = "#fff";
+          document.getElementById("step-line-2").style.background = "#22c55e";
+          document.getElementById("acc-footer").innerHTML =
+            '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done ✓</button>';
+          accStep = 3;
+          showToast("Account request submitted! Ref: ACC-2025-0048", "🔑");
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brgy. Conde Labac — Sign In</title>
+    <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/shared.css" />
+    <link rel="stylesheet" href="css/system.css" />
+  </head>
+  <body>
+    <!-- ═══════════════════════════════ LOGIN SCREEN ═══════════════════════════════ -->
+    <div id="login-screen">
+      <div class="login-bg-pattern"></div>
+      <div class="login-card">
+        <div class="login-seal">
+          <img src="../img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
+        </div>
+        <h1 class="login-title">Brgy. Conde Labac</h1>
+        <p class="login-subtitle">
+          Integrated Barangay Management System · Batangas City
+        </p>
+
+        <div class="login-roles">
+          <button class="role-chip active" onclick="selectRole(this, 'Admin')">
+            Admin
+          </button>
+          <button class="role-chip" onclick="selectRole(this, 'Officer')">
+            Officer
+          </button>
+          <button class="role-chip" onclick="selectRole(this, 'Resident')">
+            Resident
+          </button>
+        </div>
+
+        <label class="login-label">Username / Email</label>
+        <input
+          class="login-input"
+          type="text"
+          id="login-user"
+          placeholder="e.g. admin@condelabac.gov.ph"
+          value="admin@condelabac.gov.ph"
+        />
+
+        <label class="login-label">Password</label>
+        <input
+          class="login-input"
+          type="password"
+          id="login-pass"
+          placeholder="••••••••"
+          value="••••••••"
+        />
+
+        <button class="login-btn" onclick="doLogin()">Sign In to System</button>
+        <a href="index.html" class="login-back-link"
+          >← Back to C.A.R.E.S. Landing Page</a
+        >
+      </div>
+    </div>
+
+    <script>
+      const SESSION_KEY = "ibmdss.session";
+      let currentRole = "Admin";
+
+      function getSession() {
+        try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
+        catch (e) { return null; }
+      }
+
+      function setSession(session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      }
+
+      function selectRole(el, role) {
+        document.querySelectorAll(".role-chip").forEach((c) => c.classList.remove("active"));
+        el.classList.add("active");
+        currentRole = role;
+      }
+
+      function doLogin() {
+        const user = document.getElementById("login-user").value.trim() || "User";
+        const names    = { Admin: "Juan D. Administrator", Officer: "Maria R. Officer", Resident: "Pedro S. Santos" };
+        const initials = { Admin: "JD", Officer: "MR", Resident: "PS" };
+        const displayName = names[currentRole];
+        const init        = initials[currentRole];
+        const shortName   = displayName.split(" ").slice(0, 2).join(" ");
+
+        setSession({ role: currentRole, displayName, shortName, initials: init, user });
+
+        if (currentRole === "Resident") {
+          window.location.href = "index.html";
+        } else {
+          window.location.href = "pages/dashboard.html";
+        }
+      }
+
+      // If already logged in, redirect immediately
+      const existing = getSession();
+      if (existing) {
+        if (existing.role === "Resident") {
+          window.location.href = "index.html";
+        } else {
+          window.location.href = "pages/dashboard.html";
+        }
+      }
+    </script>
+  </body>
+</html>
