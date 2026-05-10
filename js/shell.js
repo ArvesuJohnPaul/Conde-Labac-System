@@ -264,10 +264,11 @@ function initGisMap(targetId) {
         .addTo(map);
     });
 
+    // FIX: .addTo(map) must come before .openPopup() so the popup shows on load
     L.marker([13.8784, 121.0832])
       .bindPopup("Conde Labac, Batangas City - Barangay Center")
-      .openPopup()
-      .addTo(map);
+      .addTo(map)
+      .openPopup();
 
     gisMaps[targetId] = map;
   }
