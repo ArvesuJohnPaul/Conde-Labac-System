@@ -34,8 +34,7 @@ function selectRole(el, role) {
 
 // ════════════════════ LOGIN ════════════════════
 function doLogin() {
-  const user =
-    document.getElementById("login-user").value.trim() || "User";
+  const user = document.getElementById("login-user").value.trim() || "User";
   const names = {
     Admin: "Juan D. Administrator",
     Officer: "Maria R. Officer",
@@ -82,13 +81,30 @@ function applySessionToApp(session) {
   const init = session.initials || "U";
   const shortName = session.shortName || displayName;
 
-  // Update navbar user pill
+  // Update navbar user pill (desktop)
   const navPill = document.getElementById("nav-user-pill");
   if (navPill) navPill.style.display = "flex";
   const navName = document.getElementById("nav-user-name");
   if (navName) navName.textContent = shortName;
+
+  // Update navbar user menu (mobile)
+  const navUserMenu = document.getElementById("nav-user-menu");
+  if (navUserMenu) navUserMenu.classList.remove("is-hidden");
   const navAvatar = document.getElementById("nav-avatar");
   if (navAvatar) navAvatar.textContent = init;
+  const navAvatarLg = document.getElementById("nav-avatar-lg");
+  if (navAvatarLg) navAvatarLg.textContent = init;
+  const navUserNameFull = document.getElementById("nav-user-name-full");
+  if (navUserNameFull) navUserNameFull.textContent = displayName;
+  const navUserRole = document.getElementById("nav-user-role");
+  if (navUserRole) {
+    navUserRole.textContent =
+      currentRole === "Admin"
+        ? "System Admin"
+        : currentRole === "Officer"
+          ? "Barangay Officer"
+          : "Resident";
+  }
 
   // Update sidebar user info
   const sideUser = document.getElementById("sidebar-user");
@@ -99,8 +115,8 @@ function applySessionToApp(session) {
       currentRole === "Admin"
         ? "System Admin"
         : currentRole === "Officer"
-        ? "Barangay Officer"
-        : "Resident";
+          ? "Barangay Officer"
+          : "Resident";
   const sideAvatar = document.getElementById("sidebar-avatar");
   if (sideAvatar) sideAvatar.textContent = init;
 
@@ -163,6 +179,60 @@ function doLogout() {
   window.location.href = "../index.html";
 }
 
+// ════════════════════ USER MENU DROPDOWN ════════════════════
+function initializeUserMenu() {
+  const trigger = document.getElementById("nav-user-trigger");
+  const dropdown = document.getElementById("nav-user-dropdown");
+
+  if (!trigger || !dropdown) return;
+
+  trigger.addEventListener("click", function (e) {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", function (e) {
+    if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
+    }
+  });
+}
+
+// ════════════════════ TOPBAR MODULES MENU ════════════════════
+function initializeTopbarModulesMenu() {
+  const trigger = document.getElementById("topbarModulesTrigger");
+  const dropdown = document.getElementById("topbarModulesDropdown");
+
+  if (!trigger || !dropdown) return;
+
+  trigger.addEventListener("click", function (e) {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  // Close dropdown when clicking a module item
+  const moduleItems = dropdown.querySelectorAll(".topbar-module-item");
+  moduleItems.forEach((item) => {
+    item.addEventListener("click", function () {
+      dropdown.classList.remove("open");
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", function (e) {
+    if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
+    }
+  });
+}
+
+// Call this after DOM is ready
+document.addEventListener("DOMContentLoaded", function () {
+  initializeUserMenu();
+  initializeTopbarModulesMenu();
+});
+
 function scrollToServices(e) {
   e.preventDefault();
   document
@@ -202,17 +272,17 @@ const moduleConfig = {
 
 // Page map for cross-page navigation
 const PAGE_MAP = {
-  dashboard:    "dashboard.html",
-  residency:    "residency.html",
+  dashboard: "dashboard.html",
+  residency: "residency.html",
   certificates: "certificates.html",
-  incidents:    "incidents.html",
-  feedback:     "feedback.html",
-  gis:          "gis.html",
-  accounts:     "accounts.html",
-  analytics:    "analytics.html",
-  users:        "users.html",
-  audit:        "audit.html",
-  archive:      "archive.html",
+  incidents: "incidents.html",
+  feedback: "feedback.html",
+  gis: "gis.html",
+  accounts: "accounts.html",
+  analytics: "analytics.html",
+  users: "users.html",
+  audit: "audit.html",
+  archive: "archive.html",
 };
 
 function nav(el, module) {
@@ -377,28 +447,99 @@ function renderResidentPortal() {
 
 // ════════════════════ RESIDENCY MODAL LOGIC ════════════════════
 const RESIDENTS_DATA = [
-  { name: "Santos, Pedro J.",    age: 34, purok: "Purok 1", household: "HH-0042", cat: "",               status: "Active"   },
-  { name: "dela Cruz, Maria L.", age: 67, purok: "Purok 2", household: "HH-0081", cat: "Senior Citizen",  status: "Active"   },
-  { name: "Reyes, Jose B.",      age: 45, purok: "Purok 3", household: "HH-0156", cat: "4Ps Beneficiary", status: "Active"   },
-  { name: "Aquino, Ana M.",      age: 29, purok: "Purok 1", household: "HH-0033", cat: "Solo Parent",     status: "Active"   },
-  { name: "Bautista, Carlos F.", age: 52, purok: "Purok 4", household: "HH-0204", cat: "PWD",             status: "Active"   },
-  { name: "Villanueva, Rosa T.", age: 78, purok: "Purok 5", household: "HH-0312", cat: "Senior Citizen",  status: "Active"   },
-  { name: "Garcia, Luis N.",     age: 38, purok: "Purok 2", household: "HH-0098", cat: "",               status: "Active"   },
-  { name: "Mendoza, Elena P.",   age: 44, purok: "Purok 3", household: "HH-0177", cat: "4Ps Beneficiary", status: "Inactive" },
-  { name: "Santos, Juan R.",     age: 22, purok: "Purok 1", household: "HH-0044", cat: "",               status: "Active"   },
-  { name: "Cruz, Nora T.",       age: 61, purok: "Purok 5", household: "HH-0298", cat: "Senior Citizen",  status: "Active"   },
+  {
+    name: "Santos, Pedro J.",
+    age: 34,
+    purok: "Purok 1",
+    household: "HH-0042",
+    cat: "",
+    status: "Active",
+  },
+  {
+    name: "dela Cruz, Maria L.",
+    age: 67,
+    purok: "Purok 2",
+    household: "HH-0081",
+    cat: "Senior Citizen",
+    status: "Active",
+  },
+  {
+    name: "Reyes, Jose B.",
+    age: 45,
+    purok: "Purok 3",
+    household: "HH-0156",
+    cat: "4Ps Beneficiary",
+    status: "Active",
+  },
+  {
+    name: "Aquino, Ana M.",
+    age: 29,
+    purok: "Purok 1",
+    household: "HH-0033",
+    cat: "Solo Parent",
+    status: "Active",
+  },
+  {
+    name: "Bautista, Carlos F.",
+    age: 52,
+    purok: "Purok 4",
+    household: "HH-0204",
+    cat: "PWD",
+    status: "Active",
+  },
+  {
+    name: "Villanueva, Rosa T.",
+    age: 78,
+    purok: "Purok 5",
+    household: "HH-0312",
+    cat: "Senior Citizen",
+    status: "Active",
+  },
+  {
+    name: "Garcia, Luis N.",
+    age: 38,
+    purok: "Purok 2",
+    household: "HH-0098",
+    cat: "",
+    status: "Active",
+  },
+  {
+    name: "Mendoza, Elena P.",
+    age: 44,
+    purok: "Purok 3",
+    household: "HH-0177",
+    cat: "4Ps Beneficiary",
+    status: "Inactive",
+  },
+  {
+    name: "Santos, Juan R.",
+    age: 22,
+    purok: "Purok 1",
+    household: "HH-0044",
+    cat: "",
+    status: "Active",
+  },
+  {
+    name: "Cruz, Nora T.",
+    age: 61,
+    purok: "Purok 5",
+    household: "HH-0298",
+    cat: "Senior Citizen",
+    status: "Active",
+  },
 ];
 
 function filterResidents() {
-  const nameQ   = document.getElementById("res-search-name")?.value.toLowerCase() || "";
-  const purokQ  = document.getElementById("res-search-purok")?.value || "";
-  const catQ    = document.getElementById("res-search-cat")?.value || "";
+  const nameQ =
+    document.getElementById("res-search-name")?.value.toLowerCase() || "";
+  const purokQ = document.getElementById("res-search-purok")?.value || "";
+  const catQ = document.getElementById("res-search-cat")?.value || "";
   const statusQ = document.getElementById("res-search-status")?.value || "";
   const filtered = RESIDENTS_DATA.filter((r) => {
     return (
-      (!nameQ   || r.name.toLowerCase().includes(nameQ)) &&
-      (!purokQ  || r.purok === purokQ.split(" — ")[0] || purokQ === "") &&
-      (!catQ    || r.cat === catQ) &&
+      (!nameQ || r.name.toLowerCase().includes(nameQ)) &&
+      (!purokQ || r.purok === purokQ.split(" — ")[0] || purokQ === "") &&
+      (!catQ || r.cat === catQ) &&
       (!statusQ || r.status === statusQ)
     );
   });
@@ -426,7 +567,7 @@ function renderResidentResults(filtered) {
           <p>${r.age} yrs · ${r.purok} · ${r.household}${r.cat ? " · " + r.cat : ""}</p>
         </div>
         <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
-      </div>`
+      </div>`,
       )
       .join("");
 }
@@ -496,12 +637,12 @@ function setGisLayer(el, layer) {
     .forEach((b) => b.classList.remove("active"));
   el.classList.add("active");
   const labels = {
-    all:        "All layers shown",
+    all: "All layers shown",
     households: "Household markers shown",
-    hazard:     "Hazard zones highlighted",
-    seniors:    "Senior citizen locations shown",
-    pwd:        "PWD household markers shown",
-    "4ps":      "4Ps beneficiary households shown",
+    hazard: "Hazard zones highlighted",
+    seniors: "Senior citizen locations shown",
+    pwd: "PWD household markers shown",
+    "4ps": "4Ps beneficiary households shown",
   };
   showToast(labels[layer] || "Layer updated", "🗺️");
 }
@@ -528,11 +669,20 @@ function accNextStep() {
     accStep = 2;
   } else if (accStep === 2) {
     const email = document.getElementById("acc-email").value.trim();
-    const pass  = document.getElementById("acc-pass").value;
+    const pass = document.getElementById("acc-pass").value;
     const pass2 = document.getElementById("acc-pass2").value;
-    if (!email) { alert("Please enter your email address."); return; }
-    if (pass !== pass2) { alert("Passwords do not match."); return; }
-    if (pass.length < 8) { alert("Password must be at least 8 characters."); return; }
+    if (!email) {
+      alert("Please enter your email address.");
+      return;
+    }
+    if (pass !== pass2) {
+      alert("Passwords do not match.");
+      return;
+    }
+    if (pass.length < 8) {
+      alert("Password must be at least 8 characters.");
+      return;
+    }
     document.getElementById("acc-step-2").classList.add("is-hidden");
     document.getElementById("acc-step-3").classList.remove("is-hidden");
     document.getElementById("step-2-dot").style.background = "#22c55e";

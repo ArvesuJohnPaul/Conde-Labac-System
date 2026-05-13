@@ -1600,6 +1600,7 @@ body {
   }
   #sidebar {
     transform: translateX(-100%);
+    z-index: 910;
   }
   #sidebar.mobile-open {
     transform: translateX(0);
@@ -1607,6 +1608,24 @@ body {
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 768px) {
+  #topbar {
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .topbar-title {
+    font-size: 16px;
+  }
+  .topbar-subtitle {
+    font-size: 11px;
+  }
+  .topbar-right {
+    gap: 6px;
+  }
+  .topbar-date {
+    display: none;
   }
 }
 @media (max-width: 600px) {

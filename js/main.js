@@ -16,6 +16,9 @@ function initializeSidebarToggle() {
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", function () {
       sidebar.classList.toggle("mobile-open");
+      // Close user dropdown when opening sidebar
+      const dropdown = document.getElementById("nav-user-dropdown");
+      if (dropdown) dropdown.classList.remove("open");
     });
   }
 
