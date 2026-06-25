@@ -785,4 +785,54 @@ textarea.form-control {
   .nav-user-menu {
     display: flex !important;
   }
+  .topbar {
+    padding: 0 12px;
+    gap: 10px;
+    align-items: center;
+  }
+  .topbar-modules-menu {
+    position: static;
+  }
+  .topbar-modules-trigger {
+    padding: 8px 6px;
+  }
+  .topbar-modules-dropdown {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: calc(var(--navbar-h) + 8px);
+    min-width: 0;
+    width: auto;
+    max-height: calc(100vh - var(--navbar-h) - 16px);
+    padding: 10px;
+    border-radius: 18px;
+    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-content: start;
+    overflow: auto;
+  }
+  .topbar-modules-dropdown.open {
+    display: grid;
+  }
+  .topbar-modules-section {
+    grid-column: 1 / -1;
+    padding: 4px 6px 2px;
+    margin-top: 4px;
+  }
+  .topbar-module-item {
+    min-height: 44px;
+    padding: 10px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .topbar-module-item:hover {
+    padding-left: 10px;
+  }
+  .topbar-module-icon {
+    width: 16px;
+  }
 }

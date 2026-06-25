@@ -35,12 +35,10 @@
       </a>
 
       <ul class="nav-links" id="nav-links">
-        <li><a href="#about">About</a></li>
         <li><a href="#features">Services</a></li>
         <li id="nav-mis-li" class="is-hidden">
           <a href="system.html">MIS</a>
         </li>
-        <li><a href="#sdg">SDG</a></li>
         <li><a href="#team">Team</a></li>
       </ul>
 
@@ -77,11 +75,14 @@
 
     <!-- --- HERO --- -->
     <section class="hero">
-      <div class="hero-grid"></div>
-      <div class="hero-diagonal"></div>
-      <div class="hero-orb orb-1"></div>
-      <div class="hero-orb orb-2"></div>
-      <div class="hero-orb orb-3"></div>
+      <!-- Barangay Hall Image Background -->
+      <img
+        src="img/brgy_hall_img.png"
+        alt="Barangay Conde Labac Hall"
+        class="hero-bg-img"
+        onerror="this.style.display = 'none'"
+      />
+      <div class="hero-bg-overlay"></div>
 
       <div class="hero-shell">
         <div class="hero-inner">
@@ -89,6 +90,9 @@
           <div class="hero-left">
             <div class="hero-eyebrow">
               Official Digital Portal – Batangas City
+            </div>
+            <div class="hero-mobile-logo is-hidden">
+              <img src="img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
             </div>
             <h1 class="hero-title">
               <span class="hero-title-cares">
@@ -111,22 +115,11 @@
               delivers AI-powered predictive analytics for evidence-based
               governance in Barangay Conde Labac, Batangas City.
             </p>
-
-            <div class="hero-btns">
-              <a
-                href="system.html"
-                class="btn-primary-hero"
-                id="access-system-btn"
-                >Access System →</a
-              >
-              <a href="#features" class="btn-outline-hero">Explore Services</a>
-            </div>
           </div>
 
           <!-- Right -->
           <div class="hero-right">
             <div class="logo-showcase">
-              <div class="logo-ring-outer"></div>
               <div class="logo-ring-mid"></div>
               <div class="logo-glow"></div>
               <img
@@ -142,309 +135,123 @@
           </div>
         </div>
 
-        <!-- Stats Row -->
-        <div class="hero-stats">
-          <div class="stat-box">
-            <span class="stat-num">2,438</span>
-            <span class="stat-label">Registered Residents</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">721</span>
-            <span class="stat-label">Households</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">Region IV-A</span>
-            <span class="stat-label">Batangas City</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-num">24/7</span>
-            <span class="stat-label">Digital Portal</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- --- ABOUT --- -->
-    <section id="about">
-      <div class="container">
-        <div class="reveal">
-          <div class="section-label">Overview</div>
-          <h2 class="section-title">
-            A Smarter Barangay.<br />Built from the Ground Up.
+        <div class="hero-features-title-wrap">
+          <div class="hero-features-kicker">Services</div>
+          <h2 class="hero-features-title">
+            Access Barangay Services in a Few Clicks
           </h2>
-          <p class="section-desc">
-            Replacing paper-based governance with a unified, intelligent
-            platform – from certificate issuance to real-time GIS hazard mapping
-            and AI decision support.
-          </p>
         </div>
 
-        <div class="about-grid reveal">
-          <div class="about-left">
-            <div class="about-cards-stack">
-              <div class="about-card">
-                <div class="about-card-header">
-                  <div class="about-badge">📋</div>
-                  <div class="about-card-title">The Problem</div>
-                </div>
-                <p class="about-card-text">
-                  Barangay Conde Labac relied entirely on physical logbooks and
-                  handwritten forms. Records were prone to loss from fire and
-                  flooding, lacked cross-referencing, and made it impossible to
-                  identify vulnerable populations during emergencies.
-                </p>
-              </div>
-              <div class="about-card">
-                <div class="about-card-header">
-                  <div class="about-badge blue-bg">🗺️</div>
-                  <div class="about-card-title">The Solution</div>
-                </div>
-                <p class="about-card-text">
-                  C.A.R.E.S. integrates resident records, certificate
-                  processing, incident management, GIS mapping, and AI-powered
-                  analytics into a single, secure, cloud-accessible platform –
-                  shifting the barangay from reactive to proactive governance.
-                </p>
-              </div>
-              <div class="about-card">
-                <div class="about-card-header">
-                  <div class="about-badge red-bg">⚡</div>
-                  <div class="about-card-title">Development Approach</div>
-                </div>
-                <p class="about-card-text">
-                  Built using the Agile methodology with iterative sprint
-                  cycles, incorporating continuous stakeholder feedback from
-                  barangay officials and staff throughout development.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="about-right">
-            <div class="about-stat">
-              <div class="about-stat-num">100%</div>
-              <p class="about-stat-label">
-                <strong>Digital Transition</strong>From paper forms to a unified
-                digital platform – eliminating manual errors and redundant data
-                entry across all barangay processes.
-              </p>
-            </div>
-            <div class="about-stat">
-              <div class="about-stat-num">3–</div>
-              <p class="about-stat-label">
-                <strong>Faster Certificate Processing</strong>Automated
-                workflows reduce issuance time from hours to minutes through an
-                integrated database pipeline.
-              </p>
-            </div>
-            <div class="about-stat">
-              <div class="about-stat-num">GIS</div>
-              <p class="about-stat-label">
-                <strong>Spatial Decision Support</strong>Geotag households,
-                identify hazard-prone zones, and visualize vulnerable
-                populations – PWDs, elderly, 4Ps – on a live map.
-              </p>
-            </div>
-            <div class="about-stat">
-              <div class="about-stat-num">RA</div>
-              <p class="about-stat-label">
-                <strong>Data Privacy Compliant</strong>System architecture
-                designed in compliance with RA 10173 (Data Privacy Act) with
-                role-based access control and full audit logging.
-              </p>
-            </div>
-          </div>
+        <!-- Features Strip (replaces Stats Row) -->
+        <div class="hero-features">
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('residency');
+              return false;
+            "
+          >
+            <div class="feat-icon">🏘️</div>
+            <div class="feat-title">Barangay<br />Residency</div>
+          </a>
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('certificates');
+              return false;
+            "
+          >
+            <div class="feat-icon">📄</div>
+            <div class="feat-title">Certificate<br />Issuance</div>
+          </a>
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('incidents');
+              return false;
+            "
+          >
+            <div class="feat-icon">🚨</div>
+            <div class="feat-title">Blotter<br />Reporting</div>
+          </a>
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('feedback');
+              return false;
+            "
+          >
+            <div class="feat-icon">💬</div>
+            <div class="feat-title">Resident<br />Feedback</div>
+          </a>
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('gis');
+              return false;
+            "
+          >
+            <div class="feat-icon">🗺️</div>
+            <div class="feat-title">GIS<br />Mapping</div>
+          </a>
+          <a
+            href="#features"
+            class="feat-item"
+            onclick="
+              openServicePopup('accounts');
+              return false;
+            "
+          >
+            <div class="feat-icon">🔑</div>
+            <div class="feat-title">Account<br />Claiming</div>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- --- FEATURES --- -->
-    <section id="features">
-      <div class="container">
-        <div class="reveal">
-          <div class="section-label">Services We Offer</div>
-          <h2 class="section-title">
-            Access Barangay Services<br />in a Few Clicks
-          </h2>
-          <p class="section-desc">
-            Submit requests, file reports, and explore barangay resources using
-            the service popups below.
-          </p>
-        </div>
-
-        <div class="services-grid reveal">
-          <div
-            class="service-card sc-blue"
-            onclick="openServicePopup('residency')"
-          >
-            <div class="service-icon-wrap">🏘️</div>
-            <div>
-              <div class="service-title">Barangay Residency</div>
-              <div class="service-desc">
-                Search resident records, household details, and purok listings
-                within Barangay Conde Labac.
-              </div>
-            </div>
-            <div class="service-arrow">Search residents →</div>
-          </div>
-
-          <div
-            class="service-card sc-gold"
-            onclick="openServicePopup('certificates')"
-          >
-            <div class="service-icon-wrap">📄</div>
-            <div>
-              <div class="service-title">Certificate Issuance</div>
-              <div class="service-desc">
-                Request clearances, indigency, residency, and other barangay
-                certificates in minutes.
-              </div>
-            </div>
-            <div class="service-arrow">Request certificate →</div>
-          </div>
-
-          <div
-            class="service-card sc-red"
-            onclick="openServicePopup('incidents')"
-          >
-            <div class="service-icon-wrap">🚨</div>
-            <div>
-              <div class="service-title">Blotter Reporting</div>
-              <div class="service-desc">
-                File incident reports for disputes, hazards, or emergencies
-                happening in the barangay.
-              </div>
-            </div>
-            <div class="service-arrow">File a report →</div>
-          </div>
-
-          <div
-            class="service-card sc-green"
-            onclick="openServicePopup('feedback')"
-          >
-            <div class="service-icon-wrap">💬</div>
-            <div>
-              <div class="service-title">Resident Feedback</div>
-              <div class="service-desc">
-                Share your comments or suggestions so officials can improve
-                barangay services.
-              </div>
-            </div>
-            <div class="service-arrow">Give feedback →</div>
-          </div>
-
-          <div class="service-card sc-purple" onclick="openServicePopup('gis')">
-            <div class="service-icon-wrap">🗺️</div>
-            <div>
-              <div class="service-title">GIS Map</div>
-              <div class="service-desc">
-                Explore the barangay map with puroks, hazard zones, and key
-                landmarks.
-              </div>
-            </div>
-            <div class="service-arrow">View map →</div>
-          </div>
-
-          <div
-            class="service-card sc-teal"
-            onclick="openServicePopup('accounts')"
-          >
-            <div class="service-icon-wrap">🔑</div>
-            <div>
-              <div class="service-title">Account Claiming</div>
-              <div class="service-desc">
-                Verify your identity and claim your account for personalized
-                services and request tracking.
-              </div>
-            </div>
-            <div class="service-arrow">Claim account →</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- --- SDG --- -->
-    <section id="sdg">
-      <div class="container">
-        <div class="reveal">
-          <div class="section-label">Alignment</div>
-          <h2 class="section-title">Sustainable Development Goals</h2>
-          <p class="section-desc">
-            C.A.R.E.S. directly contributes to two United Nations SDGs,
-            embedding global development targets into local governance
-            innovation.
-          </p>
-        </div>
-        <div class="sdg-grid reveal">
-          <div class="sdg-card sdg-11" data-num="11">
-            <div class="sdg-num">SDG Goal 11</div>
-            <div class="sdg-title">Sustainable Cities & Communities</div>
-            <p class="sdg-desc">
-              By enabling data-driven decision-making, hazard mapping, and
-              population monitoring, C.A.R.E.S. supports inclusive and resilient
-              local governance – making Conde Labac safer and better-managed for
-              all residents.
-            </p>
-          </div>
-          <div class="sdg-card sdg-16" data-num="16">
-            <div class="sdg-num">SDG Goal 16</div>
-            <div class="sdg-title">Peace, Justice & Strong Institutions</div>
-            <p class="sdg-desc">
-              C.A.R.E.S. strengthens local institutional capacity through
-              transparent record-keeping, traceable blotter management, and
-              comprehensive audit logging – promoting accountable, inclusive
-              governance at the barangay level.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- --- TEAM --- -->
+    <!-- --- TEAM / BARANGAY OFFICIALS --- -->
     <section id="team">
       <div class="container">
         <div class="reveal">
-          <div class="section-label">Developers</div>
-          <h2 class="section-title">Meet the Team</h2>
+          <div class="section-label">Barangay Officials</div>
+          <h2 class="section-title">Barangay Officials</h2>
           <p class="section-desc">
-            A dedicated team of BSIT students from Batangas State University –
-            College of Informatics and Computing Sciences.
+            Current elected officials of Barangay Conde Labac.
           </p>
         </div>
         <div class="team-grid reveal">
           <div class="team-card">
-            <div class="team-avatar">A</div>
-            <div class="team-name">Arvesu</div>
-            <div class="team-role">System Developer</div>
+            <div class="team-avatar">J</div>
+            <div class="team-name">Hon. Juan Dela Cruz</div>
+            <div class="team-role">Punong Barangay</div>
             <p class="team-desc">
-              Designed and developed the overall software architecture, core
-              functionalities, and integration of the system.
+              Leads the barangay administration and community programs.
             </p>
           </div>
           <div class="team-card">
-            <div class="team-avatar">B</div>
-            <div class="team-name">Bacani</div>
-            <div class="team-role">Barangay Research Analyst</div>
+            <div class="team-avatar">M</div>
+            <div class="team-name">Hon. Maria Santos</div>
+            <div class="team-role">Kagawad — Public Safety</div>
             <p class="team-desc">
-              Conducted the comprehensive barangay research, localized needs
-              assessment, and data collection.
+              Oversees public safety, peace and order, and disaster response.
             </p>
           </div>
           <div class="team-card">
-            <div class="team-avatar">B</div>
-            <div class="team-name">Balmes</div>
-            <div class="team-role">Research & Paper Study</div>
+            <div class="team-avatar">P</div>
+            <div class="team-name">Hon. Pedro Reyes</div>
+            <div class="team-role">Kagawad — Health &amp; Sanitation</div>
             <p class="team-desc">
-              Dedicated to the academic paper study of the system, research
-              documentation, and theoretical analysis.
+              Manages health programs, sanitation, and community welfare.
             </p>
           </div>
         </div>
         <div class="team-note-wrap reveal">
-          <p class="team-note">
-            BatStateU – College of Informatics and Computing Sciences – AY
-            2025–2026
-          </p>
+          <p class="team-note">Barangay Conde Labac — Current Officials</p>
         </div>
       </div>
     </section>

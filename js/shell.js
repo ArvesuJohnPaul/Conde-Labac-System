@@ -285,8 +285,40 @@ const PAGE_MAP = {
   archive: "archive.html",
 };
 
+// Module permission matrix (RBAC enforcement on client-side navigation)
+const modulePermissions = {
+  dashboard: ["Admin", "Officer"],
+  residency: ["Admin", "Officer", "Resident"],
+  certificates: ["Admin", "Officer", "Resident"],
+  incidents: ["Admin", "Officer", "Resident"],
+  feedback: ["Admin", "Officer", "Resident"],
+  gis: ["Admin", "Officer", "Resident"],
+  accounts: ["Admin", "Officer", "Resident"],
+  analytics: ["Admin", "Officer"],
+  users: ["Admin"],
+  audit: ["Admin"],
+  archive: ["Admin"],
+};
+
 function nav(el, module) {
   const dest = PAGE_MAP[module];
+  const session = getSession();
+  const role = session ? session.role : null;
+
+  // Enforce client-side RBAC for navigation
+  const allowed = modulePermissions[module];
+  if (allowed && (!role || allowed.indexOf(role) === -1)) {
+    showToast("Access denied: insufficient permissions", "⚑");
+    if (!role) {
+      // Not logged in -> go to login
+      window.location.href = "../system.html";
+    } else if (role === "Resident") {
+      // Residents should use public landing/services
+      window.location.href = "../index.html";
+    }
+    return;
+  }
+
   if (dest) {
     window.location.href = dest; // relative within pages/
   }
@@ -307,6 +339,34 @@ function showToast(msg, icon = "✓") {
     t.style.transform = "translateY(100px)";
     t.style.opacity = "0";
   }, 3500);
+}
+
+// Simulated incident alert sender (UI hook)
+function sendIncidentAlert(incidentNo) {
+  // UI feedback for now; backend integration (Semaphore/Twilio) to be wired later
+  showToast(`Incident ${incidentNo} — alert sent to on-duty officers`, "📣");
+  console.log(
+    "[sendIncidentAlert]",
+    incidentNo,
+    "-> simulated SMS/Voice dispatched",
+  );
+}
+
+// Simulated AI summary generator (UI hook)
+function generateAiSummary(scope = "dashboard") {
+  showToast("Generating AI summary...", "🤖");
+  console.log("[generateAiSummary] scope=", scope);
+
+  // Simulate async AI call
+  setTimeout(() => {
+    const summary =
+      "AI Summary: Recent incidents show clustering in Purok 3; recommend resource allocation and a targeted community outreach.";
+    showToast("AI Summary generated", "📝");
+    // If there's a dashboard placeholder, inject the text
+    const el = document.getElementById("ai-summary-text");
+    if (el) el.textContent = summary;
+    console.log("[generateAiSummary] result=", summary);
+  }, 1200);
 }
 
 // ════════════════════ GIS MAP ════════════════════

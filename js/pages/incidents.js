@@ -31,16 +31,71 @@ function renderIncidentsPage() {
           <thead><tr><th>Case No.</th><th>Type</th><th>Location</th><th>Severity</th><th>Date Filed</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             ${[
-              ["INC-2025-041", "Flooding / Natural Hazard", "Purok 3 — Sitio Malinis", "critical", "May 2, 2025",  "Active"],
-              ["INC-2025-040", "Domestic Disturbance",       "Purok 1, Blk 4",          "high",     "May 1, 2025",  "Under Investigation"],
-              ["INC-2025-039", "Property Dispute",           "Purok 2",                 "medium",   "Apr 30, 2025", "Under Investigation"],
-              ["INC-2025-038", "Noise Complaint",            "Purok 5",                 "low",      "Apr 30, 2025", "Resolved"],
-              ["INC-2025-037", "Theft / Robbery",            "Purok 4",                 "high",     "Apr 29, 2025", "Resolved"],
-              ["INC-2025-036", "Vandalism",                  "Purok 3",                 "medium",   "Apr 28, 2025", "Resolved"],
+              [
+                "INC-2025-041",
+                "Flooding / Natural Hazard",
+                "Purok 3 — Sitio Malinis",
+                "critical",
+                "May 2, 2025",
+                "Active",
+              ],
+              [
+                "INC-2025-040",
+                "Domestic Disturbance",
+                "Purok 1, Blk 4",
+                "high",
+                "May 1, 2025",
+                "Under Investigation",
+              ],
+              [
+                "INC-2025-039",
+                "Property Dispute",
+                "Purok 2",
+                "medium",
+                "Apr 30, 2025",
+                "Under Investigation",
+              ],
+              [
+                "INC-2025-038",
+                "Noise Complaint",
+                "Purok 5",
+                "low",
+                "Apr 30, 2025",
+                "Resolved",
+              ],
+              [
+                "INC-2025-037",
+                "Theft / Robbery",
+                "Purok 4",
+                "high",
+                "Apr 29, 2025",
+                "Resolved",
+              ],
+              [
+                "INC-2025-036",
+                "Vandalism",
+                "Purok 3",
+                "medium",
+                "Apr 28, 2025",
+                "Resolved",
+              ],
             ]
               .map(([no, type, loc, sev, date, status]) => {
-                const sbadge  = { critical: "sev-critical", high: "sev-high", medium: "sev-medium", low: "sev-low" }[sev];
-                const stbadge = { Active: "badge-danger", "Under Investigation": "badge-warning", Resolved: "badge-success" }[status];
+                const sbadge = {
+                  critical: "sev-critical",
+                  high: "sev-high",
+                  medium: "sev-medium",
+                  low: "sev-low",
+                }[sev];
+                const stbadge = {
+                  Active: "badge-danger",
+                  "Under Investigation": "badge-warning",
+                  Resolved: "badge-success",
+                }[status];
+                const notifyBtn =
+                  status === "Active" || sev === "critical"
+                    ? `<button class="btn btn-sm btn-danger" onclick="sendIncidentAlert('${no}')">Notify</button>`
+                    : "";
                 return `<tr>
                 <td class="table-mono">${no}</td>
                 <td class="table-text-sm">${type}</td>
@@ -48,7 +103,7 @@ function renderIncidentsPage() {
                 <td><span class="sev-badge ${sbadge}">${sev.charAt(0).toUpperCase() + sev.slice(1)}</span></td>
                 <td class="table-muted">${date}</td>
                 <td><span class="badge ${stbadge}">${status}</span></td>
-                <td><button class="btn btn-sm btn-outline" onclick="showToast('Viewing ${no}')">View</button></td>
+                <td><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="showToast('Viewing ${no}')">View</button>${notifyBtn}</div></td>
               </tr>`;
               })
               .join("")}

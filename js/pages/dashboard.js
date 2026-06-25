@@ -33,17 +33,39 @@ function renderDashboard() {
         <div class="card-header"><div class="card-title">Recent Activity</div><span class="card-action" onclick="nav(null,'audit')">View log</span></div>
         <div class="timeline">
           ${[
-            ["green", "Barangay Clearance issued — Pedro Santos",          "Today, 10:45 AM · Officer Reyes"],
-            ["red",   "Incident #INC-2025-041 logged — Flooding, Purok 3", "Today, 09:12 AM · System"],
-            ["green", "Account claim approved — Maria dela Cruz",           "Today, 08:55 AM · Admin"],
-            ["gray",  "Certificate request submitted — Jose Reyes",         "Yesterday, 4:30 PM · Self-service"],
-            ["gray",  "Feedback received — 4★ rating, Barangay Services",   "Yesterday, 3:12 PM · Anonymous"],
+            [
+              "green",
+              "Barangay Clearance issued — Pedro Santos",
+              "Today, 10:45 AM · Officer Reyes",
+            ],
+            [
+              "red",
+              "Incident #INC-2025-041 logged — Flooding, Purok 3",
+              "Today, 09:12 AM · System",
+            ],
+            [
+              "green",
+              "Account claim approved — Maria dela Cruz",
+              "Today, 08:55 AM · Admin",
+            ],
+            [
+              "gray",
+              "Certificate request submitted — Jose Reyes",
+              "Yesterday, 4:30 PM · Self-service",
+            ],
+            [
+              "gray",
+              "Feedback received — 4★ rating, Barangay Services",
+              "Yesterday, 3:12 PM · Anonymous",
+            ],
           ]
-            .map(([dot, title, meta]) => `
+            .map(
+              ([dot, title, meta]) => `
             <div class="timeline-item">
               <div class="timeline-dot ${dot}"></div>
               <div class="timeline-body"><div class="timeline-title">${title}</div><div class="timeline-meta">${meta}</div></div>
-            </div>`)
+            </div>`,
+            )
             .join("")}
         </div>
       </div>
@@ -54,23 +76,44 @@ function renderDashboard() {
         <div class="card-header"><div class="card-title">Services Quick Access</div></div>
         <div class="quick-access-grid">
           ${[
-            ["🏘️", "Residency",       "residency"],
-            ["📄", "Certificates",    "certificates"],
-            ["🚨", "Blotter",         "incidents"],
-            ["💬", "Feedback",        "feedback"],
-            ["🗺️", "GIS Map",         "gis"],
-            ["🔑", "Account Claiming","accounts"],
+            ["🏘️", "Residency", "residency"],
+            ["📄", "Certificates", "certificates"],
+            ["🚨", "Blotter", "incidents"],
+            ["💬", "Feedback", "feedback"],
+            ["🗺️", "GIS Map", "gis"],
+            ["🔑", "Account Claiming", "accounts"],
           ]
-            .map(([icon, label, mod]) => `
+            .map(
+              ([icon, label, mod]) => `
             <button class="quick-access-btn" onclick="openServicePopup('${mod}')">
               <span class="quick-access-icon">${icon}</span> ${label}
-            </button>`)
+            </button>`,
+            )
             .join("")}
         </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Incident Heatmap by Purok</div></div>
         <div class="chart-box chart-box-sm"><canvas id="incidentChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card ai-card">
+        <div class="card-header"><div class="card-title">AI Summaries</div><span class="card-action" onclick="generateAiSummary('dashboard')">Generate</span></div>
+        <div class="card-body">
+          <p id="ai-summary-text" class="ai-summary-text">No summary generated yet. Use the Generate button to request an AI-assisted summary of incidents and feedback.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Quick Actions</div></div>
+        <div class="card-body">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="nav(null,'residency')">Open Residency</button>
+            <button class="btn btn-outline" onclick="nav(null,'gis')">Open GIS Map</button>
+            <button class="btn btn-outline" onclick="nav(null,'analytics')">Open Analytics</button>
+          </div>
+        </div>
       </div>
     </div>
   `);
@@ -82,14 +125,16 @@ function renderDashboard() {
         type: "bar",
         data: {
           labels: ["Wk 1", "Wk 2", "Wk 3", "Wk 4"],
-          datasets: [{
-            label: "Certificates Issued",
-            data: [18, 24, 21, 24],
-            backgroundColor: "rgba(201,162,39,0.7)",
-            borderColor: "#c9a227",
-            borderWidth: 1.5,
-            borderRadius: 4,
-          }],
+          datasets: [
+            {
+              label: "Certificates Issued",
+              data: [18, 24, 21, 24],
+              backgroundColor: "rgba(201,162,39,0.7)",
+              borderColor: "#c9a227",
+              borderWidth: 1.5,
+              borderRadius: 4,
+            },
+          ],
         },
         options: {
           responsive: true,
@@ -108,15 +153,25 @@ function renderDashboard() {
         type: "doughnut",
         data: {
           labels: ["Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5"],
-          datasets: [{
-            data: [4, 7, 12, 3, 6],
-            backgroundColor: ["#3b82f6", "#22c55e", "#ef4444", "#f59e0b", "#8b5cf6"],
-          }],
+          datasets: [
+            {
+              data: [4, 7, 12, 3, 6],
+              backgroundColor: [
+                "#3b82f6",
+                "#22c55e",
+                "#ef4444",
+                "#f59e0b",
+                "#8b5cf6",
+              ],
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: "right", labels: { font: { size: 11 } } } },
+          plugins: {
+            legend: { position: "right", labels: { font: { size: 11 } } },
+          },
         },
       });
     }
