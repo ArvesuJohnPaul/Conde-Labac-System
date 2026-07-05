@@ -70,6 +70,7 @@
   margin: 0;
   padding: 0;
 }
+
 html {
   scroll-behavior: smooth;
 }
@@ -100,6 +101,7 @@ html {
   text-decoration: none;
   flex-shrink: 0;
 }
+
 .nav-logo img {
   height: 40px;
   width: 40px;
@@ -107,6 +109,7 @@ html {
   border: 2px solid var(--yellow);
   object-fit: cover;
 }
+
 .nav-brand {
   font-family: "Space Mono", monospace;
   font-size: 0.72rem;
@@ -121,6 +124,7 @@ html {
   list-style: none;
   align-items: center;
 }
+
 .nav-links a {
   color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
@@ -132,6 +136,7 @@ html {
   transition: color 0.2s;
   position: relative;
 }
+
 .nav-links a::after {
   content: "";
   position: absolute;
@@ -142,9 +147,11 @@ html {
   background: var(--yellow);
   transition: width 0.3s;
 }
+
 .nav-links a:hover {
   color: var(--yellow);
 }
+
 .nav-links a:hover::after {
   width: 100%;
 }
@@ -174,6 +181,7 @@ html {
   cursor: pointer;
   transition: all 0.3s;
 }
+
 .btn-nav-signin:hover {
   background: var(--yellow-dark);
   transform: translateY(-1px);
@@ -192,9 +200,11 @@ html {
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .nav-user-pill:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
 .nav-user-avatar {
   width: 28px;
   height: 28px;
@@ -208,12 +218,14 @@ html {
   justify-content: center;
   font-family: "Space Mono", monospace;
 }
+
 .nav-user-name {
   font-family: "DM Sans", sans-serif;
   font-size: 0.78rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
 }
+
 .nav-logout-btn {
   background: none;
   border: none;
@@ -225,6 +237,7 @@ html {
   font-family: "DM Sans", sans-serif;
   transition: color 0.2s;
 }
+
 .nav-logout-btn:hover {
   color: var(--yellow);
 }
@@ -239,6 +252,7 @@ html {
   border: none;
   padding: 4px;
 }
+
 .nav-toggle span {
   display: block;
   width: 22px;
@@ -259,6 +273,7 @@ html {
   padding: 6px;
   z-index: 910;
 }
+
 .sidebar-toggle span {
   display: block;
   width: 22px;
@@ -275,6 +290,7 @@ html {
   align-items: center;
   gap: 12px;
 }
+
 .topbar-modules-trigger {
   background: none;
   border: none;
@@ -286,6 +302,7 @@ html {
   justify-content: center;
   align-items: center;
 }
+
 .topbar-modules-trigger span {
   display: block;
   width: 20px;
@@ -294,9 +311,11 @@ html {
   border-radius: 2px;
   transition: all 0.3s ease;
 }
+
 .topbar-modules-trigger:hover span {
   background: var(--gold);
 }
+
 .topbar-modules-dropdown {
   position: absolute;
   top: 100%;
@@ -314,9 +333,11 @@ html {
   display: none;
   flex-direction: column;
 }
+
 .topbar-modules-dropdown.open {
   display: flex;
 }
+
 .topbar-modules-section {
   font-size: 10px;
   font-weight: 700;
@@ -326,9 +347,11 @@ html {
   padding: 8px 16px;
   margin-top: 4px;
 }
+
 .topbar-modules-section:first-child {
   margin-top: 0;
 }
+
 .topbar-module-item {
   display: flex;
   align-items: center;
@@ -345,11 +368,13 @@ html {
   width: 100%;
   transition: all var(--transition);
 }
+
 .topbar-module-item:hover {
   background: var(--surface);
   color: var(--navy);
   padding-left: 20px;
 }
+
 .topbar-module-icon {
   width: 18px;
   flex-shrink: 0;
@@ -362,6 +387,7 @@ html {
 .nav-user-menu {
   position: relative;
 }
+
 .nav-user-menu-trigger {
   background: none;
   border: none;
@@ -373,9 +399,11 @@ html {
   border-radius: 50%;
   transition: background 0.2s;
 }
+
 .nav-user-menu-trigger:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
 .nav-user-avatar {
   width: 28px;
   height: 28px;
@@ -389,6 +417,7 @@ html {
   justify-content: center;
   font-family: "Space Mono", monospace;
 }
+
 .nav-user-avatar-lg {
   width: 40px;
   height: 40px;
@@ -402,6 +431,7 @@ html {
   justify-content: center;
   font-family: "Space Mono", monospace;
 }
+
 .nav-user-menu-dropdown {
   position: absolute;
   top: 100%;
@@ -419,9 +449,11 @@ html {
   flex-direction: column;
   gap: 12px;
 }
+
 .nav-user-menu-dropdown.open {
   display: flex;
 }
+
 .nav-user-menu-header {
   display: flex;
   align-items: center;
@@ -429,17 +461,20 @@ html {
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(201, 162, 39, 0.15);
 }
+
 .nav-user-menu-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
+
 .nav-user-name-full {
   font-family: "DM Sans", sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
 }
+
 .nav-user-role {
   font-family: "DM Sans", sans-serif;
   font-size: 11px;
@@ -447,6 +482,7 @@ html {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
 .nav-user-menu-logout {
   background: rgba(201, 162, 39, 0.12);
   border: 1px solid rgba(201, 162, 39, 0.25);
@@ -461,6 +497,7 @@ html {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
 .nav-user-menu-logout:hover {
   background: rgba(201, 162, 39, 0.2);
   border-color: rgba(201, 162, 39, 0.4);
@@ -478,9 +515,11 @@ html {
   justify-content: center;
   padding: 20px;
 }
+
 .modal-backdrop.open {
   display: flex;
 }
+
 .modal-box {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -492,22 +531,27 @@ html {
   animation: modalIn 0.22s ease;
   position: relative;
 }
+
 .modal-box.modal-lg {
   width: 720px;
 }
+
 .modal-box.modal-xl {
   width: 900px;
 }
+
 @keyframes modalIn {
   from {
     opacity: 0;
     transform: scale(0.95) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
+
 .modal-header {
   padding: 22px 26px 16px;
   border-bottom: 1px solid var(--border);
@@ -517,6 +561,7 @@ html {
   background: var(--navy);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
+
 .modal-title {
   font-family: "Playfair Display", serif;
   font-size: 1.15rem;
@@ -525,6 +570,7 @@ html {
   align-items: center;
   gap: 10px;
 }
+
 .modal-title-icon {
   width: 34px;
   height: 34px;
@@ -536,6 +582,7 @@ html {
   justify-content: center;
   font-size: 1rem;
 }
+
 .modal-close {
   background: none;
   border: none;
@@ -547,13 +594,16 @@ html {
   border-radius: 6px;
   transition: all 0.2s;
 }
+
 .modal-close:hover {
   color: var(--yellow);
   background: rgba(255, 255, 255, 0.08);
 }
+
 .modal-body {
   padding: 26px;
 }
+
 .modal-footer {
   padding: 16px 26px;
   border-top: 1px solid var(--border);
@@ -568,6 +618,7 @@ html {
 .form-group {
   margin-bottom: 16px;
 }
+
 .form-label {
   display: block;
   font-family: "DM Sans", sans-serif;
@@ -578,6 +629,7 @@ html {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
 .form-control {
   width: 100%;
   padding: 10px 14px;
@@ -592,15 +644,18 @@ html {
     border-color var(--transition),
     box-shadow var(--transition);
 }
+
 .form-control:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.12);
 }
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+
 textarea.form-control {
   resize: vertical;
   min-height: 90px;
@@ -621,41 +676,50 @@ textarea.form-control {
   white-space: nowrap;
   border: 1.5px solid transparent;
 }
+
 .btn-primary {
   background: var(--navy);
   color: var(--white);
   border-color: var(--navy);
 }
+
 .btn-primary:hover {
   background: var(--navy-mid);
 }
+
 .btn-gold {
   background: var(--yellow);
   color: var(--navy);
   border-color: var(--yellow);
 }
+
 .btn-gold:hover {
   background: var(--yellow-dark);
   transform: translateY(-1px);
 }
+
 .btn-outline {
   background: transparent;
   color: var(--text-secondary);
   border-color: var(--border);
 }
+
 .btn-outline:hover {
   background: var(--surface);
   border-color: var(--border-dark);
 }
+
 .btn-danger {
   background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger-border);
 }
+
 .btn-sm {
   padding: 6px 14px;
   font-size: 12px;
 }
+
 .btn-group {
   display: flex;
   gap: 8px;
@@ -674,26 +738,31 @@ textarea.form-control {
   margin-bottom: 12px;
   border: 1px solid;
 }
+
 .alert-icon {
   font-size: 16px;
   flex-shrink: 0;
   margin-top: 1px;
 }
+
 .alert-warning {
   background: var(--warning-bg);
   border-color: var(--warning-border);
   color: var(--warning);
 }
+
 .alert-danger {
   background: var(--danger-bg);
   border-color: var(--danger-border);
   color: var(--danger);
 }
+
 .alert-success {
   background: var(--success-bg);
   border-color: var(--success-border);
   color: var(--success);
 }
+
 .alert-info {
   background: var(--info-bg);
   border-color: var(--info-border);
@@ -710,31 +779,37 @@ textarea.form-control {
   font-weight: 700;
   border: 1px solid;
 }
+
 .badge-success {
   background: var(--success-bg);
   color: var(--success);
   border-color: var(--success-border);
 }
+
 .badge-warning {
   background: var(--warning-bg);
   color: var(--warning);
   border-color: var(--warning-border);
 }
+
 .badge-danger {
   background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger-border);
 }
+
 .badge-info {
   background: var(--info-bg);
   color: var(--info);
   border-color: var(--info-border);
 }
+
 .badge-gold {
   background: var(--gold-pale);
   color: var(--gold-dim);
   border-color: rgba(201, 162, 39, 0.3);
 }
+
 .badge-gray {
   background: var(--surface);
   color: var(--text-secondary);
@@ -748,6 +823,7 @@ textarea.form-control {
   border-radius: 100px;
   overflow: hidden;
 }
+
 .progress-fill {
   height: 100%;
   border-radius: 100px;
@@ -760,6 +836,7 @@ textarea.form-control {
   .nav-links {
     display: none;
   }
+
   .nav-links.open {
     display: flex;
     flex-direction: column;
@@ -773,29 +850,37 @@ textarea.form-control {
     border-bottom: 3px solid var(--yellow);
     z-index: 899;
   }
+
   .nav-toggle {
     display: flex;
   }
+
   .sidebar-toggle {
     display: flex;
   }
+
   .nav-user-pill {
     display: none !important;
   }
+
   .nav-user-menu {
     display: flex !important;
   }
+
   .topbar {
     padding: 0 12px;
     gap: 10px;
     align-items: center;
   }
+
   .topbar-modules-menu {
     position: static;
   }
+
   .topbar-modules-trigger {
     padding: 8px 6px;
   }
+
   .topbar-modules-dropdown {
     position: fixed;
     left: 8px;
@@ -812,14 +897,17 @@ textarea.form-control {
     align-content: start;
     overflow: auto;
   }
+
   .topbar-modules-dropdown.open {
     display: grid;
   }
+
   .topbar-modules-section {
     grid-column: 1 / -1;
     padding: 4px 6px 2px;
     margin-top: 4px;
   }
+
   .topbar-module-item {
     min-height: 44px;
     padding: 10px 10px;
@@ -829,9 +917,11 @@ textarea.form-control {
     font-size: 12px;
     line-height: 1.2;
   }
+
   .topbar-module-item:hover {
     padding-left: 10px;
   }
+
   .topbar-module-icon {
     width: 16px;
   }

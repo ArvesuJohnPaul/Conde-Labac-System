@@ -36,6 +36,7 @@
 
       <ul class="nav-links" id="nav-links">
         <li><a href="#features">Services</a></li>
+        <li><a href="#gis">GIS Map</a></li>
         <li id="nav-mis-li" class="is-hidden">
           <a href="system.html">MIS</a>
         </li>
@@ -188,28 +189,92 @@
             <div class="feat-icon">💬</div>
             <div class="feat-title">Resident<br />Feedback</div>
           </a>
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('gis');
-              return false;
-            "
-          >
-            <div class="feat-icon">🗺️</div>
-            <div class="feat-title">GIS<br />Mapping</div>
-          </a>
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('accounts');
-              return false;
-            "
-          >
-            <div class="feat-icon">🔑</div>
-            <div class="feat-title">Account<br />Claiming</div>
-          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- --- GIS MAPPING --- -->
+    <section id="gis">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Geographic Information System</div>
+          <h2 class="section-title">GIS Mapping</h2>
+          <p class="section-desc">
+            Explore the spatial distribution of households, hazard zones, and
+            vulnerable sectors across Barangay Conde Labac. Toggle the layers
+            below to view specific datasets on the interactive map.
+          </p>
+        </div>
+
+        <div class="gis-section-panel reveal">
+          <div class="gis-filter-row">
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn active"
+              onclick="setGisLayer(this, 'all')"
+            >
+              All Layers
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'households')"
+            >
+              🏘️ Households
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'hazard')"
+            >
+              🌪️ Hazard Zones
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'seniors')"
+            >
+              👴 Senior Citizens
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, 'pwd')"
+            >
+              ♿ PWD
+            </button>
+            <button
+              class="btn btn-sm btn-outline gis-filter-btn"
+              onclick="setGisLayer(this, '4ps')"
+            >
+              👨‍👩‍👧‍👦 4Ps Beneficiaries
+            </button>
+          </div>
+
+          <div class="gis-modal-map gis-section-map" id="gis-map-container">
+            <div class="gis-leaflet-map" id="gis-map-section"></div>
+          </div>
+
+          <div class="gis-legend">
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-households"></div>
+              Household
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-seniors"></div>
+              Senior Citizen
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-flood"></div>
+              Flood Zone
+            </div>
+            <div class="gis-legend-item">
+              <div class="gis-dot gis-dot-landslide"></div>
+              Landslide Risk
+            </div>
+            <div class="gis-legend-item">🏛️ Barangay Hall</div>
+            <div class="gis-legend-item">+ Health Center</div>
+          </div>
+
+          <div class="alert alert-info alert-spacing-top">
+            <span class="alert-icon">ℹ</span> This map is for reference only.
+            For precise coordinates, contact the barangay GIS officer.
+          </div>
         </div>
       </div>
     </section>
@@ -786,265 +851,6 @@
       </div>
     </div>
 
-    <!-- -- 5. GIS MAP -- -->
-    <div
-      class="modal-backdrop"
-      id="modal-gis"
-      onclick="closeServiceModal('gis', event)"
-    >
-      <div class="modal-box modal-xl">
-        <div class="modal-header">
-          <div class="modal-title">
-            <div class="modal-title-icon">🗺️</div>
-            GIS Map – Barangay Conde Labac
-          </div>
-          <button class="modal-close" onclick="closeServiceModal('gis')">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="gis-filter-row">
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn active"
-              onclick="setGisLayer(this, 'all')"
-            >
-              All Layers
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'households')"
-            >
-              🏘️ Households
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'hazard')"
-            >
-              🌪️ Hazard Zones
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'seniors')"
-            >
-              👴 Senior Citizens
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'pwd')"
-            >
-              ♿ PWD
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, '4ps')"
-            >
-              👨‍👩‍👧‍👦 4Ps Beneficiaries
-            </button>
-          </div>
-
-          <div class="gis-modal-map" id="gis-map-container">
-            <div class="gis-leaflet-map" id="gis-map-modal"></div>
-          </div>
-
-          <div class="gis-legend">
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-households"></div>
-              Household
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-seniors"></div>
-              Senior Citizen
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-flood"></div>
-              Flood Zone
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-landslide"></div>
-              Landslide Risk
-            </div>
-            <div class="gis-legend-item">🏛️ Barangay Hall</div>
-            <div class="gis-legend-item">+ Health Center</div>
-          </div>
-
-          <div class="alert alert-info alert-spacing-top">
-            <span class="alert-icon">ℹ</span> This map is for reference only.
-            For precise coordinates, contact the barangay GIS officer.
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="closeServiceModal('gis')">
-            Close
-          </button>
-          <button
-            class="btn btn-primary"
-            onclick="
-              alert('Full GIS system requires login with internet access.')
-            "
-          >
-            ✓ Open Full GIS System
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- -- 6. ACCOUNT CLAIMING -- -->
-    <div
-      class="modal-backdrop"
-      id="modal-accounts"
-      onclick="closeServiceModal('accounts', event)"
-    >
-      <div class="modal-box modal-lg">
-        <div class="modal-header">
-          <div class="modal-title">
-            <div class="modal-title-icon">🔑</div>
-            Account Claiming – Create Your Account
-          </div>
-          <button class="modal-close" onclick="closeServiceModal('accounts')">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="acc-steps" id="acc-steps">
-            <div class="acc-step active" id="step-1-dot">1</div>
-            <div class="acc-step-line" id="step-line-1"></div>
-            <div class="acc-step" id="step-2-dot">2</div>
-            <div class="acc-step-line" id="step-line-2"></div>
-            <div class="acc-step" id="step-3-dot">3</div>
-          </div>
-          <div class="acc-step-labels">
-            <span>Verify Identity</span><span>Set Credentials</span
-            ><span>Confirmation</span>
-          </div>
-
-          <div id="acc-step-1">
-            <p class="acc-step-help">
-              We'll search for your pre-existing record in the barangay database
-              to link your account. Your data must already be registered with
-              the barangay.
-            </p>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">First Name</label>
-                <input class="form-control" id="acc-fname" placeholder="Juan" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Last Name</label>
-                <input
-                  class="form-control"
-                  id="acc-lname"
-                  placeholder="Santos"
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Date of Birth</label>
-                <input class="form-control" type="date" id="acc-dob" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Purok / Zone</label>
-                <select class="form-control" id="acc-purok">
-                  <option>Purok 1 – Sitio Maliwanag</option>
-                  <option>Purok 2 – Sitio Masagana</option>
-                  <option>Purok 3 – Sitio Malinis</option>
-                  <option>Purok 4 – Sitio Mapayapa</option>
-                  <option>Purok 5 – Sitio Bagong Pag-Asa</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Mother's Maiden Name</label>
-              <input
-                class="form-control"
-                id="acc-mother"
-                placeholder="For identity verification"
-              />
-            </div>
-            <div id="acc-verify-result" class="is-hidden"></div>
-          </div>
-
-          <div id="acc-step-2" class="is-hidden">
-            <div class="alert alert-success alert-mb">
-              <span class="alert-icon">✓</span>
-              <strong>Record found!</strong> We found a matching resident
-              record. Please set your login credentials below.
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email Address</label>
-              <input
-                class="form-control"
-                type="email"
-                id="acc-email"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Mobile Number</label>
-              <input
-                class="form-control"
-                type="tel"
-                id="acc-mobile"
-                placeholder="09XXXXXXXXX"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <input
-                class="form-control"
-                type="password"
-                id="acc-pass"
-                placeholder="Minimum 8 characters"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Confirm Password</label>
-              <input
-                class="form-control"
-                type="password"
-                id="acc-pass2"
-                placeholder="Re-enter password"
-              />
-            </div>
-            <div class="alert alert-info">
-              <span class="alert-icon">ℹ</span> Your account will be linked to
-              your existing barangay record. A barangay official will verify and
-              activate it within 24 hours.
-            </div>
-          </div>
-
-          <div id="acc-step-3" class="acc-step-complete is-hidden">
-            <div class="acc-success-icon">✓</div>
-            <h3 class="acc-success-title">Account Request Submitted!</h3>
-            <p class="acc-success-copy">
-              Your account claiming request has been received. A barangay
-              official will review and activate your account within 1–2 working
-              days. You will receive an SMS confirmation.
-            </p>
-            <div class="acc-ref-box">
-              <div class="acc-ref-label">Reference Number</div>
-              <div class="acc-ref-number" id="acc-ref-num">ACC-2025-0048</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" id="acc-footer">
-          <button
-            class="btn btn-outline"
-            onclick="closeServiceModal('accounts')"
-          >
-            Cancel
-          </button>
-          <button
-            class="btn btn-gold"
-            id="acc-next-btn"
-            onclick="accNextStep()"
-          >
-            Verify Identity →
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- -- SUCCESS TOAST -- -->
     <div id="toast" class="toast">
       <span id="toast-icon">✓</span>
@@ -1077,6 +883,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // Initialize the GIS section map on the landing page
+        setTimeout(() => initGisMap("gis-map-section"), 200);
+
         const accessBtn = document.getElementById("access-system-btn");
         if (accessBtn) {
           accessBtn.addEventListener("click", function (e) {
@@ -1177,7 +986,6 @@
 
       applySessionToNav(getSession());
 
-      let accStep = 1;
       let selectedCert = "Barangay Clearance";
       let feedbackRating = 4;
 
@@ -1233,9 +1041,6 @@
       function openServicePopup(service) {
         document.getElementById("modal-" + service).classList.add("open");
         if (service === "residency") renderResidentResults("");
-        if (service === "gis") {
-          setTimeout(() => initGisMap("gis-map-modal"), 120);
-        }
       }
 
       function closeServiceModal(service, e) {
@@ -1447,56 +1252,6 @@
           "4ps": "4Ps beneficiary households shown",
         };
         showToast(labels[layer] || "Layer updated", "???");
-      }
-
-      function accNextStep() {
-        if (accStep === 1) {
-          const fname = document.getElementById("acc-fname").value.trim();
-          const lname = document.getElementById("acc-lname").value.trim();
-          if (!fname || !lname) {
-            alert("Please fill in your name to continue.");
-            return;
-          }
-          document.getElementById("acc-step-1").style.display = "none";
-          document.getElementById("acc-step-2").style.display = "";
-          document.getElementById("step-1-dot").style.background = "#22c55e";
-          document.getElementById("step-1-dot").textContent = "?";
-          document.getElementById("step-2-dot").style.background =
-            "var(--navy)";
-          document.getElementById("step-2-dot").style.color = "#fff";
-          document.getElementById("step-line-1").style.background = "#22c55e";
-          document.getElementById("acc-next-btn").textContent =
-            "Create Account ?";
-          accStep = 2;
-        } else if (accStep === 2) {
-          const email = document.getElementById("acc-email").value.trim();
-          const pass = document.getElementById("acc-pass").value;
-          const pass2 = document.getElementById("acc-pass2").value;
-          if (!email) {
-            alert("Please enter your email address.");
-            return;
-          }
-          if (pass !== pass2) {
-            alert("Passwords do not match.");
-            return;
-          }
-          if (pass.length < 8) {
-            alert("Password must be at least 8 characters.");
-            return;
-          }
-          document.getElementById("acc-step-2").style.display = "none";
-          document.getElementById("acc-step-3").style.display = "";
-          document.getElementById("step-2-dot").style.background = "#22c55e";
-          document.getElementById("step-2-dot").textContent = "?";
-          document.getElementById("step-3-dot").style.background =
-            "var(--navy)";
-          document.getElementById("step-3-dot").style.color = "#fff";
-          document.getElementById("step-line-2").style.background = "#22c55e";
-          document.getElementById("acc-footer").innerHTML =
-            '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done ✕</button>';
-          accStep = 3;
-          showToast("Account request submitted! Ref: ACC-2025-0048", "✓");
-        }
       }
     </script>
   </body>

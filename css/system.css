@@ -186,6 +186,24 @@ body {
   border-color: var(--gold);
   color: var(--gold-light);
 }
+.login-claim {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(201, 162, 39, 0.15);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.login-claim a {
+  color: var(--gold-light);
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+.login-claim a:hover {
+  color: var(--gold);
+}
 .login-back-link {
   display: block;
   text-align: center;
