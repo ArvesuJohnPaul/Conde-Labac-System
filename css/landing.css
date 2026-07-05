@@ -40,14 +40,18 @@ body {
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(circle at 50% 42%,
+    radial-gradient(
+      circle at 50% 42%,
       rgba(58, 119, 226, 0.18) 0%,
       rgba(22, 58, 124, 0.32) 36%,
-      rgba(10, 25, 60, 0.72) 100%),
-    linear-gradient(135deg,
+      rgba(10, 25, 60, 0.72) 100%
+    ),
+    linear-gradient(
+      135deg,
       rgba(10, 25, 60, 0.44) 0%,
       rgba(15, 40, 100, 0.24) 42%,
-      rgba(10, 20, 50, 0.62) 100%);
+      rgba(10, 20, 50, 0.62) 100%
+    );
 }
 
 .hero-grid,
@@ -74,19 +78,27 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 50% 42%,
+    radial-gradient(
+      ellipse 70% 50% at 50% 42%,
       rgba(58, 119, 226, 0.14) 0%,
       rgba(58, 119, 226, 0.06) 42%,
-      transparent 72%),
-    radial-gradient(ellipse 78% 62% at 15% 50%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 78% 62% at 15% 50%,
       rgba(26, 58, 124, 0.34) 0%,
-      transparent 60%),
-    radial-gradient(ellipse 58% 78% at 85% 20%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 58% 78% at 85% 20%,
       rgba(196, 30, 42, 0.14) 0%,
-      transparent 60%),
-    radial-gradient(ellipse 50% 50% at 50% 100%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 50% at 50% 100%,
       rgba(245, 197, 24, 0.06) 0%,
-      transparent 60%);
+      transparent 60%
+    );
 }
 
 .hero-grid {
@@ -105,10 +117,12 @@ body {
   right: 0;
   width: 45%;
   height: 100%;
-  background: linear-gradient(135deg,
-      transparent 0%,
-      rgba(245, 197, 24, 0.06) 50%,
-      rgba(196, 30, 42, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(245, 197, 24, 0.06) 50%,
+    rgba(196, 30, 42, 0.08) 100%
+  );
   clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
 }
 
@@ -121,9 +135,11 @@ body {
 .orb-1 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle,
-      rgba(245, 197, 24, 0.12) 0%,
-      transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(245, 197, 24, 0.12) 0%,
+    transparent 70%
+  );
   top: -100px;
   right: 5%;
   animation-delay: 0s;
@@ -132,9 +148,11 @@ body {
 .orb-2 {
   width: 250px;
   height: 250px;
-  background: radial-gradient(circle,
-      rgba(196, 30, 42, 0.15) 0%,
-      transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(196, 30, 42, 0.15) 0%,
+    transparent 70%
+  );
   bottom: 10%;
   left: 5%;
   animation-delay: -3s;
@@ -143,16 +161,17 @@ body {
 .orb-3 {
   width: 150px;
   height: 150px;
-  background: radial-gradient(circle,
-      rgba(37, 99, 235, 0.2) 0%,
-      transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(37, 99, 235, 0.2) 0%,
+    transparent 70%
+  );
   top: 30%;
   right: 25%;
   animation-delay: -5s;
 }
 
 @keyframes floatOrb {
-
   0%,
   100% {
     transform: translateY(0) scale(1);
@@ -198,7 +217,6 @@ body {
 }
 
 @keyframes pulseDot {
-
   0%,
   100% {
     opacity: 1;
@@ -359,16 +377,49 @@ body {
   }
 
   .hero-features {
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 1.8rem 1.2rem;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0.9rem 0.7rem 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    background: var(--cream);
+    overflow-x: auto;
+    justify-content: space-between;
+    scrollbar-width: none;
+  }
+
+  .hero-features::-webkit-scrollbar {
+    display: none;
   }
 
   .feat-item {
-    flex: 1 1 calc(50% - 12px);
+    flex: 1 1 0;
     max-width: none;
-    min-height: 120px;
+    min-height: 0;
     margin-top: 0;
+    padding: 0.8rem 0.25rem 0.55rem;
+    gap: 0.55rem;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    min-width: 0;
+  }
+
+  .feat-item:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .feat-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+    margin-bottom: 0;
+  }
+
+  .feat-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
   }
 
   .hero-inner {
@@ -402,7 +453,7 @@ body {
 
 @media (max-width: 480px) {
   .feat-item {
-    flex: 1 1 100%;
+    padding-inline: 0.15rem;
   }
 }
 
@@ -739,15 +790,16 @@ body {
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle,
-      rgba(245, 197, 24, 0.2) 0%,
-      rgba(26, 58, 124, 0.1) 50%,
-      transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(245, 197, 24, 0.2) 0%,
+    rgba(26, 58, 124, 0.1) 50%,
+    transparent 70%
+  );
   animation: glowPulse 3s ease-in-out infinite;
 }
 
 @keyframes glowPulse {
-
   0%,
   100% {
     transform: scale(1);
