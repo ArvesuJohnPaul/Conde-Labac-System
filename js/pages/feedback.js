@@ -12,7 +12,7 @@ function renderFeedbackPage() {
       <p class="page-desc">Resident sentiment trends and submitted comments</p>
     </div>
     <div class="kpi-grid">
-      <div class="kpi-card success"><div class="kpi-label">Avg. Rating</div><div class="kpi-value">4.2★</div><div class="kpi-trend"><span class="up">↑ 0.3</span> vs last quarter</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Avg. Rating</div><div class="kpi-value">4.2<i data-icon=star class=ic-fill></i></div><div class="kpi-trend"><span class="up"><i data-icon=trend-up></i> 0.3</span> vs last quarter</div></div>
       <div class="kpi-card"><div class="kpi-label">Total Submissions</div><div class="kpi-value">284</div></div>
       <div class="kpi-card info"><div class="kpi-label">This Month</div><div class="kpi-value">42</div></div>
       <div class="kpi-card warning"><div class="kpi-label">Unreviewed</div><div class="kpi-value">11</div></div>
@@ -49,7 +49,7 @@ function renderFeedbackPage() {
         .map(([r, cat, msg, name, date]) => `
         <div class="feedback-item">
           <div class="feedback-meta">
-            <span class="feedback-stars">${"★".repeat(r)}${"☆".repeat(5 - r)}</span>
+            <span class="feedback-stars">${"<i data-icon=star class=ic-fill></i>".repeat(r)}${"<i data-icon=star></i>".repeat(5 - r)}</span>
             <span class="badge badge-gray">${cat}</span>
             <span class="feedback-date">${name} · ${date}</span>
           </div>

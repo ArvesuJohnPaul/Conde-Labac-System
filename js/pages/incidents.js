@@ -17,13 +17,13 @@ function renderIncidentsPage() {
       <div class="kpi-card success"><div class="kpi-label">Resolved (30 days)</div><div class="kpi-value">24</div></div>
       <div class="kpi-card"><div class="kpi-label">Total Blotter Entries</div><div class="kpi-value">142</div></div>
     </div>
-    <div class="alert alert-danger"><span class="alert-icon">⚠</span><strong>INC-2025-041</strong> — Critical: Flooding at Purok 3. 14 families displaced. Active response underway.</div>
+    <div class="alert alert-danger"><span class="alert-icon"><i data-icon=triangle-alert></i></span><strong>INC-2025-041</strong> — Critical: Flooding at Purok 3. 14 families displaced. Active response underway.</div>
     <div class="card">
       <div class="card-header">
         <div class="card-title">Incident Blotter</div>
         <div class="btn-group">
           <button class="btn btn-sm btn-gold" onclick="openServicePopup('incidents')">⊕ File Incident</button>
-          <button class="btn btn-sm btn-outline">⬇ Export</button>
+          <button class="btn btn-sm btn-outline"><i data-icon=download></i> Export</button>
         </div>
       </div>
       <div class="table-wrap">

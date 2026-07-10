@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/shared.css" />
@@ -103,6 +103,7 @@
         }
       }
     </style>
+      <script src="js/icons.js"></script>
   </head>
   <body>
     <div class="claim-card">
@@ -174,7 +175,7 @@
 
       <div id="acc-step-2" class="is-hidden">
         <div class="alert alert-success alert-mb">
-          <span class="alert-icon">✓</span>
+          <span class="alert-icon"><i data-icon=check></i></span>
           <strong>Record found!</strong> We found a matching resident record.
           Please set your login credentials below.
         </div>
@@ -215,14 +216,14 @@
           />
         </div>
         <div class="alert alert-info">
-          <span class="alert-icon">ℹ</span> Your account will be linked to your
+          <span class="alert-icon"><i data-icon=info></i></span> Your account will be linked to your
           existing barangay record. A barangay official will verify and activate
           it within 24 hours.
         </div>
       </div>
 
       <div id="acc-step-3" class="acc-step-complete is-hidden">
-        <div class="acc-success-icon">✓</div>
+        <div class="acc-success-icon"><i data-icon=check></i></div>
         <h3 class="acc-success-title">Account Request Submitted!</h3>
         <p class="acc-success-copy">
           Your account claiming request has been received. A barangay official
@@ -238,26 +239,26 @@
       <div class="claim-footer" id="acc-footer">
         <a class="btn btn-outline" href="system.html">Cancel</a>
         <button class="btn btn-gold" id="acc-next-btn" onclick="accNextStep()">
-          Verify Identity →
+          Verify Identity <i data-icon=arrow-right></i>
         </button>
       </div>
 
-      <a href="system.html" class="claim-back-link">← Back to Sign In</a>
+      <a href="system.html" class="claim-back-link"><i data-icon=arrow-left></i> Back to Sign In</a>
     </div>
 
     <!-- -- SUCCESS TOAST -- -->
     <div id="toast" class="toast">
-      <span id="toast-icon">✓</span>
+      <span id="toast-icon"><i data-icon=check></i></span>
       <span id="toast-msg">Success</span>
     </div>
 
     <script>
       let accStep = 1;
 
-      function showToast(msg, icon = "✓") {
+      function showToast(msg, icon = "<i data-icon=check></i>") {
         const t = document.getElementById("toast");
         document.getElementById("toast-msg").textContent = msg;
-        document.getElementById("toast-icon").textContent = icon;
+        document.getElementById("toast-icon").innerHTML = icon;
         t.style.transform = "translateY(0)";
         t.style.opacity = "1";
         setTimeout(() => {
@@ -277,11 +278,11 @@
           document.getElementById("acc-step-1").style.display = "none";
           document.getElementById("acc-step-2").style.display = "";
           document.getElementById("step-1-dot").style.background = "#22c55e";
-          document.getElementById("step-1-dot").textContent = "✓";
+          document.getElementById("step-1-dot").innerHTML = "<i data-icon=check></i>";
           document.getElementById("step-2-dot").classList.add("active");
           document.getElementById("step-line-1").style.background = "#22c55e";
-          document.getElementById("acc-next-btn").textContent =
-            "Create Account →";
+          document.getElementById("acc-next-btn").innerHTML =
+            "Create Account <i data-icon=arrow-right></i>";
           accStep = 2;
         } else if (accStep === 2) {
           const email = document.getElementById("acc-email").value.trim();
@@ -302,13 +303,13 @@
           document.getElementById("acc-step-2").style.display = "none";
           document.getElementById("acc-step-3").style.display = "";
           document.getElementById("step-2-dot").style.background = "#22c55e";
-          document.getElementById("step-2-dot").textContent = "✓";
+          document.getElementById("step-2-dot").innerHTML = "<i data-icon=check></i>";
           document.getElementById("step-3-dot").classList.add("active");
           document.getElementById("step-line-2").style.background = "#22c55e";
           document.getElementById("acc-footer").innerHTML =
-            '<a class="btn btn-gold" href="system.html">Done — Go to Sign In →</a>';
+            '<a class="btn btn-gold" href="system.html">Done — Go to Sign In <i data-icon=arrow-right></i></a>';
           accStep = 3;
-          showToast("Account request submitted! Ref: ACC-2025-0048", "✓");
+          showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=check></i>");
         }
       }
     </script>

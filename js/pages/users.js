@@ -21,25 +21,25 @@ function renderUsers() {
           <thead><tr><th class="text-left">Module</th><th>Admin</th><th>Officer</th><th>Resident</th></tr></thead>
           <tbody>
             ${[
-              ["Dashboard (Full)",            "✓", "✓", "✗"],
-              ["Residency — View All",         "✓", "✓", "Limited"],
-              ["Certificate — Approve/Issue",  "✓", "✓", "✗"],
-              ["Certificate — Request",        "✓", "✓", "✓"],
-              ["Blotter — File Report",        "✓", "✓", "✓"],
-              ["Blotter — Investigate",        "✓", "✓", "✗"],
-              ["Feedback — Submit",            "✓", "✓", "✓"],
-              ["Feedback — Manage",            "✓", "✓", "✗"],
-              ["GIS Map — View",              "✓", "✓", "✓"],
-              ["Account Claiming",             "✓", "✓", "✓"],
-              ["User Management",              "✓", "✗", "✗"],
-              ["Audit Logs",                   "✓", "✗", "✗"],
-              ["Archive",                      "✓", "✗", "✗"],
+              ["Dashboard (Full)",            "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=x></i>"],
+              ["Residency — View All",         "<i data-icon=check></i>", "<i data-icon=check></i>", "Limited"],
+              ["Certificate — Approve/Issue",  "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=x></i>"],
+              ["Certificate — Request",        "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=check></i>"],
+              ["Blotter — File Report",        "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=check></i>"],
+              ["Blotter — Investigate",        "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=x></i>"],
+              ["Feedback — Submit",            "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=check></i>"],
+              ["Feedback — Manage",            "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=x></i>"],
+              ["GIS Map — View",              "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=check></i>"],
+              ["Account Claiming",             "<i data-icon=check></i>", "<i data-icon=check></i>", "<i data-icon=check></i>"],
+              ["User Management",              "<i data-icon=check></i>", "<i data-icon=x></i>", "<i data-icon=x></i>"],
+              ["Audit Logs",                   "<i data-icon=check></i>", "<i data-icon=x></i>", "<i data-icon=x></i>"],
+              ["Archive",                      "<i data-icon=check></i>", "<i data-icon=x></i>", "<i data-icon=x></i>"],
             ]
               .map(([mod, a, o, r]) => `<tr>
               <td>${mod}</td>
-              <td class="${a === "✓" ? "perm-check" : a === "✗" ? "perm-x" : ""} text-center">${a}</td>
-              <td class="${o === "✓" ? "perm-check" : o === "✗" ? "perm-x" : ""} text-center">${o}</td>
-              <td class="${r === "✓" ? "perm-check" : r === "✗" ? "perm-x" : ""} text-center table-text-sm">${r}</td>
+              <td class="${a === "<i data-icon=check></i>" ? "perm-check" : a === "<i data-icon=x></i>" ? "perm-x" : ""} text-center">${a}</td>
+              <td class="${o === "<i data-icon=check></i>" ? "perm-check" : o === "<i data-icon=x></i>" ? "perm-x" : ""} text-center">${o}</td>
+              <td class="${r === "<i data-icon=check></i>" ? "perm-check" : r === "<i data-icon=x></i>" ? "perm-x" : ""} text-center table-text-sm">${r}</td>
             </tr>`)
               .join("")}
           </tbody>

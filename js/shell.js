@@ -259,7 +259,7 @@ const moduleConfig = {
   gis: { title: "GIS Mapping", sub: "Interactive zone & hazard view" },
   accounts: {
     title: "Account Claiming",
-    sub: "Household registration & verification",
+    sub: "Resident registration & verification",
   },
   analytics: {
     title: "Analytics",
@@ -308,7 +308,7 @@ function nav(el, module) {
   // Enforce client-side RBAC for navigation
   const allowed = modulePermissions[module];
   if (allowed && (!role || allowed.indexOf(role) === -1)) {
-    showToast("Access denied: insufficient permissions", "⚑");
+    showToast("Access denied: insufficient permissions", "<i data-icon=flag></i>");
     if (!role) {
       // Not logged in -> go to login
       window.location.href = "../system.html";
@@ -329,10 +329,12 @@ function setContent(html) {
 }
 
 // ════════════════════ TOAST ════════════════════
-function showToast(msg, icon = "✓") {
+function showToast(msg, icon = "<i data-icon=check></i>") {
   const t = document.getElementById("toast");
   document.getElementById("toast-msg").textContent = msg;
-  document.getElementById("toast-icon").textContent = icon;
+  // innerHTML (not textContent) so callers can pass a small trusted icon
+  // markup string (e.g. the GIS map's inline SVG icons) as well as plain text.
+  document.getElementById("toast-icon").innerHTML = icon;
   t.style.transform = "translateY(0)";
   t.style.opacity = "1";
   setTimeout(() => {
@@ -344,7 +346,7 @@ function showToast(msg, icon = "✓") {
 // Simulated incident alert sender (UI hook)
 function sendIncidentAlert(incidentNo) {
   // UI feedback for now; backend integration (Semaphore/Twilio) to be wired later
-  showToast(`Incident ${incidentNo} — alert sent to on-duty officers`, "📣");
+  showToast(`Incident ${incidentNo} — alert sent to on-duty officers`, "<i data-icon=megaphone></i>");
   console.log(
     "[sendIncidentAlert]",
     incidentNo,
@@ -354,58 +356,19 @@ function sendIncidentAlert(incidentNo) {
 
 // Simulated AI summary generator (UI hook)
 function generateAiSummary(scope = "dashboard") {
-  showToast("Generating AI summary...", "🤖");
+  showToast("Generating AI summary...", "<i data-icon=sparkles></i>");
   console.log("[generateAiSummary] scope=", scope);
 
   // Simulate async AI call
   setTimeout(() => {
     const summary =
       "AI Summary: Recent incidents show clustering in Purok 3; recommend resource allocation and a targeted community outreach.";
-    showToast("AI Summary generated", "📝");
+    showToast("AI Summary generated", "<i data-icon=pencil></i>");
     // If there's a dashboard placeholder, inject the text
     const el = document.getElementById("ai-summary-text");
     if (el) el.textContent = summary;
     console.log("[generateAiSummary] result=", summary);
   }, 1200);
-}
-
-// ════════════════════ GIS MAP ════════════════════
-const gisMaps = {};
-const gisHouseholds = [
-  { lat: 13.8784, lng: 121.0832, name: "Household #001", zone: "A" },
-  { lat: 13.8794, lng: 121.0842, name: "Household #002", zone: "B" },
-  { lat: 13.8774, lng: 121.0822, name: "Household #003", zone: "C" },
-];
-
-function initGisMap(targetId) {
-  const el = document.getElementById(targetId);
-  if (!el || typeof L === "undefined") return;
-
-  if (!gisMaps[targetId]) {
-    const map = L.map(targetId).setView([13.8784, 121.0832], 15);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
-
-    gisHouseholds.forEach((h) => {
-      L.marker([h.lat, h.lng])
-        .bindPopup(`<strong>${h.name}</strong><br>Zone ${h.zone}`)
-        .addTo(map);
-    });
-
-    // FIX: .addTo(map) must come before .openPopup() so the popup shows on load
-    L.marker([13.8784, 121.0832])
-      .bindPopup("Conde Labac, Batangas City - Barangay Center")
-      .addTo(map)
-      .openPopup();
-
-    gisMaps[targetId] = map;
-  }
-
-  setTimeout(() => {
-    gisMaps[targetId]?.invalidateSize();
-  }, 50);
 }
 
 // ════════════════════ SERVICE POPUP HELPERS ════════════════════
@@ -439,67 +402,67 @@ function renderResidentPortal() {
 
         <div class="services-grid">
           <div class="service-card sc-blue" onclick="openServicePopup('residency')">
-            <div class="service-icon-wrap">🏘️</div>
+            <div class="service-icon-wrap"><i data-icon=houses></i></div>
             <div>
               <div class="service-title">Barangay Residency</div>
-              <div class="service-desc">Search and view resident records, household information, and purok listings within Barangay Conde Labac.</div>
+              <div class="service-desc">Search and view resident records and purok listings within Barangay Conde Labac.</div>
             </div>
-            <div class="service-arrow">Search residents →</div>
+            <div class="service-arrow">Search residents <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-gold" onclick="openServicePopup('certificates')">
-            <div class="service-icon-wrap">📄</div>
+            <div class="service-icon-wrap"><i data-icon=file-text></i></div>
             <div>
               <div class="service-title">Certificate Issuance</div>
               <div class="service-desc">Request Barangay Clearances, Certificates of Indigency, Residency, Good Moral, Business Clearance, and more.</div>
             </div>
-            <div class="service-arrow">Request certificate →</div>
+            <div class="service-arrow">Request certificate <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-red" onclick="openServicePopup('incidents')">
-            <div class="service-icon-wrap">🚨</div>
+            <div class="service-icon-wrap"><i data-icon=siren></i></div>
             <div>
               <div class="service-title">Blotter Reporting</div>
               <div class="service-desc">File an incident report for complaints, disputes, altercations, vandalism, or other concerns happening in the barangay.</div>
             </div>
-            <div class="service-arrow">File a report →</div>
+            <div class="service-arrow">File a report <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-green" onclick="openServicePopup('feedback')">
-            <div class="service-icon-wrap">💬</div>
+            <div class="service-icon-wrap"><i data-icon=message-square></i></div>
             <div>
               <div class="service-title">Feedback</div>
               <div class="service-desc">Share your comments, suggestions, or concerns about barangay services. Your voice helps improve governance.</div>
             </div>
-            <div class="service-arrow">Give feedback →</div>
+            <div class="service-arrow">Give feedback <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-purple" onclick="openServicePopup('gis')">
-            <div class="service-icon-wrap">🗺️</div>
+            <div class="service-icon-wrap"><i data-icon=map></i></div>
             <div>
               <div class="service-title">GIS Map</div>
               <div class="service-desc">View the interactive map of Barangay Conde Labac — showing puroks, hazard zones, health centers, and key landmarks.</div>
             </div>
-            <div class="service-arrow">View map →</div>
+            <div class="service-arrow">View map <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-teal" onclick="openServicePopup('accounts')">
-            <div class="service-icon-wrap">🔑</div>
+            <div class="service-icon-wrap"><i data-icon=key></i></div>
             <div>
               <div class="service-title">Account Claiming</div>
               <div class="service-desc">Already registered in the barangay system? Claim your account to access personalized services and track your requests.</div>
             </div>
-            <div class="service-arrow">Claim account →</div>
+            <div class="service-arrow">Claim account <i data-icon=arrow-right></i></div>
           </div>
         </div>
       </div>
 
       <!-- Notices -->
       <div class="notice-card">
-        <div class="notice-title">📢 Barangay Notices</div>
-        <div class="alert alert-warning"><span class="alert-icon">⚑</span> <strong>Flood Advisory:</strong> Purok 3 residents — please monitor weather conditions. Pre-positioned relief goods at Brgy Hall.</div>
-        <div class="alert alert-info"><span class="alert-icon">ℹ</span> <strong>Certificate Processing:</strong> Regular processing hours are Mon–Fri, 8:00 AM – 5:00 PM.</div>
-        <div class="alert alert-success"><span class="alert-icon">✓</span> <strong>Free Medical Mission:</strong> May 15, 2025 at the Barangay Health Center. Walk-ins welcome.</div>
+        <div class="notice-title"><i data-icon=megaphone></i> Barangay Notices</div>
+        <div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> <strong>Flood Advisory:</strong> Purok 3 residents — please monitor weather conditions. Pre-positioned relief goods at Brgy Hall.</div>
+        <div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> <strong>Certificate Processing:</strong> Regular processing hours are Mon–Fri, 8:00 AM – 5:00 PM.</div>
+        <div class="alert alert-success"><span class="alert-icon"><i data-icon=check></i></span> <strong>Free Medical Mission:</strong> May 15, 2025 at the Barangay Health Center. Walk-ins welcome.</div>
       </div>
     </div>
   `);
@@ -511,7 +474,6 @@ const RESIDENTS_DATA = [
     name: "Santos, Pedro J.",
     age: 34,
     purok: "Purok 1",
-    household: "HH-0042",
     cat: "",
     status: "Active",
   },
@@ -519,7 +481,6 @@ const RESIDENTS_DATA = [
     name: "dela Cruz, Maria L.",
     age: 67,
     purok: "Purok 2",
-    household: "HH-0081",
     cat: "Senior Citizen",
     status: "Active",
   },
@@ -527,15 +488,13 @@ const RESIDENTS_DATA = [
     name: "Reyes, Jose B.",
     age: 45,
     purok: "Purok 3",
-    household: "HH-0156",
-    cat: "4Ps Beneficiary",
+    cat: "Indigent Family",
     status: "Active",
   },
   {
     name: "Aquino, Ana M.",
     age: 29,
     purok: "Purok 1",
-    household: "HH-0033",
     cat: "Solo Parent",
     status: "Active",
   },
@@ -543,7 +502,6 @@ const RESIDENTS_DATA = [
     name: "Bautista, Carlos F.",
     age: 52,
     purok: "Purok 4",
-    household: "HH-0204",
     cat: "PWD",
     status: "Active",
   },
@@ -551,7 +509,6 @@ const RESIDENTS_DATA = [
     name: "Villanueva, Rosa T.",
     age: 78,
     purok: "Purok 5",
-    household: "HH-0312",
     cat: "Senior Citizen",
     status: "Active",
   },
@@ -559,7 +516,6 @@ const RESIDENTS_DATA = [
     name: "Garcia, Luis N.",
     age: 38,
     purok: "Purok 2",
-    household: "HH-0098",
     cat: "",
     status: "Active",
   },
@@ -567,15 +523,13 @@ const RESIDENTS_DATA = [
     name: "Mendoza, Elena P.",
     age: 44,
     purok: "Purok 3",
-    household: "HH-0177",
-    cat: "4Ps Beneficiary",
+    cat: "Indigent Family",
     status: "Inactive",
   },
   {
     name: "Santos, Juan R.",
     age: 22,
     purok: "Purok 1",
-    household: "HH-0044",
     cat: "",
     status: "Active",
   },
@@ -583,7 +537,6 @@ const RESIDENTS_DATA = [
     name: "Cruz, Nora T.",
     age: 61,
     purok: "Purok 5",
-    household: "HH-0298",
     cat: "Senior Citizen",
     status: "Active",
   },
@@ -624,7 +577,7 @@ function renderResidentResults(filtered) {
         <div class="resident-avatar-sm">${r.name.split(",")[1]?.trim()[0] || "?"}${r.name.split(",")[0][0]}</div>
         <div class="resident-info">
           <h4>${r.name}</h4>
-          <p>${r.age} yrs · ${r.purok} · ${r.household}${r.cat ? " · " + r.cat : ""}</p>
+          <p>${r.age} yrs · ${r.purok}${r.cat ? " · " + r.cat : ""}</p>
         </div>
         <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
       </div>`,
@@ -633,7 +586,7 @@ function renderResidentResults(filtered) {
 }
 
 function exportResidents() {
-  showToast("Exporting results as CSV...", "⬇");
+  showToast("Exporting results as CSV...", "<i data-icon=download></i>");
 }
 
 // ════════════════════ CERTIFICATE MODAL LOGIC ════════════════════
@@ -655,7 +608,7 @@ function submitCertificate() {
     return;
   }
   closeServiceModal("certificates");
-  showToast(`${selectedCert} request submitted! Ref: CERT-2025-088`, "📄");
+  showToast(`${selectedCert} request submitted! Ref: CERT-2025-088`, "<i data-icon=file-text></i>");
 }
 
 // ════════════════════ BLOTTER MODAL LOGIC ════════════════════
@@ -666,7 +619,7 @@ function submitBlotter() {
     return;
   }
   closeServiceModal("incidents");
-  showToast("Blotter report submitted! Case No: INC-2025-042", "🚨");
+  showToast("Blotter report submitted! Case No: INC-2025-042", "<i data-icon=siren></i>");
 }
 
 // ════════════════════ FEEDBACK MODAL LOGIC ════════════════════
@@ -687,24 +640,7 @@ function submitFeedback() {
     return;
   }
   closeServiceModal("feedback");
-  showToast("Feedback submitted! Thank you for your input.", "💬");
-}
-
-// ════════════════════ GIS LAYER TOGGLE ════════════════════
-function setGisLayer(el, layer) {
-  document
-    .querySelectorAll(".gis-filter-btn")
-    .forEach((b) => b.classList.remove("active"));
-  el.classList.add("active");
-  const labels = {
-    all: "All layers shown",
-    households: "Household markers shown",
-    hazard: "Hazard zones highlighted",
-    seniors: "Senior citizen locations shown",
-    pwd: "PWD household markers shown",
-    "4ps": "4Ps beneficiary households shown",
-  };
-  showToast(labels[layer] || "Layer updated", "🗺️");
+  showToast("Feedback submitted! Thank you for your input.", "<i data-icon=message-square></i>");
 }
 
 // ════════════════════ ACCOUNT CLAIMING STEPS ════════════════════
@@ -721,11 +657,11 @@ function accNextStep() {
     document.getElementById("acc-step-1").classList.add("is-hidden");
     document.getElementById("acc-step-2").classList.remove("is-hidden");
     document.getElementById("step-1-dot").style.background = "#22c55e";
-    document.getElementById("step-1-dot").textContent = "✓";
+    document.getElementById("step-1-dot").innerHTML = "<i data-icon=check></i>";
     document.getElementById("step-2-dot").style.background = "var(--navy)";
     document.getElementById("step-2-dot").style.color = "#fff";
     document.getElementById("step-line-1").style.background = "#22c55e";
-    document.getElementById("acc-next-btn").textContent = "Create Account →";
+    document.getElementById("acc-next-btn").innerHTML = "Create Account <i data-icon=arrow-right></i>";
     accStep = 2;
   } else if (accStep === 2) {
     const email = document.getElementById("acc-email").value.trim();
@@ -746,20 +682,20 @@ function accNextStep() {
     document.getElementById("acc-step-2").classList.add("is-hidden");
     document.getElementById("acc-step-3").classList.remove("is-hidden");
     document.getElementById("step-2-dot").style.background = "#22c55e";
-    document.getElementById("step-2-dot").textContent = "✓";
+    document.getElementById("step-2-dot").innerHTML = "<i data-icon=check></i>";
     document.getElementById("step-3-dot").style.background = "var(--navy)";
     document.getElementById("step-3-dot").style.color = "#fff";
     document.getElementById("step-line-2").style.background = "#22c55e";
     document.getElementById("acc-footer").innerHTML =
-      '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done ✓</button>';
+      '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done <i data-icon=check></i></button>';
     accStep = 3;
-    showToast("Account request submitted! Ref: ACC-2025-0048", "🔑");
+    showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=key></i>");
   }
 }
 
 // ════════════════════ MISC ════════════════════
 function toggleNotif() {
-  showToast("3 new notifications", "🔔");
+  showToast("3 new notifications", "<i data-icon=bell></i>");
 }
 
 // ════════════════════ BOOTSTRAP ════════════════════

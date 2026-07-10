@@ -7,16 +7,13 @@
     <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/shared.css" />
     <link rel="stylesheet" href="../css/system.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
-    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+      <script src="../js/icons.js"></script>
   </head>
   <body>
     <!-- --- APP SHELL --- -->
@@ -78,50 +75,50 @@
         </div>
         <div class="sidebar-section-label">Core Services</div>
         <div class="nav-item" onclick="nav(this, 'dashboard')">
-          <span class="nav-icon">📊</span> Dashboard
+          <span class="nav-icon"><i data-icon=chart></i></span> Dashboard
         </div>
         <div class="nav-item" onclick="nav(this, 'residency')">
-          <span class="nav-icon">🏘️</span> Barangay Residency
+          <span class="nav-icon"><i data-icon=houses></i></span> Barangay Residency
         </div>
         <div class="nav-item" onclick="nav(this, 'certificates')">
-          <span class="nav-icon">📄</span> Certificate Processing<span
+          <span class="nav-icon"><i data-icon=file-text></i></span> Certificate Processing<span
             class="nav-badge"
             id="cert-badge"
             >7</span
           >
         </div>
         <div class="nav-item" onclick="nav(this, 'incidents')">
-          <span class="nav-icon">🚨</span> Blotter / Incidents<span
+          <span class="nav-icon"><i data-icon=siren></i></span> Blotter / Incidents<span
             class="nav-badge"
             id="inc-badge"
             >3</span
           >
         </div>
         <div class="nav-item" onclick="nav(this, 'feedback')">
-          <span class="nav-icon">💬</span> Feedback
+          <span class="nav-icon"><i data-icon=message-square></i></span> Feedback
         </div>
         <div class="nav-item" onclick="nav(this, 'gis')">
-          <span class="nav-icon">🗺️</span> GIS Mapping
+          <span class="nav-icon"><i data-icon=map></i></span> GIS Mapping
         </div>
         <div class="nav-item" onclick="nav(this, 'accounts')">
-          <span class="nav-icon">🔑</span> Account Claiming<span
+          <span class="nav-icon"><i data-icon=key></i></span> Account Claiming<span
             class="nav-badge"
             id="acc-badge"
             >12</span
           >
         </div>
         <div class="nav-item" onclick="nav(this, 'analytics')">
-          <span class="nav-icon">📊</span> Analytics
+          <span class="nav-icon"><i data-icon=chart></i></span> Analytics
         </div>
         <div class="sidebar-section-label">Administration</div>
         <div class="nav-item" onclick="nav(this, 'users')">
-          <span class="nav-icon">👥</span> User Management
+          <span class="nav-icon"><i data-icon=users></i></span> User Management
         </div>
         <div class="nav-item" onclick="nav(this, 'audit')">
-          <span class="nav-icon">📋</span> Audit Logs
+          <span class="nav-icon"><i data-icon=clipboard></i></span> Audit Logs
         </div>
         <div class="nav-item" onclick="nav(this, 'archive')">
-          <span class="nav-icon">📦</span> Archive
+          <span class="nav-icon"><i data-icon=archive></i></span> Archive
         </div>
         <div class="sidebar-footer">
           <div class="user-pill">
@@ -133,7 +130,7 @@
               <div class="user-role" id="sidebar-role">System Admin</div>
             </div>
             <button class="logout-btn" onclick="doLogout()" title="Logout">
-              🚪
+              <i data-icon=log-out></i>
             </button>
           </div>
         </div>
@@ -153,42 +150,42 @@
             <div class="topbar-modules-dropdown" id="topbarModulesDropdown">
               <div class="topbar-modules-section">Core Services</div>
               <div class="topbar-module-item" onclick="nav(null, 'dashboard')">
-                <span class="topbar-module-icon">📊</span> Dashboard
+                <span class="topbar-module-icon"><i data-icon=chart></i></span> Dashboard
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'residency')">
-                <span class="topbar-module-icon">🏘️</span> Barangay Residency
+                <span class="topbar-module-icon"><i data-icon=houses></i></span> Barangay Residency
               </div>
               <div
                 class="topbar-module-item"
                 onclick="nav(null, 'certificates')"
               >
-                <span class="topbar-module-icon">📄</span> Certificate
+                <span class="topbar-module-icon"><i data-icon=file-text></i></span> Certificate
                 Processing
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'incidents')">
-                <span class="topbar-module-icon">🚨</span> Blotter / Incidents
+                <span class="topbar-module-icon"><i data-icon=siren></i></span> Blotter / Incidents
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'feedback')">
-                <span class="topbar-module-icon">💬</span> Feedback
+                <span class="topbar-module-icon"><i data-icon=message-square></i></span> Feedback
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'gis')">
-                <span class="topbar-module-icon">🗺️</span> GIS Mapping
+                <span class="topbar-module-icon"><i data-icon=map></i></span> GIS Mapping
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'accounts')">
-                <span class="topbar-module-icon">🔑</span> Account Claiming
+                <span class="topbar-module-icon"><i data-icon=key></i></span> Account Claiming
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'analytics')">
-                <span class="topbar-module-icon">📊</span> Analytics
+                <span class="topbar-module-icon"><i data-icon=chart></i></span> Analytics
               </div>
               <div class="topbar-modules-section">Administration</div>
               <div class="topbar-module-item" onclick="nav(null, 'users')">
-                <span class="topbar-module-icon">👥</span> User Management
+                <span class="topbar-module-icon"><i data-icon=users></i></span> User Management
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'audit')">
-                <span class="topbar-module-icon">📋</span> Audit Logs
+                <span class="topbar-module-icon"><i data-icon=clipboard></i></span> Audit Logs
               </div>
               <div class="topbar-module-item" onclick="nav(null, 'archive')">
-                <span class="topbar-module-icon">📦</span> Archive
+                <span class="topbar-module-icon"><i data-icon=archive></i></span> Archive
               </div>
             </div>
           </div>
@@ -201,7 +198,7 @@
           <div class="topbar-right">
             <div class="topbar-date" id="topbar-date"></div>
             <button class="topbar-notif-btn" onclick="toggleNotif()">
-              ??
+              <i data-icon=bell></i>
               <div id="notif-dot" class="topbar-notif-dot"></div>
             </button>
           </div>
@@ -219,11 +216,11 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">🏘️</div>
+            <div class="modal-title-icon"><i data-icon=houses></i></div>
             Barangay Residency Resident Search
           </div>
           <button class="modal-close" onclick="closeServiceModal('residency')">
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
@@ -268,8 +265,8 @@
                 <option value="">All Categories</option>
                 <option>Senior Citizen</option>
                 <option>PWD</option>
-                <option>4Ps Beneficiary</option>
                 <option>Solo Parent</option>
+                <option>Indigent Family</option>
               </select>
             </div>
             <div class="form-group form-group-flat">
@@ -295,7 +292,7 @@
           >
             Close</button
           ><button class="btn btn-primary" onclick="exportResidents()">
-            📄 Export Results
+            <i data-icon=file-text></i> Export Results
           </button>
         </div>
       </div>
@@ -309,14 +306,14 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">📄</div>
+            <div class="modal-title-icon"><i data-icon=file-text></i></div>
             Certificate Issuance Request Form
           </div>
           <button
             class="modal-close"
             onclick="closeServiceModal('certificates')"
           >
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
@@ -330,42 +327,42 @@
               class="cert-type-card selected"
               onclick="selectCert(this, 'Barangay Clearance')"
             >
-              <span class="cert-icon">📋</span>
+              <span class="cert-icon"><i data-icon=clipboard></i></span>
               <div class="cert-name">Barangay Clearance</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Indigency')"
             >
-              <span class="cert-icon">💼</span>
+              <span class="cert-icon"><i data-icon=briefcase></i></span>
               <div class="cert-name">Certificate of Indigency</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Residency')"
             >
-              <span class="cert-icon">📋</span>
+              <span class="cert-icon"><i data-icon=clipboard></i></span>
               <div class="cert-name">Certificate of Residency</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Business Clearance')"
             >
-              <span class="cert-icon">📋</span>
+              <span class="cert-icon"><i data-icon=clipboard></i></span>
               <div class="cert-name">Business Clearance</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Good Moral')"
             >
-              <span class="cert-icon">⭐</span>
+              <span class="cert-icon"><i data-icon=star class=ic-fill></i></span>
               <div class="cert-name">Good Moral Certificate</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Solo Parent')"
             >
-              <span class="cert-icon">👨‍👩‍👧</span>
+              <span class="cert-icon"><i data-icon=family></i></span>
               <div class="cert-name">Solo Parent Certificate</div>
             </div>
           </div>
@@ -426,7 +423,7 @@
             </div>
           </div>
           <div class="alert alert-info">
-            <span class="alert-icon">✓</span> You will receive an SMS
+            <span class="alert-icon"><i data-icon=info></i></span> You will receive an SMS
             notification once your certificate is ready for pickup at the
             barangay hall.
           </div>
@@ -438,7 +435,7 @@
           >
             Cancel</button
           ><button class="btn btn-gold" onclick="submitCertificate()">
-            ✓ Submit Request
+            <i data-icon=check></i> Submit Request
           </button>
         </div>
       </div>
@@ -452,16 +449,16 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">📄</div>
+            <div class="modal-title-icon"><i data-icon=file-text></i></div>
             Blotter Report File an Incident
           </div>
           <button class="modal-close" onclick="closeServiceModal('incidents')">
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="alert alert-warning">
-            <span class="alert-icon">✓</span> For life-threatening emergencies,
+            <span class="alert-icon"><i data-icon=triangle-alert></i></span> For life-threatening emergencies,
             call <strong>911</strong> or the local police at
             <strong>(043) 702-4011</strong> immediately.
           </div>
@@ -549,7 +546,7 @@
             />
           </div>
           <div class="alert alert-info">
-            <span class="alert-icon">✓</span> Your blotter report will be
+            <span class="alert-icon"><i data-icon=info></i></span> Your blotter report will be
             assigned a case number. You will be contacted by a barangay official
             within 24 hours.
           </div>
@@ -564,7 +561,7 @@
             class="btn btn-danger btn-danger-strong"
             onclick="submitBlotter()"
           >
-            ✓ Submit Blotter Report
+            <i data-icon=check></i> Submit Blotter Report
           </button>
         </div>
       </div>
@@ -578,11 +575,11 @@
       <div class="modal-box">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">📄</div>
+            <div class="modal-title-icon"><i data-icon=file-text></i></div>
             Resident Feedback
           </div>
           <button class="modal-close" onclick="closeServiceModal('feedback')">
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
@@ -606,11 +603,11 @@
           <div class="form-group">
             <label class="form-label">Overall Satisfaction</label>
             <div class="star-rating" id="star-rating">
-              <span class="star active" onclick="setRating(1)">★</span
-              ><span class="star active" onclick="setRating(2)">★</span
-              ><span class="star active" onclick="setRating(3)">★</span
-              ><span class="star active" onclick="setRating(4)">★</span
-              ><span class="star" onclick="setRating(5)">☆</span>
+              <span class="star active" onclick="setRating(1)"><i data-icon=star class=ic-fill></i></span
+              ><span class="star active" onclick="setRating(2)"><i data-icon=star class=ic-fill></i></span
+              ><span class="star active" onclick="setRating(3)"><i data-icon=star class=ic-fill></i></span
+              ><span class="star active" onclick="setRating(4)"><i data-icon=star class=ic-fill></i></span
+              ><span class="star" onclick="setRating(5)"><i data-icon=star></i></span>
             </div>
             <div id="rating-label" class="rating-label">4 out of 5 Good</div>
           </div>
@@ -639,7 +636,7 @@
             />
           </div>
           <div class="alert alert-success">
-            <span class="alert-icon">✓</span> Feedback is reviewed by the
+            <span class="alert-icon"><i data-icon=check></i></span> Feedback is reviewed by the
             Barangay Chairperson and department heads during monthly meetings.
           </div>
         </div>
@@ -650,7 +647,7 @@
           >
             Cancel</button
           ><button class="btn btn-gold" onclick="submitFeedback()">
-            ✓ Submit Feedback
+            <i data-icon=check></i> Submit Feedback
           </button>
         </div>
       </div>
@@ -664,77 +661,18 @@
       <div class="modal-box modal-xl">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">🏘️</div>
+            <div class="modal-title-icon"><i data-icon=houses></i></div>
             GIS Map Barangay Conde Labac
           </div>
           <button class="modal-close" onclick="closeServiceModal('gis')">
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
-          <div class="gis-filter-row">
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn active"
-              onclick="setGisLayer(this, 'all')"
-            >
-              All Layers
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'households')"
-            >
-              🏘️ Households
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'hazard')"
-            >
-              🌪️ Hazard Zones
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'seniors')"
-            >
-              👴 Senior Citizens
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'pwd')"
-            >
-              ♿ PWD
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, '4ps')"
-            >
-              👨‍👩‍👧‍👦 4Ps Beneficiaries
-            </button>
-          </div>
-          <div class="gis-modal-map" id="gis-map-container">
-            <div class="gis-leaflet-map" id="gis-map-modal"></div>
-          </div>
-          <div class="gis-legend">
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-households"></div>
-              Household
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-seniors"></div>
-              Senior Citizen
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-flood"></div>
-              Flood Zone
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-landslide"></div>
-              Landslide Risk
-            </div>
-            <div class="gis-legend-item">🏛️ Barangay Hall</div>
-            <div class="gis-legend-item">+ Health Center</div>
-          </div>
+          <div class="gis-filter-row"></div>
+          <div class="gis-modal-map" id="gis-map-modal"></div>
           <div class="alert alert-info alert-spacing-top">
-            <span class="alert-icon">✓</span> This map is for reference only.
+            <span class="alert-icon"><i data-icon=check></i></span> This map is for reference only.
             For precise coordinates, contact the barangay GIS officer.
           </div>
         </div>
@@ -747,7 +685,7 @@
               alert('Full GIS system requires login with internet access.')
             "
           >
-            ✓ Open Full GIS System
+            <i data-icon=check></i> Open Full GIS System
           </button>
         </div>
       </div>
@@ -761,11 +699,11 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">📄</div>
+            <div class="modal-title-icon"><i data-icon=file-text></i></div>
             Account Claiming Create Your Account
           </div>
           <button class="modal-close" onclick="closeServiceModal('accounts')">
-            ?
+            <i data-icon=x></i>
           </button>
         </div>
         <div class="modal-body">
@@ -831,7 +769,7 @@
           </div>
           <div id="acc-step-2" class="is-hidden">
             <div class="alert alert-success alert-mb">
-              <span class="alert-icon">✓</span><strong>Record found!</strong> We
+              <span class="alert-icon"><i data-icon=check></i></span><strong>Record found!</strong> We
               found a matching resident record. Please set your login
               credentials below.
             </div>
@@ -872,12 +810,12 @@
               />
             </div>
             <div class="alert alert-info">
-              <span class="alert-icon">✓</span> Your account will be linked to
+              <span class="alert-icon"><i data-icon=info></i></span> Your account will be linked to
               your existing barangay record and activated within 24 hours.
             </div>
           </div>
           <div id="acc-step-3" class="acc-step-complete is-hidden">
-            <div class="acc-success-icon">✓</div>
+            <div class="acc-success-icon"><i data-icon=check></i></div>
             <h3 class="acc-success-title">Account Request Submitted!</h3>
             <p class="acc-success-copy">
               Your account claiming request has been received. A barangay
@@ -902,7 +840,7 @@
             id="acc-next-btn"
             onclick="accNextStep()"
           >
-            Verify Identity →
+            Verify Identity <i data-icon=arrow-right></i>
           </button>
         </div>
       </div>
@@ -910,11 +848,11 @@
 
     <!-- TOAST -->
     <div id="toast" class="toast">
-      <span id="toast-icon">✓</span><span id="toast-msg">Success</span>
+      <span id="toast-icon"><i data-icon=check></i></span><span id="toast-msg">Success</span>
     </div>
 
     <!-- SCRIPTS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="../js/gis-map.js"></script>
     <script src="../js/shell.js"></script>
     <script src="../js/pages/residency.js"></script>
   </body>

@@ -3,7 +3,7 @@
    Common design tokens, navbar, modal, utilities
 ═══════════════════════════════════════════════════ */
 
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
 
 /* ─── DESIGN TOKENS ───────────────────────────── */
 :root {
@@ -23,22 +23,22 @@
   --navy-light: #1e3260;
   --gold: #c9a227;
   --gold-light: #e8c55a;
-  --gold-pale: #fbf3dc;
+  --gold-pale: #faf5e6;
   --gold-dim: #8c711a;
   --white: #ffffff;
-  --cream: #fdfaf3;
-  --gray: #6b7280;
-  --gray-light: #f3f4f6;
-  --text: #1a1a2e;
+  --cream: #f6f7fb;
+  --gray: #667085;
+  --gray-light: #f2f4f7;
+  --text: #101828;
 
-  /* System palette */
-  --surface: #f7f5f0;
-  --surface-2: #eeeae0;
-  --border: #ddd8cc;
-  --border-dark: #c4bfb0;
-  --text-primary: #1a1208;
-  --text-secondary: #5a5040;
-  --text-muted: #9a8e78;
+  /* System palette — modern neutral scale */
+  --surface: #f6f7fb;
+  --surface-2: #eef0f5;
+  --border: #e4e7ec;
+  --border-dark: #cdd5e0;
+  --text-primary: #101828;
+  --text-secondary: #475467;
+  --text-muted: #98a2b3;
   --success: #166534;
   --success-bg: #dcfce7;
   --success-border: #86efac;
@@ -55,11 +55,16 @@
   /* Layout */
   --navbar-h: 64px;
   --sidebar-w: 260px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow: 0 2px 12px rgba(13, 27, 62, 0.08);
-  --shadow-lg: 0 8px 32px rgba(13, 27, 62, 0.14);
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lg:
+    0 12px 32px -8px rgba(16, 24, 40, 0.16),
+    0 4px 12px -4px rgba(16, 24, 40, 0.08);
   --transition: 0.2s ease;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 /* ─── RESET ────────────────────────────────────── */
@@ -128,7 +133,7 @@ html {
 .nav-links a {
   color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -172,7 +177,7 @@ html {
   color: var(--navy);
   padding: 9px 20px;
   border-radius: 6px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-weight: 700;
   font-size: 0.82rem;
   letter-spacing: 0.04em;
@@ -220,7 +225,7 @@ html {
 }
 
 .nav-user-name {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 0.78rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
@@ -234,7 +239,7 @@ html {
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   transition: color 0.2s;
 }
 
@@ -469,14 +474,14 @@ html {
 }
 
 .nav-user-name-full {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
 }
 
 .nav-user-role {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
@@ -489,7 +494,7 @@ html {
   color: var(--yellow);
   padding: 8px 12px;
   border-radius: 8px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -563,7 +568,7 @@ html {
 }
 
 .modal-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.15rem;
   color: var(--white);
   display: flex;
@@ -621,7 +626,7 @@ html {
 
 .form-label {
   display: block;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -668,7 +673,7 @@ textarea.form-control {
   gap: 7px;
   padding: 10px 20px;
   border-radius: var(--radius);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -925,4 +930,129 @@ textarea.form-control {
   .topbar-module-icon {
     width: 16px;
   }
+}
+/* ═══════════════════════════════════════════════════
+   MODERN REFRESH — shared component polish
+   (loaded last in this file; same-specificity wins)
+═══════════════════════════════════════════════════ */
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Navbar: hairline border, deeper blur */
+.navbar {
+  background: rgba(9, 18, 40, 0.88);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(245, 197, 24, 0.28);
+}
+
+.btn-nav-signin {
+  border-radius: 10px;
+}
+
+/* Buttons: modern radius, motion + focus states */
+.btn {
+  border-radius: 10px;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition),
+    transform 0.12s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn:focus-visible,
+.form-control:focus-visible,
+.gis-filter-btn:focus-visible {
+  outline: 2px solid var(--blue-mid);
+  outline-offset: 2px;
+}
+.btn-primary:hover {
+  box-shadow: 0 6px 16px -6px rgba(13, 27, 62, 0.45);
+}
+.btn-gold:hover {
+  box-shadow: 0 6px 16px -6px rgba(212, 160, 23, 0.55);
+}
+
+/* Modal: light header, softer shell */
+.modal-box {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.modal-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 26px 16px;
+}
+.modal-title {
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.modal-title-icon {
+  background: var(--gold-pale);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  color: var(--gold-dim);
+  border-radius: 10px;
+}
+.modal-close {
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  padding: 0;
+}
+.modal-close:hover {
+  color: var(--navy);
+  background: var(--surface);
+}
+.modal-footer {
+  border-radius: 0 0 20px 20px;
+}
+
+/* Forms: calmer borders, brand focus ring */
+.form-control {
+  border-width: 1px;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.form-control:focus {
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Alerts: rounder, calmer */
+.alert {
+  border-radius: 12px;
+  align-items: center;
+}
+.alert-icon {
+  display: inline-flex;
+  font-size: 15px;
+  margin-top: 0;
+}
+
+/* Badges: subtle weight */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Progress */
+.progress-bar {
+  height: 7px;
 }

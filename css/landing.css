@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════ */
 
 body {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   background: var(--cream);
   color: var(--text);
   overflow-x: hidden;
@@ -228,7 +228,7 @@ body {
 }
 
 .hero-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: clamp(2rem, 3.5vw, 3.2rem);
   font-weight: 900;
   line-height: 1.1;
@@ -287,7 +287,7 @@ body {
 }
 
 .hero-features-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: clamp(1rem, 1.5vw, 1.25rem);
   line-height: 1.15;
   color: var(--white);
@@ -546,9 +546,208 @@ body {
 
 .gis-filter-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.gis-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition, 0.15s ease);
+  white-space: nowrap;
+}
+.gis-filter-btn:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+.gis-filter-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+/* Layer-visibility toggles (Vegetation/Water/Roads/etc.) live in the same
+   filter row but read as "on/off" rather than an exclusive category choice,
+   so they get a softer gold active state instead of the solid navy fill. */
+.gis-layer-toggle {
+  border-style: dashed;
+}
+.gis-layer-toggle.active {
+  background: rgba(201, 162, 39, 0.14);
+  color: var(--navy);
+  border-color: var(--gold, #c9a227);
+  border-style: solid;
+}
+/* Filter dropdowns (Building Type / Classification / Map Layers) share the
+   .gis-elements-* button-plus-panel design. A choice dropdown with a filter
+   applied gets the soft gold "active" treatment so it reads at a glance. */
+.gis-choice-dropdown.gis-choice-active .gis-elements-btn {
+  background: rgba(201, 162, 39, 0.14);
+  border-color: var(--gold, #c9a227);
+  color: var(--navy);
+}
+.gis-elements-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+.gis-elements-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gis-elements-btn .gis-icon {
+  width: 14px;
+  height: 14px;
+}
+.gis-elements-btn:hover,
+.gis-elements-dropdown.open .gis-elements-btn {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+.gis-elements-caret {
+  font-size: 9px;
+  color: var(--gold, #c9a227);
+  transition: transform 0.15s ease;
+}
+.gis-elements-dropdown.open .gis-elements-caret {
+  transform: rotate(180deg);
+}
+.gis-elements-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 190px;
+  padding: 8px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+/* display:flex above beats the UA's [hidden] rule — restate it so the panel
+   actually closes when the dropdown is toggled shut. */
+.gis-elements-panel[hidden] {
+  display: none;
+}
+/* Every dropdown panel (Building Type, Classification, Map Layers) shares
+   one row design: borderless rows, navy hover, and a soft-gold active state
+   with a gold check — overriding the pill/dashed looks the row buttons
+   would otherwise inherit from .gis-filter-btn/.gis-layer-toggle. */
+.gis-elements-panel .gis-filter-btn {
+  width: 100%;
+  justify-content: flex-start;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+}
+.gis-elements-panel .gis-filter-btn:hover {
+  background: rgba(27, 42, 74, 0.06);
+  color: var(--navy);
+}
+.gis-elements-panel .gis-filter-btn.active {
+  background: rgba(201, 162, 39, 0.14);
+  color: var(--navy);
+}
+.gis-elements-panel .gis-filter-btn.active::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 10px;
+  color: var(--gold, #c9a227);
+  font-weight: 700;
+}
+/* Household search — mounted into the same filter row as the layer toggles */
+.gis-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+  flex: 1 1 220px;
+  padding: 7px 12px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+}
+.gis-search-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.gis-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  background: transparent;
+  min-width: 0;
+}
+.gis-search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.gis-search-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+.gis-search-result:hover {
+  background: var(--surface);
+}
+.gis-search-empty {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .gis-svg-full {
@@ -569,12 +768,65 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: opacity 0.15s ease;
+}
+/* Applied to [data-legend-layer] entries whose layer is currently toggled
+   off, so the legend always matches what's actually visible on the map. */
+.gis-legend-item.gis-legend-dim {
+  opacity: 0.35;
+}
+/* Engine-generated legend overlay — sits in the map's bottom-left corner on
+   a translucent panel, one column per filter dropdown (Map Layers /
+   Building Type / Classification), in the same order as the filters. */
+.gis-legend-overlay {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 5;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(27, 42, 74, 0.08);
+  border-radius: var(--radius);
+  font-size: 11px;
+  pointer-events: none;
+}
+.gis-legend-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.gis-legend-col-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 1px;
+}
+/* Too little room on phones — the overlay would cover most of the map. */
+@media (max-width: 640px) {
+  .gis-legend-overlay {
+    display: none;
+  }
 }
 
 .gis-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.gis-dot-government {
+  background: #92400e;
+}
+
+.gis-dot-business {
+  background: #0891b2;
 }
 
 .gis-dot-households {
@@ -585,14 +837,38 @@ body {
   border: 2px solid #f59e0b;
 }
 
-.gis-dot-flood {
+.gis-dot-pwd {
+  background: #8b5cf6;
+}
+
+.gis-dot-solo-parent {
+  background: #db2777;
+}
+
+.gis-dot-indigent {
+  background: #0d9488;
+}
+
+.gis-dot-hazard {
   background: rgba(239, 68, 68, 0.4);
   border: 1px dashed #ef4444;
 }
 
-.gis-dot-landslide {
-  background: rgba(245, 158, 11, 0.4);
-  border: 1px dashed #f59e0b;
+.gis-dot-construction {
+  background: rgba(234, 140, 8, 0.4);
+  border: 1px dashed #ea8c08;
+}
+.gis-dot-vegetation {
+  background: #16a34a;
+}
+.gis-dot-water {
+  background: #3b82f6;
+}
+.gis-dot-roads {
+  background: #64748b;
+}
+.gis-dot-accidents {
+  background: #b91c1c;
 }
 
 .alert-spacing-top {
@@ -667,7 +943,7 @@ body {
 }
 
 .acc-success-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.3rem;
   color: var(--navy);
   margin-bottom: 8px;
@@ -714,7 +990,7 @@ body {
   padding: 14px 22px;
   border-radius: 10px;
   box-shadow: var(--shadow-lg);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 13px;
   font-weight: 500;
   z-index: 9999;
@@ -832,7 +1108,7 @@ body {
 }
 
 .logo-info-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--white);
@@ -870,7 +1146,7 @@ body {
 }
 
 .stat-num {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 2rem;
   font-weight: 900;
   color: var(--yellow);
@@ -909,7 +1185,7 @@ section {
 }
 
 .section-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 900;
   line-height: 1.15;
@@ -986,7 +1262,7 @@ section {
 }
 
 .about-card-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--navy);
@@ -1018,7 +1294,7 @@ section {
 }
 
 .about-stat-num {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 2.5rem;
   font-weight: 900;
   color: var(--blue);
@@ -1126,7 +1402,7 @@ section {
 }
 
 .feature-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--white);
@@ -1260,7 +1536,7 @@ section {
 }
 
 .service-title {
-  font-family: "DM Serif Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1rem;
   color: var(--navy);
   margin-bottom: 4px;
@@ -1335,13 +1611,8 @@ section {
 .gis-modal-map {
   width: 100%;
   height: 360px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ─── GIS SECTION (landing page) ───────────────── */
@@ -1362,10 +1633,978 @@ section {
   height: 460px;
 }
 
-.gis-leaflet-map {
+/* ─── CUSTOM GEOJSON GIS MAP ──────────── */
+.gis-custom-map {
+  position: relative;
   width: 100%;
   height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+.gis-map-toolbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.gis-toolbar-row {
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+.gis-toolbar-row-wrap {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+.gis-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+.gis-zoom-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.gis-zoom-btn .gis-icon {
+  width: 16px;
+  height: 16px;
+}
+.gis-zoom-btn:hover {
+  background: var(--surface);
+}
+.gis-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--navy);
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+.gis-toolbar-btn.active {
+  background: var(--gold, #c9a227);
+  color: #fff;
+  border-color: var(--gold, #c9a227);
+}
+/* Edit Mode button + its animated one-column draw/ping tools dropdown */
+.gis-edit-row {
+  align-items: flex-start;
+}
+.gis-deselect-btn {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-style: dashed;
+}
+.gis-deselect-btn:hover {
+  color: var(--danger, #7f1d1d);
+  border-color: var(--danger, #7f1d1d);
+}
+/* `.gis-toolbar-btn`'s `display: inline-flex` would otherwise beat the UA
+   [hidden] rule, since author-origin styles win regardless of specificity. */
+.gis-deselect-btn[hidden] {
+  display: none;
+}
+.gis-edit-menu {
+  position: relative;
+  pointer-events: auto;
+}
+.gis-edit-toggle-btn {
+  position: relative;
+  z-index: 2;
+}
+.gis-draw-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 168px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  transform-origin: top right;
+  transform: scaleY(0.85) translateY(-6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0.16s;
+}
+.gis-draw-dropdown.open {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+.gis-draw-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 3px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.gis-draw-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--navy);
+  font-size: 12.5px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+}
+.gis-draw-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+.gis-draw-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  border-radius: 6px;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+/* `display: flex` above would otherwise beat the UA [hidden] rule, since
+   author-origin styles win regardless of matching specificity. */
+.gis-draw-action-btn[hidden] {
+  display: none;
+}
+.gis-draw-finish {
+  background: var(--success, #166534);
+  color: #fff;
+}
+.gis-draw-cancel {
+  background: var(--danger, #7f1d1d);
+  color: #fff;
+}
+.gis-draw-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 4px 10px;
+  align-self: flex-end;
+}
+.gis-svg-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.gis-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gis-drawing .gis-svg {
+  cursor: crosshair;
+}
+.gis-svg:active {
+  cursor: grabbing;
+}
+.gis-boundary {
+  fill: rgba(37, 99, 235, 0.08);
+  stroke: var(--navy, #0d1b3e);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+/* Any feature wired up via attachFeatureInteraction (buildings, roads,
+   vegetation, construction, hazards, accidents) gets a pointer cursor —
+   hover shows read-only info outside edit mode, click opens edit/delete
+   actions inside it. */
+.gis-interactive-feature {
+  cursor: pointer;
+}
+.gis-vegetation {
+  fill: rgba(34, 197, 94, 0.2);
+  stroke: rgba(22, 163, 74, 0.4);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: fill-opacity 0.15s ease;
+}
+/* Surrounding-context vegetation past the barangay border. */
+.gis-vegetation-outside {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.gis-vegetation:hover {
+  fill-opacity: 0.6;
+}
+.gis-vegetation-farmland {
+  fill: rgba(234, 179, 8, 0.22);
+  stroke: rgba(161, 98, 7, 0.4);
+}
+.gis-vegetation-farmyard {
+  fill: rgba(217, 119, 6, 0.18);
+  stroke: rgba(161, 98, 7, 0.4);
+}
+.gis-vegetation-orchard {
+  fill: rgba(132, 204, 22, 0.28);
+  stroke: rgba(77, 124, 15, 0.4);
+}
+.gis-vegetation-meadow {
+  fill: rgba(163, 230, 53, 0.22);
+  stroke: rgba(77, 124, 15, 0.35);
+}
+.gis-vegetation-wood,
+.gis-vegetation-forest {
+  fill: rgba(21, 128, 61, 0.28);
+  stroke: rgba(20, 83, 45, 0.45);
+}
+.gis-water-poly {
+  fill: rgba(59, 130, 246, 0.35);
+  stroke: #3b82f6;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.gis-water-line {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.gis-road {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.gis-road-service {
+  stroke: #cbd5e1;
+  stroke-width: 1.2;
+}
+.gis-road-local {
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+.gis-road-major {
+  stroke: #64748b;
+  stroke-width: 2.8;
+}
+.gis-building {
+  fill: rgba(13, 27, 62, 0.12);
+  stroke: rgba(13, 27, 62, 0.35);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.gis-building:hover {
+  fill: rgba(37, 99, 235, 0.35);
+}
+/* Fellow members of a hovered building's tag group light up in their own
+   tag color -- each category's :hover rule doubles as the group highlight --
+   with a thicker outline so the group still reads as one unit. */
+.gis-building.gis-building-group-hover {
+  stroke-width: 2;
+}
+.gis-building-tagged {
+  fill: rgba(201, 162, 39, 0.35);
+  stroke: var(--gold, #c9a227);
+}
+.gis-building-tagged:hover,
+.gis-building-tagged.gis-building-group-hover {
+  fill: rgba(201, 162, 39, 0.55);
+}
+/* Surrounding-context buildings past the barangay border — faded grey,
+   not interactive. */
+.gis-building-outside {
+  fill: rgba(148, 163, 184, 0.14);
+  stroke: rgba(100, 116, 139, 0.3);
+  cursor: default;
+  pointer-events: none;
+}
+.gis-building-cat-government {
+  fill: rgba(146, 64, 14, 0.35);
+  stroke: #92400e;
+}
+.gis-building-cat-government:hover,
+.gis-building-cat-government.gis-building-group-hover {
+  fill: rgba(146, 64, 14, 0.55);
+}
+.gis-building-cat-business {
+  fill: rgba(8, 145, 178, 0.35);
+  stroke: #0891b2;
+}
+.gis-building-cat-business:hover,
+.gis-building-cat-business.gis-building-group-hover {
+  fill: rgba(8, 145, 178, 0.55);
+}
+.gis-building-cat-households {
+  fill: rgba(29, 78, 216, 0.35);
+  stroke: #1d4ed8;
+}
+.gis-building-cat-households:hover,
+.gis-building-cat-households.gis-building-group-hover {
+  fill: rgba(29, 78, 216, 0.55);
+}
+.gis-building-cat-seniors {
+  fill: rgba(245, 158, 11, 0.35);
+  stroke: #f59e0b;
+}
+.gis-building-cat-seniors:hover,
+.gis-building-cat-seniors.gis-building-group-hover {
+  fill: rgba(245, 158, 11, 0.55);
+}
+.gis-building-cat-pwd {
+  fill: rgba(139, 92, 246, 0.35);
+  stroke: #8b5cf6;
+}
+.gis-building-cat-pwd:hover,
+.gis-building-cat-pwd.gis-building-group-hover {
+  fill: rgba(139, 92, 246, 0.55);
+}
+.gis-building-cat-solo-parent {
+  fill: rgba(219, 39, 119, 0.35);
+  stroke: #db2777;
+}
+.gis-building-cat-solo-parent:hover,
+.gis-building-cat-solo-parent.gis-building-group-hover {
+  fill: rgba(219, 39, 119, 0.55);
+}
+.gis-building-cat-indigent {
+  fill: rgba(13, 148, 136, 0.35);
+  stroke: #0d9488;
+}
+.gis-building-cat-indigent:hover,
+.gis-building-cat-indigent.gis-building-group-hover {
+  fill: rgba(13, 148, 136, 0.55);
+}
+.gis-construction {
+  fill: rgba(234, 179, 8, 0.15);
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.gis-construction:hover {
+  fill: rgba(234, 179, 8, 0.3);
+}
+.gis-hazard-ping {
+  cursor: pointer;
+  transition: fill-opacity 0.15s ease;
+}
+/* Rendered as a raw <g> of icon paths (not wrapped by gisIcon()'s <svg>), so
+   the stroke/fill presentation attributes those paths rely on are supplied
+   here instead via inheritance from this ancestor. */
+.gis-accident-icon {
+  cursor: pointer;
+  user-select: none;
+  fill: none;
+  stroke: currentColor;
+  color: #b91c1c;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gis-accident-icon-bg {
+  fill: #fff;
+  fill-opacity: 0.85;
+  stroke: none;
+}
+.gis-hazard-severity-low {
+  fill-opacity: 0.18;
+}
+.gis-hazard-severity-medium {
+  fill-opacity: 0.3;
+}
+.gis-hazard-severity-high {
+  fill-opacity: 0.45;
+}
+.gis-draw-preview-shape {
+  fill: rgba(37, 99, 235, 0.15);
+  stroke: #2563eb;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.gis-draw-preview-line {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.gis-draw-preview-ping {
+  fill: rgba(37, 99, 235, 0.12);
+  stroke: #2563eb;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+/* The vegetation cut tool traces an area to remove, not add — a red preview
+   makes that "subtract" intent clear at a glance. */
+.gis-draw-preview-cut {
+  fill: rgba(220, 38, 38, 0.18);
+  stroke: #dc2626;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.gis-draw-preview-vertex {
+  fill: #6b7280;
+  stroke: #fff;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.gis-draw-preview-measure {
+  fill: none;
+  stroke: #0d9488;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.gis-draw-measure-label {
+  fill: #0d9488;
+  font-weight: 700;
+  font-family: "Space Mono", monospace;
+  pointer-events: none;
+}
+.gis-load-error {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.gis-popup,
+.gis-pin-form {
+  position: absolute;
+  z-index: 10;
+  background: var(--white);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 14px;
+  min-width: 180px;
+  max-width: 240px;
+  font-size: 12.5px;
+}
+/* Read-only hover popup (shown outside edit mode) — info only, no action
+   buttons, and it must not intercept the mouse itself or the underlying
+   feature's mouseleave would never fire, leaving it stuck open. */
+.gis-popup-readonly {
+  pointer-events: none;
+}
+.gis-popup-title {
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+.gis-popup-cat {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.gis-popup-notes {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.gis-popup-delete {
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  background: none;
+  border-radius: 6px;
+  padding: 5px 0;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.gis-popup-delete:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+.gis-popup-action {
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid var(--gold, #c9a227);
+  color: var(--gold, #c9a227);
+  background: none;
+  border-radius: 6px;
+  padding: 5px 0;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.gis-popup-action:hover {
+  background: rgba(201, 162, 39, 0.08);
+}
+
+/* ── Community report pins & cards ── */
+.gis-report-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.gis-report-signin-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.gis-report-pin {
+  cursor: pointer;
+}
+.gis-report-pin path {
+  fill: #15803d;
+  stroke: #ffffff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gis-report-pin circle {
+  fill: #ffffff;
+  stroke: none;
+}
+.gis-report-pin:hover path {
+  fill: #166534;
+}
+.gis-dot-reports {
+  background: #15803d;
+}
+/* Interactive report cards must accept the cursor — unlike the read-only
+   hover popup, which is pointer-events:none so it can follow the mouse. */
+.gis-popup-hoverable {
+  pointer-events: auto;
+}
+.gis-popup-expanded {
+  max-width: 320px;
+  padding-top: 16px;
+}
+.gis-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.gis-popup-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--navy);
+}
+.gis-popup-close .gis-icon {
+  width: 14px;
+  height: 14px;
+}
+.gis-report-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-right: 20px;
+}
+.gis-report-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--yellow, #f5c542);
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gis-report-reporter-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 12.5px;
+}
+.gis-report-reporter-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+/* ── Draw dock — bottom-right of the map while Edit Mode is on. Holds the
+   "Add to Map" element panel plus a companion types panel that appears to
+   its LEFT when an element is picked. Both share the legend overlay's
+   translucent styling and fold up into view. Only editable (MIS) embeds
+   render it, but the styles live here too for completeness. ── */
+.gis-draw-dock {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 8;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-height: 80%;
+}
+.gis-draw-dock[hidden] {
+  display: none;
+}
+.gis-draw-panel {
+  width: 210px;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(27, 42, 74, 0.08);
+  border-radius: var(--radius);
+  transform-origin: bottom center;
+  animation: gisFoldUp 0.18s ease;
+}
+.gis-draw-panel[hidden] {
+  display: none;
+}
+/* Each dock column stacks its boxes bottom-up (hint above Add to Map;
+   Finish/Cancel above the types panel). */
+.gis-draw-dock-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 8px;
+  max-height: 100%;
+  min-height: 0;
+}
+.gis-draw-types-panel {
+  width: 185px;
+}
+/* Finish/Cancel — its own box above the types panel */
+.gis-draw-actions-panel {
+  width: 185px;
+  flex-direction: row;
+  gap: 6px;
+}
+@keyframes gisFoldUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scaleY(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* The types panel slides in from the side (out of the Add to Map panel)
+   instead of folding up like the other boxes. */
+.gis-draw-types-panel {
+  animation: gisSlideIn 0.18s ease;
+}
+@keyframes gisSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.gis-draw-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.gis-draw-panel-title .gis-icon {
+  width: 13px;
+  height: 13px;
+}
+.gis-draw-panel .gis-draw-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.gis-draw-panel .gis-draw-btn:hover {
+  background: rgba(27, 42, 74, 0.06);
+  color: var(--navy);
+}
+.gis-draw-panel .gis-draw-btn .gis-elements-caret {
+  margin-left: auto;
+}
+/* Element row whose types panel is open, or whose tool is armed */
+.gis-draw-btn.open,
+.gis-draw-btn.armed {
+  background: rgba(27, 42, 74, 0.06);
+  color: var(--navy);
+}
+.gis-draw-types {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gis-draw-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 9px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+.gis-draw-type-btn .gis-icon {
+  width: 13px;
+  height: 13px;
+}
+.gis-draw-type-btn:hover {
+  background: rgba(27, 42, 74, 0.06);
+  color: var(--navy);
+}
+.gis-draw-btn.active,
+.gis-draw-type-btn.active {
+  background: rgba(201, 162, 39, 0.16);
+  color: var(--navy);
+}
+.gis-draw-panel-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+/* Hint — its own translucent box above the Add to Map panel */
+.gis-draw-panel.gis-draw-hint {
+  width: 210px;
+  align-self: stretch;
+  font-size: 11.5px;
+  color: var(--navy);
+  white-space: normal;
+}
+/* ── In-map delete confirmation (replaces the browser's confirm dialog) ── */
+.gis-confirm-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 6px;
+}
+.gis-confirm-head .gis-pin-form-title {
+  margin-bottom: 0;
+}
+.gis-confirm-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gis-confirm-icon .gis-icon {
+  width: 15px;
+  height: 15px;
+}
+.gis-confirm-message {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+.gis-confirm-delete {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+}
+.gis-confirm-delete:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+/* The chosen type shown as a fixed line in creation pin forms (the selector
+   would be redundant — the type was picked in the draw panel). */
+.gis-pin-form-static {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  margin-bottom: 8px;
+  border-radius: 7px;
+  background: rgba(201, 162, 39, 0.12);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 600;
+}
+.gis-pin-form-static .gis-icon {
+  width: 14px;
+  height: 14px;
+}
+.gis-pin-form-static .gis-swatch-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Report placement mode */
+.gis-reporting .gis-svg {
+  cursor: crosshair;
+}
+.gis-report-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 9;
+  background: var(--navy);
+  color: #fff;
+  font-size: 11.5px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  box-shadow: var(--shadow-lg);
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.gis-pin-form-title {
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.gis-pin-form-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+/* display:block above beats the UA's [hidden] rule — restate it so rows the
+   form toggles off (e.g. Household Classification) actually disappear. */
+.gis-pin-form-label[hidden] {
+  display: none;
+}
+.gis-pin-form-input {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--white);
+  color: var(--text-primary);
+}
+.gis-pin-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+.gis-swatch-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.gis-swatch-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.gis-swatch-option.active {
+  border-color: var(--navy);
+  background: var(--surface);
+  color: var(--navy);
+  font-weight: 700;
+}
+.gis-swatch-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 .cert-type-grid {
@@ -1486,7 +2725,7 @@ section {
   position: absolute;
   right: -8px;
   bottom: -16px;
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 5rem;
   font-weight: 900;
   color: rgba(255, 255, 255, 0.1);
@@ -1511,7 +2750,7 @@ section {
 }
 
 .sdg-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.4rem;
   font-weight: 900;
   margin-bottom: 10px;
@@ -1605,7 +2844,7 @@ section {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 2rem;
   font-weight: 900;
   color: var(--yellow);
@@ -1613,7 +2852,7 @@ section {
 }
 
 .team-name {
-  font-family: "Playfair Display", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--navy);
@@ -1831,4 +3070,71 @@ footer {
   .services-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   MODERN REFRESH — landing page polish
+═══════════════════════════════════════════════════ */
+
+/* Display type: tighter, weightier */
+.hero-title {
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.section-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-features-title {
+  font-weight: 700;
+}
+.hero-subtitle {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Feature cards under the hero: rounder, icon-tinted */
+.feat-item {
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow:
+    0 20px 44px -16px rgba(9, 18, 40, 0.35),
+    0 2px 8px rgba(9, 18, 40, 0.1);
+}
+.feat-icon {
+  border-radius: 16px;
+  font-size: 1.5rem;
+}
+.feat-item:hover {
+  transform: translateY(-5px) scale(1.01);
+}
+
+/* GIS panel + legend chips */
+.gis-section-panel {
+  border-radius: var(--radius-lg);
+}
+.gis-modal-map,
+.gis-section-map {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Team cards */
+.team-card {
+  border-radius: 20px;
+  border-color: var(--border);
+}
+.team-avatar {
+  font-weight: 800;
+  border-width: 3px;
+}
+
+/* Footer: hairline accent instead of heavy bar */
+footer {
+  border-top: 1px solid rgba(245, 197, 24, 0.3);
+}
+
+/* Modal titles on the landing page pick up navy from shared refresh */
+.modal-title {
+  font-weight: 700;
 }

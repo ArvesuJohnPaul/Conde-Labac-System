@@ -8,21 +8,21 @@ function renderPage() {
 function renderDashboard() {
   setContent(`
     <div class="page-header">
-      <h2 class="page-title">Good morning, ${currentRole === "Officer" ? "Officer Reyes" : "Administrator"}! 👋</h2>
+      <h2 class="page-title">Good morning, ${currentRole === "Officer" ? "Officer Reyes" : "Administrator"}! <i data-icon=wave></i></h2>
       <p class="page-desc">Here's what's happening in Barangay Conde Labac today</p>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-label">Registered Households</div><div class="kpi-value">1,248</div><div class="kpi-trend"><span class="up">↑ +23</span> this month</div></div>
-      <div class="kpi-card success"><div class="kpi-label">Certificates Issued</div><div class="kpi-value">87</div><div class="kpi-trend"><span class="up">↑ +12%</span> vs last month</div></div>
-      <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value">3</div><div class="kpi-trend"><span class="dn">↑ +2</span> this week</div></div>
+      <div class="kpi-card"><div class="kpi-label">Registered Residents</div><div class="kpi-value">1,248</div><div class="kpi-trend"><span class="up"><i data-icon=trend-up></i> +23</span> this month</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Certificates Issued</div><div class="kpi-value">87</div><div class="kpi-trend"><span class="up"><i data-icon=trend-up></i> +12%</span> vs last month</div></div>
+      <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value">3</div><div class="kpi-trend"><span class="dn"><i data-icon=trend-up></i> +2</span> this week</div></div>
       <div class="kpi-card info"><div class="kpi-label">Pending Requests</div><div class="kpi-value">19</div><div class="kpi-trend"><span class="dn">−5</span> resolved today</div></div>
-      <div class="kpi-card"><div class="kpi-label">Feedback Score</div><div class="kpi-value">4.2</div><div class="kpi-trend"><span class="up">↑ 0.3</span> vs last quarter</div></div>
+      <div class="kpi-card"><div class="kpi-label">Feedback Score</div><div class="kpi-value">4.2</div><div class="kpi-trend"><span class="up"><i data-icon=trend-up></i> 0.3</span> vs last quarter</div></div>
       <div class="kpi-card"><div class="kpi-label">Resident Population</div><div class="kpi-value">5,612</div><div class="kpi-trend">Last census: Jan 2025</div></div>
     </div>
 
-    <div class="alert alert-danger"><span class="alert-icon">⚠</span><div><strong>Critical Incident:</strong> Flooding reported at Purok 3 — Sitio Malinis. 14 families affected. Response team dispatched.</div></div>
-    <div class="alert alert-warning"><span class="alert-icon">⚑</span><div><strong>12 pending account claims</strong> require document verification before approval.</div></div>
+    <div class="alert alert-danger"><span class="alert-icon"><i data-icon=triangle-alert></i></span><div><strong>Critical Incident:</strong> Flooding reported at Purok 3 — Sitio Malinis. 14 families affected. Response team dispatched.</div></div>
+    <div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span><div><strong>12 pending account claims</strong> require document verification before approval.</div></div>
 
     <div class="grid-2">
       <div class="card">
@@ -55,7 +55,7 @@ function renderDashboard() {
             ],
             [
               "gray",
-              "Feedback received — 4★ rating, Barangay Services",
+              "Feedback received — 4<i data-icon=star class=ic-fill></i> rating, Barangay Services",
               "Yesterday, 3:12 PM · Anonymous",
             ],
           ]
@@ -76,12 +76,12 @@ function renderDashboard() {
         <div class="card-header"><div class="card-title">Services Quick Access</div></div>
         <div class="quick-access-grid">
           ${[
-            ["🏘️", "Residency", "residency"],
-            ["📄", "Certificates", "certificates"],
-            ["🚨", "Blotter", "incidents"],
-            ["💬", "Feedback", "feedback"],
-            ["🗺️", "GIS Map", "gis"],
-            ["🔑", "Account Claiming", "accounts"],
+            ["<i data-icon=houses></i>", "Residency", "residency"],
+            ["<i data-icon=file-text></i>", "Certificates", "certificates"],
+            ["<i data-icon=siren></i>", "Blotter", "incidents"],
+            ["<i data-icon=message-square></i>", "Feedback", "feedback"],
+            ["<i data-icon=map></i>", "GIS Map", "gis"],
+            ["<i data-icon=key></i>", "Account Claiming", "accounts"],
           ]
             .map(
               ([icon, label, mod]) => `

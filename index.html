@@ -7,15 +7,12 @@
     <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
     />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/landing.css?v=20260706" />
+    <link rel="stylesheet" href="css/landing.css?v=20260708" />
+    <script src="js/icons.js"></script>
   </head>
   <body>
     <!-- --- SHARED NAVBAR --- -->
@@ -29,8 +26,10 @@
             this.nextElementSibling.style.display = 'flex';
           "
           alt="Conde Labac Seal"
-        />
-        <div class="nav-logo-fallback is-hidden">⚜</div>
+        />/
+        <div class="nav-logo-fallback is-hidden">
+          <i data-icon="landmark"></i>
+        </div>
         <span class="nav-brand">C.A.R.E.S.<br />Barangay Conde Labac</span>
       </a>
 
@@ -153,7 +152,7 @@
               return false;
             "
           >
-            <div class="feat-icon">🏘️</div>
+            <div class="feat-icon"><i data-icon="houses"></i></div>
             <div class="feat-title">Barangay<br />Residency</div>
           </a>
           <a
@@ -164,7 +163,7 @@
               return false;
             "
           >
-            <div class="feat-icon">📄</div>
+            <div class="feat-icon"><i data-icon="file-text"></i></div>
             <div class="feat-title">Certificate<br />Issuance</div>
           </a>
           <a
@@ -175,7 +174,7 @@
               return false;
             "
           >
-            <div class="feat-icon">🚨</div>
+            <div class="feat-icon"><i data-icon="siren"></i></div>
             <div class="feat-title">Blotter<br />Reporting</div>
           </a>
           <a
@@ -186,7 +185,7 @@
               return false;
             "
           >
-            <div class="feat-icon">💬</div>
+            <div class="feat-icon"><i data-icon="message-square"></i></div>
             <div class="feat-title">Resident<br />Feedback</div>
           </a>
         </div>
@@ -207,73 +206,37 @@
         </div>
 
         <div class="gis-section-panel reveal">
-          <div class="gis-filter-row">
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn active"
-              onclick="setGisLayer(this, 'all')"
-            >
-              All Layers
+          <div class="gis-report-bar">
+            <button class="btn btn-sm btn-gold" id="gis-report-btn" hidden>
+              <svg
+                class="gis-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 21s7-6.5 7-11.6A7 7 0 0 0 5 9.4C5 14.5 12 21 12 21Z"
+                />
+                <circle cx="12" cy="9.4" r="2.4" />
+              </svg>
+              Report a Concern
             </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'households')"
-            >
-              🏘️ Households
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'hazard')"
-            >
-              🌪️ Hazard Zones
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'seniors')"
-            >
-              👴 Senior Citizens
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, 'pwd')"
-            >
-              ♿ PWD
-            </button>
-            <button
-              class="btn btn-sm btn-outline gis-filter-btn"
-              onclick="setGisLayer(this, '4ps')"
-            >
-              👨‍👩‍👧‍👦 4Ps Beneficiaries
-            </button>
+            <span class="gis-report-signin-hint" id="gis-report-signin-hint">
+              Sign in as a resident to report a concern on the map.
+            </span>
           </div>
+          <div class="gis-filter-row"></div>
 
-          <div class="gis-modal-map gis-section-map" id="gis-map-container">
-            <div class="gis-leaflet-map" id="gis-map-section"></div>
-          </div>
-
-          <div class="gis-legend">
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-households"></div>
-              Household
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-seniors"></div>
-              Senior Citizen
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-flood"></div>
-              Flood Zone
-            </div>
-            <div class="gis-legend-item">
-              <div class="gis-dot gis-dot-landslide"></div>
-              Landslide Risk
-            </div>
-            <div class="gis-legend-item">🏛️ Barangay Hall</div>
-            <div class="gis-legend-item">+ Health Center</div>
-          </div>
+          <div class="gis-modal-map gis-section-map" id="gis-map-section"></div>
 
           <div class="alert alert-info alert-spacing-top">
-            <span class="alert-icon">ℹ</span> This map is for reference only.
-            For precise coordinates, contact the barangay GIS officer.
+            <span class="alert-icon"><i data-icon="info"></i></span> This map is
+            for reference only. For precise coordinates, contact the barangay
+            GIS officer.
           </div>
         </div>
       </div>
@@ -332,19 +295,19 @@
       <div class="modal-box">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">🔒</div>
+            <div class="modal-title-icon"><i data-icon="lock"></i></div>
             Access Denied
           </div>
           <button
             class="modal-close"
             onclick="closeServiceModal('access-denied')"
           >
-            ×
+            <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="alert alert-warning">
-            <span class="alert-icon">⚠</span>
+            <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
             <strong>Permission Restricted</strong>
           </div>
           <p class="modal-muted-text">
@@ -370,7 +333,7 @@
               window.location.hash = '#features';
             "
           >
-            View Services →
+            View Services <i data-icon="arrow-right"></i>
           </button>
         </div>
       </div>
@@ -385,11 +348,11 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">🏘️</div>
+            <div class="modal-title-icon"><i data-icon="houses"></i></div>
             Barangay Residency – Resident Search
           </div>
           <button class="modal-close" onclick="closeServiceModal('residency')">
-            ✕
+            <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -434,8 +397,8 @@
                 <option value="">All Categories</option>
                 <option>Senior Citizen</option>
                 <option>PWD</option>
-                <option>4Ps Beneficiary</option>
                 <option>Solo Parent</option>
+                <option>Indigent Family</option>
               </select>
             </div>
             <div class="form-group form-group-flat">
@@ -464,7 +427,7 @@
             Close
           </button>
           <button class="btn btn-primary" onclick="exportResidents()">
-            📄 Export Results
+            <i data-icon="file-text"></i> Export Results
           </button>
         </div>
       </div>
@@ -479,14 +442,14 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">📄</div>
+            <div class="modal-title-icon"><i data-icon="file-text"></i></div>
             Certificate Issuance – Request Form
           </div>
           <button
             class="modal-close"
             onclick="closeServiceModal('certificates')"
           >
-            ✕
+            <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -501,42 +464,44 @@
               class="cert-type-card selected"
               onclick="selectCert(this, 'Barangay Clearance')"
             >
-              <span class="cert-icon">📋</span>
+              <span class="cert-icon"><i data-icon="clipboard"></i></span>
               <div class="cert-name">Barangay Clearance</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Indigency')"
             >
-              <span class="cert-icon">💼</span>
+              <span class="cert-icon"><i data-icon="briefcase"></i></span>
               <div class="cert-name">Certificate of Indigency</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Residency')"
             >
-              <span class="cert-icon">🏠</span>
+              <span class="cert-icon"><i data-icon="home"></i></span>
               <div class="cert-name">Certificate of Residency</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Business Clearance')"
             >
-              <span class="cert-icon">🏢</span>
+              <span class="cert-icon"><i data-icon="building"></i></span>
               <div class="cert-name">Business Clearance</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Good Moral')"
             >
-              <span class="cert-icon">⭐</span>
+              <span class="cert-icon"
+                ><i data-icon="star" class="ic-fill"></i
+              ></span>
               <div class="cert-name">Good Moral Certificate</div>
             </div>
             <div
               class="cert-type-card"
               onclick="selectCert(this, 'Certificate of Solo Parent')"
             >
-              <span class="cert-icon">👨‍👩‍👧</span>
+              <span class="cert-icon"><i data-icon="family"></i></span>
               <div class="cert-name">Solo Parent Certificate</div>
             </div>
           </div>
@@ -599,9 +564,9 @@
             </div>
           </div>
           <div class="alert alert-info">
-            <span class="alert-icon">ℹ</span> You will receive an SMS
-            notification once your certificate is ready for pickup at the
-            barangay hall.
+            <span class="alert-icon"><i data-icon="info"></i></span> You will
+            receive an SMS notification once your certificate is ready for
+            pickup at the barangay hall.
           </div>
         </div>
         <div class="modal-footer">
@@ -612,7 +577,7 @@
             Cancel
           </button>
           <button class="btn btn-gold" onclick="submitCertificate()">
-            ✓ Submit Request
+            <i data-icon="check"></i> Submit Request
           </button>
         </div>
       </div>
@@ -627,18 +592,18 @@
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">🚨</div>
+            <div class="modal-title-icon"><i data-icon="siren"></i></div>
             Blotter Report – File an Incident
           </div>
           <button class="modal-close" onclick="closeServiceModal('incidents')">
-            ✕
+            <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="alert alert-warning">
-            <span class="alert-icon">⚠</span> For life-threatening emergencies,
-            call <strong>911</strong> or the local police at
-            <strong>(043) 702-4011</strong> immediately.
+            <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
+            For life-threatening emergencies, call <strong>911</strong> or the
+            local police at <strong>(043) 702-4011</strong> immediately.
           </div>
 
           <div class="form-row">
@@ -735,9 +700,9 @@
           </div>
 
           <div class="alert alert-info">
-            <span class="alert-icon">ℹ</span> Your blotter report will be
-            assigned a case number. You will be contacted by a barangay official
-            within 24 hours.
+            <span class="alert-icon"><i data-icon="info"></i></span> Your
+            blotter report will be assigned a case number. You will be contacted
+            by a barangay official within 24 hours.
           </div>
         </div>
         <div class="modal-footer">
@@ -751,7 +716,7 @@
             class="btn btn-danger btn-danger-strong"
             onclick="submitBlotter()"
           >
-            ✓ Submit Blotter Report
+            <i data-icon="check"></i> Submit Blotter Report
           </button>
         </div>
       </div>
@@ -766,11 +731,13 @@
       <div class="modal-box">
         <div class="modal-header">
           <div class="modal-title">
-            <div class="modal-title-icon">💬</div>
+            <div class="modal-title-icon">
+              <i data-icon="message-square"></i>
+            </div>
             Resident Feedback
           </div>
           <button class="modal-close" onclick="closeServiceModal('feedback')">
-            ✕
+            <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -796,11 +763,21 @@
           <div class="form-group">
             <label class="form-label">Overall Satisfaction</label>
             <div class="star-rating" id="star-rating">
-              <span class="star active" onclick="setRating(1)">★</span>
-              <span class="star active" onclick="setRating(2)">★</span>
-              <span class="star active" onclick="setRating(3)">★</span>
-              <span class="star active" onclick="setRating(4)">★</span>
-              <span class="star" onclick="setRating(5)">☆</span>
+              <span class="star active" onclick="setRating(1)"
+                ><i data-icon="star" class="ic-fill"></i
+              ></span>
+              <span class="star active" onclick="setRating(2)"
+                ><i data-icon="star" class="ic-fill"></i
+              ></span>
+              <span class="star active" onclick="setRating(3)"
+                ><i data-icon="star" class="ic-fill"></i
+              ></span>
+              <span class="star active" onclick="setRating(4)"
+                ><i data-icon="star" class="ic-fill"></i
+              ></span>
+              <span class="star" onclick="setRating(5)"
+                ><i data-icon="star"></i
+              ></span>
             </div>
             <div id="rating-label" class="rating-label">4 out of 5 – Good</div>
           </div>
@@ -833,8 +810,9 @@
           </div>
 
           <div class="alert alert-success">
-            <span class="alert-icon">✓</span> Feedback is reviewed by the
-            Barangay Chairperson and department heads during monthly meetings.
+            <span class="alert-icon"><i data-icon="check"></i></span> Feedback
+            is reviewed by the Barangay Chairperson and department heads during
+            monthly meetings.
           </div>
         </div>
         <div class="modal-footer">
@@ -845,7 +823,7 @@
             Cancel
           </button>
           <button class="btn btn-gold" onclick="submitFeedback()">
-            ✓ Submit Feedback
+            <i data-icon="check"></i> Submit Feedback
           </button>
         </div>
       </div>
@@ -853,7 +831,7 @@
 
     <!-- -- SUCCESS TOAST -- -->
     <div id="toast" class="toast">
-      <span id="toast-icon">✓</span>
+      <span id="toast-icon"><i data-icon="check"></i></span>
       <span id="toast-msg">Success</span>
     </div>
 
@@ -880,11 +858,53 @@
       </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="js/gis-map.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         // Initialize the GIS section map on the landing page
         setTimeout(() => initGisMap("gis-map-section"), 200);
+
+        // Community Reports — signed-in visitors can drop a concern pin on
+        // the map; everyone else sees a sign-in hint instead of the button.
+        const reportBtn = document.getElementById("gis-report-btn");
+        const reportSigninHint = document.getElementById(
+          "gis-report-signin-hint",
+        );
+        const reportSession = getSession();
+        if (reportBtn && reportSession) {
+          reportBtn.hidden = false;
+          if (reportSigninHint) reportSigninHint.hidden = true;
+          reportBtn.addEventListener("click", async () => {
+            const instance =
+              gisInstances["gis-map-section"] ||
+              (await initGisMap("gis-map-section"));
+            if (
+              !instance ||
+              typeof instance.beginCommunityReport !== "function"
+            )
+              return;
+            // The mock session has no purok, so best-effort match the
+            // reporter's surname against the resident directory for one.
+            const surname = (reportSession.displayName || "")
+              .trim()
+              .split(" ")
+              .pop();
+            const residentMatch =
+              surname && typeof RESIDENTS_DATA !== "undefined"
+                ? RESIDENTS_DATA.find(
+                    (r) =>
+                      r.name.split(",")[0].trim().toLowerCase() ===
+                      surname.toLowerCase(),
+                  )
+                : null;
+            instance.beginCommunityReport({
+              name: reportSession.displayName || "Resident",
+              initials: reportSession.initials || "",
+              role: reportSession.role || "Resident",
+              purok: residentMatch ? residentMatch.purok : null,
+            });
+          });
+        }
 
         const accessBtn = document.getElementById("access-system-btn");
         if (accessBtn) {
@@ -989,47 +1009,10 @@
       let selectedCert = "Barangay Clearance";
       let feedbackRating = 4;
 
-      const gisMaps = {};
-      const gisHouseholds = [
-        { lat: 13.8784, lng: 121.0832, name: "Household #001", zone: "A" },
-        { lat: 13.8794, lng: 121.0842, name: "Household #002", zone: "B" },
-        { lat: 13.8774, lng: 121.0822, name: "Household #003", zone: "C" },
-      ];
-
-      function initGisMap(targetId) {
-        const el = document.getElementById(targetId);
-        if (!el || typeof L === "undefined") return;
-
-        if (!gisMaps[targetId]) {
-          const map = L.map(targetId).setView([13.8784, 121.0832], 15);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "– OpenStreetMap contributors",
-            maxZoom: 19,
-          }).addTo(map);
-
-          gisHouseholds.forEach((h) => {
-            L.marker([h.lat, h.lng])
-              .bindPopup(`<strong>${h.name}</strong><br>Zone ${h.zone}`)
-              .addTo(map);
-          });
-
-          L.marker([13.8784, 121.0832])
-            .bindPopup("Conde Labac, Batangas City - Barangay Center")
-            .openPopup()
-            .addTo(map);
-
-          gisMaps[targetId] = map;
-        }
-
-        setTimeout(() => {
-          gisMaps[targetId]?.invalidateSize();
-        }, 50);
-      }
-
-      function showToast(msg, icon = "?") {
+      function showToast(msg, icon = "<i data-icon=check></i>") {
         const t = document.getElementById("toast");
         document.getElementById("toast-msg").textContent = msg;
-        document.getElementById("toast-icon").textContent = icon;
+        document.getElementById("toast-icon").innerHTML = icon;
         t.style.transform = "translateY(0)";
         t.style.opacity = "1";
         setTimeout(() => {
@@ -1054,7 +1037,6 @@
           name: "Santos, Pedro J.",
           age: 34,
           purok: "Purok 1",
-          household: "HH-0042",
           cat: "",
           status: "Active",
         },
@@ -1062,7 +1044,6 @@
           name: "dela Cruz, Maria L.",
           age: 67,
           purok: "Purok 2",
-          household: "HH-0081",
           cat: "Senior Citizen",
           status: "Active",
         },
@@ -1070,15 +1051,13 @@
           name: "Reyes, Jose B.",
           age: 45,
           purok: "Purok 3",
-          household: "HH-0156",
-          cat: "4Ps Beneficiary",
+          cat: "Indigent Family",
           status: "Active",
         },
         {
           name: "Aquino, Ana M.",
           age: 29,
           purok: "Purok 1",
-          household: "HH-0033",
           cat: "Solo Parent",
           status: "Active",
         },
@@ -1086,7 +1065,6 @@
           name: "Bautista, Carlos F.",
           age: 52,
           purok: "Purok 4",
-          household: "HH-0204",
           cat: "PWD",
           status: "Active",
         },
@@ -1094,7 +1072,6 @@
           name: "Villanueva, Rosa T.",
           age: 78,
           purok: "Purok 5",
-          household: "HH-0312",
           cat: "Senior Citizen",
           status: "Active",
         },
@@ -1102,7 +1079,6 @@
           name: "Garcia, Luis N.",
           age: 38,
           purok: "Purok 2",
-          household: "HH-0098",
           cat: "",
           status: "Active",
         },
@@ -1110,15 +1086,13 @@
           name: "Mendoza, Elena P.",
           age: 44,
           purok: "Purok 3",
-          household: "HH-0177",
-          cat: "4Ps Beneficiary",
+          cat: "Indigent Family",
           status: "Inactive",
         },
         {
           name: "Santos, Juan R.",
           age: 22,
           purok: "Purok 1",
-          household: "HH-0044",
           cat: "",
           status: "Active",
         },
@@ -1126,7 +1100,6 @@
           name: "Cruz, Nora T.",
           age: 61,
           purok: "Purok 5",
-          household: "HH-0298",
           cat: "Senior Citizen",
           status: "Active",
         },
@@ -1168,7 +1141,7 @@
         <div class="resident-avatar-sm">${r.name.split(",")[1]?.trim()[0] || "?"}${r.name.split(",")[0][0]}</div>
         <div class="resident-info">
           <h4>${r.name}</h4>
-          <p>${r.age} yrs – ${r.purok} – ${r.household}${r.cat ? " – " + r.cat : ""}</p>
+          <p>${r.age} yrs – ${r.purok}${r.cat ? " – " + r.cat : ""}</p>
         </div>
         <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
       </div>`,
@@ -1177,7 +1150,7 @@
       }
 
       function exportResidents() {
-        showToast("Exporting results as CSV...", "?");
+        showToast("Exporting results as CSV...", "<i data-icon=download></i>");
       }
 
       function selectCert(el, certName) {
@@ -1198,7 +1171,10 @@
           return;
         }
         closeServiceModal("certificates");
-        showToast(`${selectedCert} request submitted! Ref: CERT-2025-088`, "✓");
+        showToast(
+          `${selectedCert} request submitted! Ref: CERT-2025-088`,
+          "<i data-icon=check></i>",
+        );
       }
 
       function submitBlotter() {
@@ -1208,7 +1184,10 @@
           return;
         }
         closeServiceModal("incidents");
-        showToast("Blotter report submitted! Case No: INC-2025-042", "✓");
+        showToast(
+          "Blotter report submitted! Case No: INC-2025-042",
+          "<i data-icon=check></i>",
+        );
       }
 
       const ratingLabels = [
@@ -1235,23 +1214,10 @@
           return;
         }
         closeServiceModal("feedback");
-        showToast("Feedback submitted! Thank you for your input.", "✓");
-      }
-
-      function setGisLayer(el, layer) {
-        document
-          .querySelectorAll(".gis-filter-btn")
-          .forEach((b) => b.classList.remove("active"));
-        el.classList.add("active");
-        const labels = {
-          all: "All layers shown",
-          households: "Household markers shown",
-          hazard: "Hazard zones highlighted",
-          seniors: "Senior citizen locations shown",
-          pwd: "PWD household markers shown",
-          "4ps": "4Ps beneficiary households shown",
-        };
-        showToast(labels[layer] || "Layer updated", "???");
+        showToast(
+          "Feedback submitted! Thank you for your input.",
+          "<i data-icon=check></i>",
+        );
       }
     </script>
   </body>
