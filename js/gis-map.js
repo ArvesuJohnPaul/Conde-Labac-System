@@ -505,6 +505,8 @@ function gisAllReportFeatures() {
       comment: r.comment,
       reporter: r.reporter,
       createdAt: r.createdAt,
+      resolved: !!r.resolved,
+      resolvedAt: r.resolvedAt || null,
     },
     geometry: { type: "Point", coordinates: r.point },
   }));
@@ -519,6 +521,8 @@ function gisAddCommunityReport(point, data) {
     comment: data.comment || "",
     reporter: data.reporter || null,
     createdAt: Date.now(),
+    resolved: false,
+    resolvedAt: null,
   };
   list.push(record);
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
@@ -526,6 +530,27 @@ function gisAddCommunityReport(point, data) {
 }
 function gisDeleteCommunityReport(id) {
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, gisAllCommunityReports().filter((r) => r.id !== id));
+}
+// Resolving a concern pin hides it from the map and the "Recent Community
+// Reports" feed (which only shows active/unresolved pins) — it stays in the
+// full history (View All modal) and can be reopened there. Global (not
+// module-scoped) so the MIS page's feed/history modal can call it directly.
+function gisSetCommunityReportResolved(id, resolved) {
+  const list = gisAllCommunityReports();
+  const record = list.find((r) => String(r.id) === String(id));
+  if (!record) return;
+  record.resolved = !!resolved;
+  record.resolvedAt = resolved ? Date.now() : null;
+  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
+}
+// Permanently drops every resolved concern from storage (the "Clear Resolved"
+// action in the history modal). Active reports are untouched. Returns the
+// number removed. Irreversible — callers should confirm first.
+function gisClearResolvedCommunityReports() {
+  const list = gisAllCommunityReports();
+  const kept = list.filter((r) => !r.resolved);
+  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, kept);
+  return list.length - kept.length;
 }
 
 // Compact relative timestamp for report cards/feeds ("5m ago", "2d ago"...).
@@ -780,6 +805,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // must never get the button that unlocks it. Opt in per initGisMap() call.
   const editable = !!opts.editable;
 
+  // Anonymous embeds (the public landing-page map) keep tagged households
+  // private: no household names, no vulnerable-classification tag/filter/color,
+  // and no reporter names on community-concern pins — only the generic
+  // "Household" type tag survives. Opt in per initGisMap() call.
+  const anonymous = !!opts.anonymous;
+
   // The extractor includes surroundings a few hundred meters past the border
   // for context. A feature counts as part of the barangay if ANY part of it
   // touches the boundary — only features entirely outside render faded and
@@ -1026,6 +1057,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     </div>
   `;
 
+  // Anonymous embeds drop the household-classification filter and the
+  // by-name household search (both would expose private resident info).
+  const sectorFilterMarkup = anonymous ? "" : sectorFilterHtml;
+  const searchMarkup = anonymous ? "" : searchHtml;
+
   const filterRowEl =
     container.previousElementSibling && container.previousElementSibling.classList.contains("gis-filter-row")
       ? container.previousElementSibling
@@ -1033,14 +1069,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   if (filterRowEl) {
     filterRowEl.insertAdjacentHTML(
       "beforeend",
-      layerToggleButtonsHtml + typeFilterHtml + sectorFilterHtml + searchHtml,
+      layerToggleButtonsHtml + typeFilterHtml + sectorFilterMarkup + searchMarkup,
     );
   } else {
     container
       .querySelector(".gis-map-toolbar")
       .insertAdjacentHTML(
         "afterbegin",
-        `<div class="gis-toolbar-row gis-toolbar-row-wrap">${layerToggleButtonsHtml}${typeFilterHtml}${sectorFilterHtml}</div>${searchHtml}`,
+        `<div class="gis-toolbar-row gis-toolbar-row-wrap">${layerToggleButtonsHtml}${typeFilterHtml}${sectorFilterMarkup}</div>${searchMarkup}`,
       );
   }
   const toggleButtonsHost = filterRowEl || container;
@@ -1078,12 +1114,16 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         .map(([key, m]) => legendItemHtml(key, m.label, "buildings"))
         .join(""),
     )}
-    ${legendColumnHtml(
-      "Classification",
-      Object.entries(GIS_HOUSEHOLD_SUBCAT_META)
-        .map(([key, m]) => legendItemHtml(key, m.label, "buildings"))
-        .join(""),
-    )}
+    ${
+      anonymous
+        ? ""
+        : legendColumnHtml(
+            "Classification",
+            Object.entries(GIS_HOUSEHOLD_SUBCAT_META)
+              .map(([key, m]) => legendItemHtml(key, m.label, "buildings"))
+              .join(""),
+          )
+    }
   </div>`;
   container.querySelector(".gis-svg-wrap").insertAdjacentHTML("beforeend", legendHtml);
   const legendEl = container.querySelector(".gis-legend-overlay");
@@ -1547,6 +1587,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     const tag = tags[buildingId];
     const displayMeta = gisTagDisplayMeta(tag);
     const groupSize = tag?.groupId ? Object.values(tags).filter((t) => t?.groupId === tag.groupId).length : 0;
+    // Anonymous embeds keep tagged *households* private — only the generic
+    // "Household" tag shows, never the resident name, vulnerable
+    // classification, or free-text notes. Businesses and government buildings
+    // are public info, so they still show their full details.
+    if (anonymous && tag?.type === "households") {
+      const typeMeta = GIS_BUILDING_TYPE_META.households;
+      return `<div class="gis-popup-title">${gisIcon(typeMeta.icon)} ${escapeHtml(typeMeta.label)}</div>`;
+    }
     return tag
       ? `
       <div class="gis-popup-title">${gisIcon(displayMeta ? displayMeta.icon : "home")} ${escapeHtml(tag.name)}</div>
@@ -1619,8 +1667,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       if (tag?.type) {
         // Households colored by classification when one is set (its group
         // hues carry over from the old category system); other types get
-        // their own type color.
-        cls += " gis-building-cat-" + (tag.type === "households" && tag.subcat ? tag.subcat : tag.type);
+        // their own type color. Anonymous embeds ignore the classification so
+        // every household reads as the same neutral household color.
+        const catKey = !anonymous && tag.type === "households" && tag.subcat ? tag.subcat : tag.type;
+        cls += " gis-building-cat-" + catKey;
       }
       if (state.groupSelection.has(String(buildingId))) cls += " gis-building-grouped";
       path.setAttribute("class", cls);
@@ -2481,6 +2531,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
 
     gisAllReportFeatures().forEach((feature) => {
       const props = feature.properties;
+      // Resolved concerns drop off the map — they live on only in the history.
+      if (props.resolved) return;
       const [x, y] = project(...feature.geometry.coordinates);
       // Constant on-screen size (same trick as accidents), but translated so
       // the pin's TIP — not its center — sits on the reported location.
@@ -2498,9 +2550,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     const meta = GIS_REPORT_TYPE_META[props.reportType] || GIS_REPORT_TYPE_META.other;
     const comment = props.comment || "";
     const truncated = comment.length > 90 ? comment.slice(0, 90).trimEnd() + "…" : comment;
+    // Anonymous embeds omit the reporter's name — just "a resident".
+    const reportedBy = anonymous ? "a resident" : props.reporter?.name || "Resident";
     return `
       <div class="gis-popup-title">${gisIcon(meta.icon)} ${escapeHtml(props.title || meta.label)}</div>
-      <div class="gis-popup-cat">Reported by ${escapeHtml(props.reporter?.name || "Resident")} · ${escapeHtml(gisTimeAgo(props.createdAt))}</div>
+      <div class="gis-popup-cat">Reported by ${escapeHtml(reportedBy)} · ${escapeHtml(gisTimeAgo(props.createdAt))}</div>
       ${truncated ? `<div class="gis-popup-notes">${escapeHtml(truncated)}</div>` : ""}
       <button type="button" class="gis-popup-action" data-gis-report-more>See more</button>
     `;
@@ -2527,20 +2581,35 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     const when = props.createdAt
       ? new Date(props.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
       : "";
-    const reporterSub = [reporter.role || "Resident", reporter.purok].filter(Boolean).join(" · ");
+    // Anonymous embeds show a generic reporter identity only.
+    const reporterName = anonymous ? "Resident" : reporter.name || "Resident";
+    const reporterInitials = anonymous ? "R" : reporter.initials || (reporter.name || "?").charAt(0);
+    const reporterSub = anonymous
+      ? "Community report"
+      : [reporter.role || "Resident", reporter.purok].filter(Boolean).join(" · ");
     popupEl.innerHTML = `
       <button type="button" class="gis-popup-close" data-gis-report-close aria-label="Close report details">${gisIcon("cancelX")}</button>
       <div class="gis-report-card-head">
-        <div class="gis-report-avatar">${escapeHtml(reporter.initials || (reporter.name || "?").charAt(0))}</div>
+        <div class="gis-report-avatar">${escapeHtml(reporterInitials)}</div>
         <div class="gis-report-reporter">
-          <div class="gis-report-reporter-name">${escapeHtml(reporter.name || "Resident")}</div>
+          <div class="gis-report-reporter-name">${escapeHtml(reporterName)}</div>
           <div class="gis-report-reporter-sub">${escapeHtml(reporterSub)}</div>
         </div>
       </div>
       <div class="gis-popup-title">${gisIcon(meta.icon)} ${escapeHtml(props.title || meta.label)}</div>
       <div class="gis-popup-cat">${escapeHtml(meta.label)}${when ? ` · ${escapeHtml(when)}` : ""}</div>
       ${props.comment ? `<div class="gis-popup-notes">${escapeHtml(props.comment)}</div>` : ""}
-      ${state.editMode ? `<button type="button" class="gis-popup-delete" data-gis-report-delete>Delete report</button>` : ""}
+      ${
+        // Resolving is a plain moderation action available to MIS staff any time
+        // (no need to arm Edit Mode); deleting stays gated behind Edit Mode as a
+        // destructive action. Public/anonymous embeds get neither.
+        editable && (!props.resolved || state.editMode)
+          ? `<div class="gis-popup-actions-row">
+               ${props.resolved ? "" : `<button type="button" class="gis-popup-resolve" data-gis-report-resolve>${gisIcon("check")} Mark as resolved</button>`}
+               ${state.editMode ? `<button type="button" class="gis-popup-delete" data-gis-report-delete>Delete report</button>` : ""}
+             </div>`
+          : ""
+      }
     `;
     popupEl.classList.remove("gis-popup-readonly");
     popupEl.classList.add("gis-popup-hoverable", "gis-popup-expanded");
@@ -2552,6 +2621,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     popupEl.querySelector("[data-gis-report-close]").addEventListener("click", (e) => {
       e.stopPropagation();
       hidePopup();
+    });
+    // Staff moderation: resolving clears the pin off the map and out of the
+    // active feed; it remains in the View All history where it can be reopened.
+    popupEl.querySelector("[data-gis-report-resolve]")?.addEventListener("click", () => {
+      gisSetCommunityReportResolved(props.id, true);
+      hidePopup();
+      renderReports();
+      if (typeof renderReportFeed === "function") renderReportFeed();
+      if (typeof showToast === "function") showToast("Concern marked as resolved", gisIcon("check"));
     });
     // Staff moderation: deletable from the MIS embed while edit mode is on.
     popupEl.querySelector("[data-gis-report-delete]")?.addEventListener("click", () => {

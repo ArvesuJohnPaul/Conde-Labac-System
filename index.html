@@ -11,10 +11,21 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/landing.css?v=20260708" />
+    <link rel="stylesheet" href="css/landing.css?v=20260710" />
     <script src="js/icons.js"></script>
   </head>
   <body>
+    <!-- --- OFFICIAL MASTHEAD --- -->
+    <div class="gov-masthead">
+      <span class="gov-flag" aria-hidden="true"
+        ><span></span><span></span><span></span
+      ></span>
+      <span class="gov-masthead-text">
+        The Official Web Portal of Barangay Conde Labac, Batangas City
+      </span>
+      <span class="gov-masthead-gov">Republic of the Philippines</span>
+    </div>
+
     <!-- --- SHARED NAVBAR --- -->
     <nav class="navbar">
       <a href="index.html" class="nav-logo">
@@ -26,7 +37,7 @@
             this.nextElementSibling.style.display = 'flex';
           "
           alt="Conde Labac Seal"
-        />/
+        />
         <div class="nav-logo-fallback is-hidden">
           <i data-icon="landmark"></i>
         </div>
@@ -39,7 +50,7 @@
         <li id="nav-mis-li" class="is-hidden">
           <a href="system.html">MIS</a>
         </li>
-        <li><a href="#team">Team</a></li>
+        <li><a href="#team">Officials</a></li>
       </ul>
 
       <div class="nav-right">
@@ -74,120 +85,145 @@
     </nav>
 
     <!-- --- HERO --- -->
-    <section class="hero">
-      <!-- Barangay Hall Image Background -->
-      <img
-        src="img/brgy_hall_img.png"
-        alt="Barangay Conde Labac Hall"
-        class="hero-bg-img"
-        onerror="this.style.display = 'none'"
-      />
-      <div class="hero-bg-overlay"></div>
-
-      <div class="hero-shell">
-        <div class="hero-inner">
-          <!-- Left -->
-          <div class="hero-left">
+    <section class="hero" id="home">
+      <div class="container hero-shell">
+        <div class="hero-grid">
+          <!-- Left: copy -->
+          <div class="hero-copy">
             <div class="hero-eyebrow">
-              Official Digital Portal – Batangas City
-            </div>
-            <div class="hero-mobile-logo is-hidden">
-              <img src="img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
+              <i data-icon="landmark"></i>
+              Official Digital Portal · Batangas City
             </div>
             <h1 class="hero-title">
-              <span class="hero-title-cares">
-                <span class="accent-blue">C.</span
-                ><span class="accent-blue">A.</span
-                ><span class="accent-red">R.</span
-                ><span class="accent-yellow">E.</span
-                ><span class="accent-yellow">S.</span>
-              </span>
-              <br />
-              <span class="accent-blue">C</span>ONDE L<span class="accent-blue"
-                >A</span
-              >BAC <span class="accent-red">R</span
-              ><span class="accent-yellow">E</span>SIDENTS<br />
-              <span class="accent-yellow">S</span>YSTEM
+              C.A.R.E.S.
+              <span class="hero-title-expansion"
+                >Conde Labac Residents System</span
+              >
             </h1>
             <p class="hero-subtitle">
-              A cloud-based platform that digitizes administrative processes,
-              enables spatial mapping of households and hazard zones, and
-              delivers AI-powered predictive analytics for evidence-based
-              governance in Barangay Conde Labac, Batangas City.
+              The official service platform of Barangay Conde Labac — request
+              certificates, file blotter reports, explore the community GIS
+              map, and reach your barangay from anywhere.
             </p>
+            <div class="hero-cta-row">
+              <a href="#features" class="btn-hero btn-hero-gold">
+                Explore Services <i data-icon="arrow-right"></i>
+              </a>
+              <a href="#gis" class="btn-hero btn-hero-ghost">
+                <i data-icon="map"></i> View GIS Map
+              </a>
+            </div>
+            <div class="hero-meta">
+              <div class="hero-meta-item">
+                <i data-icon="bell"></i>
+                <div>
+                  <span class="hero-meta-label">Barangay Hotline</span>
+                  <span class="hero-meta-value">(043) 702-4011</span>
+                </div>
+              </div>
+              <div class="hero-meta-item">
+                <i data-icon="info"></i>
+                <div>
+                  <span class="hero-meta-label">Office Hours</span>
+                  <span class="hero-meta-value">Mon–Fri · 8:00 AM–5:00 PM</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Right -->
-          <div class="hero-right">
-            <div class="logo-showcase">
-              <div class="logo-ring-mid"></div>
-              <div class="logo-glow"></div>
+          <!-- Right: barangay hall photo + official seal -->
+          <div class="hero-visual">
+            <figure class="hero-photo-card">
+              <img
+                src="img/brgy_hall_img.png"
+                alt="Barangay Conde Labac Hall"
+                onerror="this.closest('.hero-visual').classList.add('hero-visual-noimg')"
+              />
+              <figcaption>Barangay Hall · Conde Labac, Batangas City</figcaption>
+            </figure>
+            <div class="hero-seal-badge">
               <img
                 src="img/conde%20labac%20logo.png"
-                alt="Conde Labac Seal"
-                class="logo-img"
+                alt="Official Seal of Barangay Conde Labac"
               />
-            </div>
-            <div class="logo-info">
-              <div class="logo-info-title">Brgy. Conde Labac</div>
-              <div class="logo-info-sub">Batangas City – PHILIPPINES</div>
             </div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="hero-features-title-wrap">
-          <div class="hero-features-kicker">Services</div>
-          <h2 class="hero-features-title">
-            Access Barangay Services in a Few Clicks
-          </h2>
+    <!-- --- CITIZEN SERVICES --- -->
+    <section id="features" class="section-services">
+      <div class="container">
+        <div class="section-head reveal">
+          <div class="section-kicker">Citizen Services</div>
+          <h2 class="section-title">How can the barangay help you today?</h2>
+          <p class="section-desc">
+            Transact with Barangay Conde Labac without lining up at the hall.
+            Choose a service below to get started — no account required.
+          </p>
         </div>
-
-        <!-- Features Strip (replaces Stats Row) -->
-        <div class="hero-features">
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('residency');
-              return false;
-            "
+        <div class="services-grid reveal">
+          <button
+            type="button"
+            class="service-card"
+            onclick="openServicePopup('residency')"
           >
-            <div class="feat-icon"><i data-icon="houses"></i></div>
-            <div class="feat-title">Barangay<br />Residency</div>
-          </a>
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('certificates');
-              return false;
-            "
+            <div class="service-icon"><i data-icon="houses"></i></div>
+            <h3 class="service-title">Barangay Residency</h3>
+            <p class="service-desc">
+              Search the resident registry and verify residency records within
+              the barangay.
+            </p>
+            <span class="service-link"
+              >Open service <i data-icon="arrow-right"></i
+            ></span>
+          </button>
+          <button
+            type="button"
+            class="service-card"
+            onclick="openServicePopup('certificates')"
           >
-            <div class="feat-icon"><i data-icon="file-text"></i></div>
-            <div class="feat-title">Certificate<br />Issuance</div>
-          </a>
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('incidents');
-              return false;
-            "
+            <div class="service-icon"><i data-icon="file-text"></i></div>
+            <h3 class="service-title">Certificate Issuance</h3>
+            <p class="service-desc">
+              Request clearances, indigency, residency, and other official
+              documents for pickup in 1–3 working days.
+            </p>
+            <span class="service-link"
+              >Open service <i data-icon="arrow-right"></i
+            ></span>
+          </button>
+          <button
+            type="button"
+            class="service-card"
+            onclick="openServicePopup('incidents')"
           >
-            <div class="feat-icon"><i data-icon="siren"></i></div>
-            <div class="feat-title">Blotter<br />Reporting</div>
-          </a>
-          <a
-            href="#features"
-            class="feat-item"
-            onclick="
-              openServicePopup('feedback');
-              return false;
-            "
+            <div class="service-icon"><i data-icon="siren"></i></div>
+            <h3 class="service-title">Blotter Reporting</h3>
+            <p class="service-desc">
+              File an incident report online. A barangay official will contact
+              you within 24 hours.
+            </p>
+            <span class="service-link"
+              >Open service <i data-icon="arrow-right"></i
+            ></span>
+          </button>
+          <button
+            type="button"
+            class="service-card"
+            onclick="openServicePopup('feedback')"
           >
-            <div class="feat-icon"><i data-icon="message-square"></i></div>
-            <div class="feat-title">Resident<br />Feedback</div>
-          </a>
+            <div class="service-icon"><i data-icon="message-square"></i></div>
+            <h3 class="service-title">Resident Feedback</h3>
+            <p class="service-desc">
+              Rate barangay services and send suggestions — reviewed monthly by
+              barangay officials.
+            </p>
+            <span class="service-link"
+              >Open service <i data-icon="arrow-right"></i
+            ></span>
+          </button>
         </div>
       </div>
     </section>
@@ -195,13 +231,13 @@
     <!-- --- GIS MAPPING --- -->
     <section id="gis">
       <div class="container">
-        <div class="reveal">
-          <div class="section-label">Geographic Information System</div>
-          <h2 class="section-title">GIS Mapping</h2>
+        <div class="section-head reveal">
+          <div class="section-kicker">Geographic Information System</div>
+          <h2 class="section-title">Community GIS Map</h2>
           <p class="section-desc">
-            Explore the spatial distribution of households, hazard zones, and
-            vulnerable sectors across Barangay Conde Labac. Toggle the layers
-            below to view specific datasets on the interactive map.
+            Explore households, hazard zones, roads, and community concerns
+            across Barangay Conde Labac. Toggle the layers below to view
+            specific datasets on the interactive map.
           </p>
         </div>
 
@@ -242,44 +278,41 @@
       </div>
     </section>
 
-    <!-- --- TEAM / BARANGAY OFFICIALS --- -->
-    <section id="team">
+    <!-- --- BARANGAY OFFICIALS --- -->
+    <section id="team" class="section-officials">
       <div class="container">
-        <div class="reveal">
-          <div class="section-label">Barangay Officials</div>
+        <div class="section-head reveal">
+          <div class="section-kicker">Leadership</div>
           <h2 class="section-title">Barangay Officials</h2>
           <p class="section-desc">
-            Current elected officials of Barangay Conde Labac.
+            The current elected officials serving Barangay Conde Labac.
           </p>
         </div>
-        <div class="team-grid reveal">
-          <div class="team-card">
-            <div class="team-avatar">J</div>
-            <div class="team-name">Hon. Juan Dela Cruz</div>
-            <div class="team-role">Punong Barangay</div>
-            <p class="team-desc">
+        <div class="officials-grid reveal">
+          <article class="official-card">
+            <div class="official-avatar">JD</div>
+            <div class="official-name">Hon. Juan Dela Cruz</div>
+            <div class="official-role">Punong Barangay</div>
+            <p class="official-desc">
               Leads the barangay administration and community programs.
             </p>
-          </div>
-          <div class="team-card">
-            <div class="team-avatar">M</div>
-            <div class="team-name">Hon. Maria Santos</div>
-            <div class="team-role">Kagawad — Public Safety</div>
-            <p class="team-desc">
+          </article>
+          <article class="official-card">
+            <div class="official-avatar">MS</div>
+            <div class="official-name">Hon. Maria Santos</div>
+            <div class="official-role">Kagawad — Public Safety</div>
+            <p class="official-desc">
               Oversees public safety, peace and order, and disaster response.
             </p>
-          </div>
-          <div class="team-card">
-            <div class="team-avatar">P</div>
-            <div class="team-name">Hon. Pedro Reyes</div>
-            <div class="team-role">Kagawad — Health &amp; Sanitation</div>
-            <p class="team-desc">
+          </article>
+          <article class="official-card">
+            <div class="official-avatar">PR</div>
+            <div class="official-name">Hon. Pedro Reyes</div>
+            <div class="official-role">Kagawad — Health &amp; Sanitation</div>
+            <p class="official-desc">
               Manages health programs, sanitation, and community welfare.
             </p>
-          </div>
-        </div>
-        <div class="team-note-wrap reveal">
-          <p class="team-note">Barangay Conde Labac — Current Officials</p>
+          </article>
         </div>
       </div>
     </section>
@@ -836,33 +869,78 @@
     </div>
 
     <!-- --- FOOTER --- -->
-    <footer>
-      <div class="footer-logo">
-        <img
-          src="img/conde%20labac%20logo.png"
-          alt="Conde Labac Seal"
-          class="footer-logo-img"
-        />
-        <div class="footer-title">C.A.R.E.S. – Barangay Conde Labac</div>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col footer-brand">
+            <div class="footer-seal-row">
+              <img
+                src="img/conde%20labac%20logo.png"
+                alt="Conde Labac Seal"
+                class="footer-seal"
+              />
+              <div>
+                <div class="footer-title">C.A.R.E.S.</div>
+                <div class="footer-subtitle">
+                  Barangay Conde Labac · Batangas City
+                </div>
+              </div>
+            </div>
+            <p class="footer-text">
+              GIS-Enabled Integrated Barangay Management and Decision Support
+              System for evidence-based local governance.
+            </p>
+          </div>
+          <div class="footer-col">
+            <div class="footer-heading">Quick Links</div>
+            <ul class="footer-links">
+              <li><a href="#features">Citizen Services</a></li>
+              <li><a href="#gis">GIS Map</a></li>
+              <li><a href="#team">Barangay Officials</a></li>
+              <li><a href="system.html">Staff Sign In</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <div class="footer-heading">Contact the Barangay</div>
+            <ul class="footer-contact">
+              <li>
+                <i data-icon="map"></i>
+                <span>Barangay Hall, Conde Labac, Batangas City</span>
+              </li>
+              <li>
+                <i data-icon="bell"></i>
+                <span>Hotline: (043) 702-4011</span>
+              </li>
+              <li>
+                <i data-icon="message-square"></i>
+                <span>condelabac@batangascity.gov.ph</span>
+              </li>
+              <li>
+                <i data-icon="info"></i>
+                <span>Monday–Friday · 8:00 AM – 5:00 PM</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
-      <p class="footer-text">
-        GIS-Enabled Integrated Barangay Management and Decision Support
-        System<br />
-        Capstone Project – AY 2025–2026
-      </p>
-      <div class="footer-bar">
-        <span>Arvesu</span><span class="f-sep">–</span> <span>Bacani</span
-        ><span class="f-sep">–</span> <span>Balmes</span
-        ><span class="f-sep">–</span>
-        <span>BatStateU CICS</span>
+      <div class="footer-bottom">
+        <div class="container footer-bottom-inner">
+          <span>© 2026 Barangay Conde Labac. All rights reserved.</span>
+          <span class="footer-credit"
+            >Capstone Project AY 2025–2026 — Arvesu · Bacani · Balmes ·
+            BatStateU CICS</span
+          >
+        </div>
       </div>
     </footer>
 
     <script src="js/gis-map.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // Initialize the GIS section map on the landing page
-        setTimeout(() => initGisMap("gis-map-section"), 200);
+        // Initialize the GIS section map on the landing page. Anonymous mode
+        // keeps tagged households private (no names/classification) and hides
+        // reporter names on community-concern pins.
+        setTimeout(() => initGisMap("gis-map-section", { anonymous: true }), 200);
 
         // Community Reports — signed-in visitors can drop a concern pin on
         // the map; everyone else sees a sign-in hint instead of the button.
@@ -877,7 +955,7 @@
           reportBtn.addEventListener("click", async () => {
             const instance =
               gisInstances["gis-map-section"] ||
-              (await initGisMap("gis-map-section"));
+              (await initGisMap("gis-map-section", { anonymous: true }));
             if (
               !instance ||
               typeof instance.beginCommunityReport !== "function"

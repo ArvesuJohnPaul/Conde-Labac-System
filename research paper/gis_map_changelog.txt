@@ -1,0 +1,208 @@
+GIS MAP MODULE — CHANGELOG (for AI context ingestion, not human prose)
+System: Conde Labac Barangay MIS prototype. No backend; all data persists via localStorage. Vanilla JS/HTML/CSS, no framework.
+
+SCOPE OF WORK: 4 rounds of changes to the GIS map feature (js/gis-map.js + css/system.css + css/landing.css + js/pages/gis.js + pages/gis.html + index.html + js/shell.js + js/pages/archive.js).
+
+KEY FILES
+- js/gis-map.js: core map engine. gisCreateMap(container, opts), initGisMap(targetId, opts).
+- css/system.css + css/landing.css: DUPLICATE GIS stylesheets. landing.css used only by index.html (index.html does NOT load system.css). Any GIS CSS change must be applied to BOTH files or it silently breaks on the public page.
+- js/pages/gis.js: real MIS (logged-in internal) GIS page. Only caller that passes { editable: true } to initGisMap.
+- pages/gis.html: resident-portal preview modal (#gis-map-modal), opened via shell.js openServicePopup('gis') from renderResidentPortal() service cards. NOT reachable from public landing page.
+- index.html: public landing page GIS section (#gis-map-section), own inline <script>, separate from shell.js, no modal-gis markup.
+- js/pages/archive.js: Archive module; now also lists/restores deleted map buildings.
+
+PERMISSION MODEL (established this session)
+- editable flag threaded: initGisMap(targetId, opts) -> gisCreateMap(container, ..., opts). const editable = !!opts.editable; default false.
+- Only js/pages/gis.js (MIS) passes editable:true. index.html and pages/gis.html instances are view-only.
+- When editable=false: entire edit-mode UI (Edit Mode button, draw dropdown, deselect btn) is not rendered; every polygon/feature shows info on hover; no delete/edit possible.
+- When editable=true: draw/ping tools hidden by default, revealed via animated one-column dropdown anchored under "Edit Mode" button, only in edit mode.
+
+ICON SYSTEM CHANGE
+- Replaced all emoji in GIS UI with inline SVG icons.
+- GIS_ICON_PATHS + gisIcon(name, cls) in gis-map.js: private icon lib for map internals (building/hazard/vegetation/accident category meta now store icon names not emoji).
+- Distinct from separate sitewide js/icons.js (window.icon(name,cls), <i data-icon="name"> hydrated via MutationObserver) added by an unrelated external redesign; archive.js uses the sitewide system, gis-map.js uses its own.
+- Final GIS icon set includes: search, ruler (added), chevronDown/download/upload (added then later removed).
+
+FEATURES IMPLEMENTED (in order requested)
+1. Icon replacement (see above).
+2. Edit-mode-gated draw/ping tools: dropdown from Edit Mode button, animated, one column.
+3. Hover-only info display + no edit/delete when not in edit mode (attachFeatureInteraction(el, {hoverHtml, onOpen}) shared helper).
+4. Filter row cleanup: removed Senior/PWD/4Ps buttons; merged toolbar layer-visibility toggle buttons into the filter row (now injected by gis-map.js into a shared toggleButtonsHost element that is a SIBLING of the map container, not a child — matters for DOM queries/tests).
+5. Deletion enabled for pre-existing OSM building/house polygons (previously only user-drawn ones deletable). Implemented via soft-delete tombstoning: GIS_DELETED_BUILDINGS_KEY (localStorage) stores deleted OSM building ids; gisSoftDeleteBuilding(id), gisLoadDeletedBuildings(). OSM source GeoJSON is static/unmodifiable, hence tombstone list instead of real delete.
+6. Vegetation "cut" tool: removes part of a vegetation polygon.
+   - BUG FIXED: original implementation added the traced cut shape as a second ring with fill-rule:evenodd -> only reads as a hole where it overlaps the base shape; elsewhere renders as a new filled blob (indistinguishable from new vegetation).
+   - FIX: switched to SVG <mask> (white background rect + black cut-ring paths) applied via mask="url(#...)" on the vegetation path. A mask can only hide pixels the element already paints -> guarantees subtract-only semantics, never adds area. Function: buildVegetationCutMask(vegId, cutRings). GIS_VEGETATION_CUTS_KEY stores cut ring data. .gis-vegetation no longer needs fill-rule:evenodd.
+7. Edit dropdown width narrowed (.gis-draw-dropdown min-width: 168px).
+8. Removed non-functional chevron/arrow icon from Edit Mode button (cosmetic only).
+9. Fixed "All Layers" filter button: previously didn't re-enable/select toggles that had been switched off. Added showAllLayers() instance method resetting all show* flags + toggle button .active classes; called from setGisLayer() when layer === "all".
+10. Removed all editing access from public front page (index.html) GIS map — confirmed only js/pages/gis.js passes editable:true; index.html/pages/gis.html pass no opts (default false).
+11. Map container size: iterated 360px -> 180px (bug, too small) -> 450px -> 640px based on live user feedback viewing in browser. Final CSS: ".gis-map-embed, .gis-map-embed.gis-custom-map { height: 640px; }" (compound selector required — see CSS bug below).
+12. Household/resident search: search box that pans/zooms map to matched result. flyToHousehold(rawId), renderSearchResults(query). UI mounted into filter row (toggleButtonsHost), sibling of map container.
+13. Legend reflecting toggled-off layers: updateLegendDimStates() dims [data-legend-layer] items whose state.showX is false. legendEl found via container.nextElementSibling with class gis-legend. Added full .gis-legend block w/ data-legend-layer attrs to js/pages/gis.js (previously missing there), matching index.html/pages/gis.html.
+14. Distance measurement tool: gisMeasureDistance(points) [haversine], gisHaversineMeters(), gisFormatDistance(meters) [compact single-unit, on-map label], gisFormatDistanceAllUnits(meters) [added later: shows m/km/ft/yd/mi together, used in hint text]. On-map label font-size 15/zoom -> 26/zoom (bigger text per feedback). Hint text uses .gis-draw-hint-measure class (17px bold teal monospace).
+15. Deselect tool: deselectTool() fully clears state.drawTool (unlike cancelDrawing() which only clears in-progress points); wired to new Deselect button left of Edit Mode button, and to Escape key.
+16. Accident ping icon enlarged: GIS_ACCIDENT_ICON_SIZE 26 -> 42. Rendered as inline SVG <g> with icon paths + white translucent backing circle (.gis-accident-icon-bg), not via gisIcon()'s wrapped <svg>.
+
+FEATURES REMOVED (explicitly reverted per later user request)
+- CSV bulk import for household tagging: removed importCsvBtn/importCsvInput, importHouseholdsCsv(), gisParseCsv(). (Was implemented then fully removed same session.)
+- PNG export/print of map view: removed exportBtn and click handler. (Also implemented then removed.)
+- Undo toast mechanism: removed offerUndo(), hideUndoToast(), undoTimeoutId, undoToastEl/undoMsgEl/undoBtnEl, .gis-undo-toast/.gis-undo-btn CSS. Replaced by permanent Archive-based restore (see below) — ONLY for building deletion; other delete types (road/vegetation/construction/hazard/accident) kept plain confirm()+delete+toast with no backup.
+
+ARCHIVE-BASED RESTORE (replaces undo, buildings only)
+- New localStorage key: GIS_ARCHIVED_BUILDINGS_KEY.
+- gisLoadArchivedBuildings(), gisArchiveBuilding(entry), gisRemoveArchivedBuilding(id), gisRestoreArchivedBuilding(id) in gis-map.js (global functions, not module-scoped, so archive.js can call them).
+- Building delete flow: confirm() -> gisArchiveBuilding({id, isCustom, coordinates (if custom), tag}) -> delete (gisDeleteCustomBuilding or gisSoftDeleteBuilding) -> toast "Building moved to Archive".
+- js/pages/archive.js: new "Deleted Map Buildings" card section. renderArchivedBuildingsList() lists archived entries (name from tag, category meta, archivedAt timestamp), restoreArchivedBuildingFromArchive(id) calls gisRestoreArchivedBuilding then re-renders list + toast. Uses sitewide js/icons.js (data-icon="refresh" etc), not gisIcon(). pages/archive.html already loads js/gis-map.js before archive.js so globals are accessible.
+
+KPI / STATS
+- getStats() instance method on map object: returns {totalBuildings, taggedHouseholds, hazardZones, incidents, constructionAreas, vegetationAreas}.
+- js/pages/gis.js renderGISPage() is async, awaits initGisMap, then calls instance.getStats() to populate 4 KPI cards via textContent (ids like gis-kpi-buildings).
+
+CSS BUGS FOUND & FIXED (both system.css and landing.css)
+1. [hidden] attribute defeated by display:flex: adding display:flex to .gis-draw-action-btn / .gis-deselect-btn caused Finish/Cancel/Deselect buttons to stay visible despite [hidden] attribute — same-specificity author CSS always beats User-Agent stylesheet regardless of order. Fix: explicit ".gis-draw-action-btn[hidden] { display: none; }" and ".gis-deselect-btn[hidden] { display: none; }" rules.
+2. .gis-map-embed height silently overridden: .gis-custom-map { height: 100%; } (class added via JS onto same container) has equal specificity but declared later -> wins by cascade order regardless of .gis-map-embed's intended fixed height. Fix: compound selector ".gis-map-embed, .gis-map-embed.gis-custom-map { height: <val>; }" (specificity 0,2,0 beats 0,1,0 unconditionally).
+3. index.html doesn't load system.css at all — uses separate css/landing.css for GIS styles. Every GIS CSS change must be duplicated into landing.css or public page silently breaks/is unstyled.
+
+SESSION-LEVEL FUNCTION/ROLE BOUNDARIES CONFIRMED
+- localStorage session key: ibmdss.session (JSON: {role, displayName, shortName, initials, user}); checked by shell.js applySessionToApp().
+- Three GIS map embed contexts: index.html #gis-map-section (public, non-editable), pages/gis.html #gis-map-modal inside modal-gis (resident-portal-only preview, reached via shell.js openServicePopup('gis') from renderResidentPortal(), NOT from public landing page), js/pages/gis.js #gis-map-page (real logged-in MIS page, editable:true).
+
+OPEN DISCUSSION (no code written, advisory only — raised by user, not yet a feature)
+- User proposed future feature: residents self-report/pin incidents directly on the map. Concern raised: trolling/abuse (spam pins, false tags).
+- Advice given (not implemented): (a) moderation queue — resident-submitted pins are pending/private until an officer/admin approves, kept as a separate "community pin" layer distinct from the existing Blotter/Incident report flow (which must stay immediate for real emergencies); (b) tie every submission to the resident's logged-in account (already have accounts) for accountability via Audit Logs, enabling rate-limiting/suspension of abusive accounts; (c) corroboration — multiple independent reports near same time/place raise trust; single reports from new/flagged accounts held longer for review.
+- This is a design discussion only; not implemented in code this session.
+
+VERIFICATION METHOD USED THIS SESSION (not part of app, tooling note)
+- All changes verified via a from-scratch CDP (Chrome DevTools Protocol) WebSocket test harness driven by Deno scripts (no Playwright/node/npm available in this Windows env), serving files via `python3 -m http.server`. Confirmed working end state via screenshots + DOM assertions before each round was considered complete.
+
+=== SESSION: Community Reports, tag restructure, engine-injected filters/legend, 500m OSM buffer, draw-dock rework, styled delete confirms — 2026-07-10 ===
+
+FILES CHANGED
+- js/gis-map.js: bulk of session (~2600 lines now). All features below unless noted.
+- js/pages/gis.js: MIS GIS page relayout (side column, 5 KPIs, report feed, banner header).
+- index.html: Community Reports entry point, household data removal, empty filter row.
+- js/pages/residency.js, js/shell.js, js/pages/dashboard.js, js/pages/audit.js, js/pages/archive.js: household removal / tag-shape migration consumers.
+- css/system.css + css/landing.css: ALWAYS mirrored (landing.css = index.html only, rule from prior session still holds; tokens --navy/--gold/--white live in css/shared.css, NOT in these two).
+- pages/*.html (all 11): swept to empty `<div class="gis-filter-row"></div>`, static legends removed, residency search category options updated.
+- extract_geojson.py: NEW Overpass extraction script, BUFFER_M=500, regenerates the 4 data/*.geojson files (buildings {id}; roads {id,highway}; water {id,kind}; vegetation {id,kind}, landuse forest/scrub→wood, grassland→meadow). Ran: 2177 buildings / 262 roads / 6 water / 85 vegetation. Same schema → localStorage tag ids survive regeneration.
+
+BUILDING TAG RESTRUCTURE + HOUSEHOLD REMOVAL
+- GIS_BUILDING_CATEGORY_META REMOVED. Replaced by GIS_BUILDING_TYPE_META {government(landmark,#92400e), business(building,#0891b2), households(home,#1d4ed8)} + GIS_HOUSEHOLD_SUBCAT_META {seniors, pwd, solo-parent(#db2777,family icon), indigent(#0d9488, new `heart` icon)}. "4ps" category REMOVED — old tags with unknown cats migrate to plain household.
+- Tag shape now {name, type, subcat, notes}. gisNormalizeBuildingTag() migrates old {category}; gisMigrateBuildingTags() one-time write-back at top of initGisMap; archive.js uses gisTagDisplayMeta(gisNormalizeBuildingTag(entry.tag)) because archived entries snapshot old-shape tags.
+- gisTagDisplayMeta(tag) → {icon,label}; subcat wins icon; label "Household · Senior Citizen" style.
+- Tag form: Building type select + "Classification" select (renamed from Sector, no "(optional)") shown only when type=households.
+- Residency module: Household column/data deleted entirely (residency.js table, index.html + shell.js RESIDENTS_DATA `household:` fields, dashboard KPI "Registered Households"→"Registered Residents", residency KPI →"Verified Residents"). Residency categories now Senior Citizen/PWD/Solo Parent/Indigent Family, matching map classifications.
+
+COMMUNITY REPORTS (resident-facing pins)
+- Key: GIS_COMMUNITY_REPORTS_KEY="gis_community_reports". Record {id:gisNewId("rpt"), point:[lng,lat], reportType, title, comment, reporter:{name,initials,role,purok|null}, createdAt}.
+- GIS_REPORT_TYPE_META (road/flooding/garbage/safety/other); GIS_REPORT_ICON_SIZE=44. gisAddCommunityReport/gisAllCommunityReports/gisDeleteCommunityReport/gisTimeAgo.
+- renderReports(): pin tip on point via translate(x-size/2, y-size); size/state.zoom screen-constant; re-rendered at every zoom-changing call site via renderScreenScaledMarkers().
+- Hover-persistent popup pattern (engine popups are pointer-events:none): .gis-popup-hoverable (pointer-events:auto), 180ms grace timer scheduleHidePopup/cancelHidePopup (mouseenter on pin OR popup cancels), .gis-popup-expanded full card (avatar, role/purok, full comment, toLocaleString timestamp). hidePopup() MUST strip both classes + clear timer or later read-only popups inherit pointer-events:auto.
+- Placement: state.reportMode, instance API beginCommunityReport(reporter)/cancelCommunityReport()/flyToReport(id). Never touches editMode/drawTool — landing embed stays read-only otherwise.
+- index.html: #gis-report-btn in .gis-report-bar, hidden unless ibmdss.session exists; purok best-effort surname match against RESIDENTS_DATA. Logged-out: sign-in hint.
+- getStats() adds communityReports; totalBuildings now counts inside-boundary only.
+
+ENGINE-INJECTED FILTER UI + LEGEND (anti-drift decision)
+- Filter row markup is NO LONGER static per page. All 13 embeds have empty `.gis-filter-row`; gis-map.js injects: Map Layers dropdown + Building Type choice dropdown + Classification choice dropdown + search. CONSTRAINT: .gis-filter-row must remain immediate previous sibling of the map container.
+- Order (after user swap request): layerToggleButtonsHtml, typeFilterHtml, sectorFilterHtml, searchHtml.
+- All three dropdowns share one button+panel design (choiceDropdownHtml(kind,defaultLabel,iconName,allLabel,meta)); gold active state .gis-choice-active; panel rows unified with ::after "✓" check.
+- Filter functions: gisApplyTypeFilter(value), gisApplySectorFilter(value) — TWO independent filters (replaced single setGisLayer value for these); gisSyncChoiceDropdowns(kind,...) syncs all [data-gis-choice="type|sector"] dropdowns document-wide.
+- Legend: static .gis-legend blocks REMOVED from all pages. Engine inserts .gis-legend-overlay INSIDE .gis-svg-wrap (transparent rgba(255,255,255,0.55)+blur(4px)), one .gis-legend-col per filter in filter order (Map Layers / Building Type / Classification), hidden <640px. Legacy sibling .gis-legend removed at init if present.
+
+ZOOM / FIT
+- computeFitZoom() from projected boundary bbox; GIS_FIT_MARGIN=0.97; map loads fitted (boundary near edges); minZoom = fitZoom * GIS_MIN_ZOOM_FACTOR(0.6); pan formula 500*(1-fitZoom). Must account for square 0–1000 viewBox letterboxing (preserveAspectRatio xMidYMid meet) in non-square containers.
+
+500M BUFFER + INSIDE/OUTSIDE
+- featureInsideBoundary(): inside = ANY feature vertex inside boundary ring (gisPointInRing ray cast) OR any boundary vertex inside feature polygon (touch test, per explicit user correction of an earlier centroid-based test). Cached per feature id. Custom (user-drawn) features always inside.
+- Outside features: rendered .gis-building-outside/.gis-vegetation-outside (faded), non-interactive, excluded from stats and hidden by filters.
+- Data sources: OSM/Overpass ONLY. Google Open Buildings / Microsoft footprints merge NOT implemented — a merge prompt was authored and delivered as chat text only (offer to save as docs/merge-buildings-prompt.md not confirmed; file NOT created).
+
+DRAW UI REWORK (edit mode)
+- Deselect + Edit Mode buttons moved inline into zoom .gis-toolbar-row (editControlsHtml).
+- Old dropdown under Edit Mode button replaced by bottom-right .gis-draw-dock with two .gis-draw-dock-col: LEFT = .gis-draw-actions-panel (Finish/Cancel, data-gis-actions-panel; hidden = both buttons hidden) above .gis-draw-types-panel (data-gis-types-panel, 185px, gisSlideIn side-entry animation; replay via hidden=true; void offsetWidth; hidden=false); RIGHT = .gis-draw-panel.gis-draw-hint (210px, 11.5px) above .gis-draw-main-panel ("Add to Map", gisFoldUp animation). All panels translucent 0.55 matching legend overlay.
+- Type-first flow: pick element group → types panel → armTool(tool,subtype) sets state.drawTool+state.drawSubtype → CREATION pin forms show static .gis-pin-form-static type line (no selector; presetMeta = !existingId ? META[state.drawSubtype] : null). EDIT forms keep selectors. Applies to building/road/vegetation/construction/hazard/accident.
+- Measure hint: .gis-draw-hint-measure now same size as other hints (was oversized 17px), teal, Space Mono.
+- Building group types = {...GIS_BUILDING_TYPE_META, none:{label:"No Tag (outline only)", icon:"building"}} — `none` deliberately NOT in the meta dict so filters/legend/tag form unaffected. tryFinishShape: subtype none/absent → skip tag form, toast "Building outline added".
+
+STYLED DELETE CONFIRMATIONS (native confirm() fully removed)
+- showDeleteConfirm({title,message,confirmLabel="Delete",onConfirm}, screenX, screenY) renders into formEl: .gis-confirm-head (30px red-tinted circle .gis-confirm-icon with trash icon + title), .gis-confirm-message, Cancel + .gis-confirm-delete (#dc2626/hover #b91c1c). Positioned via positionFloatingEl. Do NOT call clampPopupToContainer here — it clamps popupEl, not formEl (was a bug, removed).
+- All 6 former confirm() sites converted: building (confirmLabel "Move to Archive", message notes restorability), road, vegetation (warns cuts removed too), construction, hazard, accident, community report (names reporter). Verified window.confirm never invoked (harness poisoned it).
+
+MIS GIS PAGE (js/pages/gis.js)
+- .gis-page-layout grid ~20/80: aside .gis-side-col with .gis-side-reports (Recent Community Reports feed, renderReportFeed() global, click→flyToReport) flex 2 + .gis-side-ai (AI Narrative Report placeholder, no logic) flex 3; map card right. <1024px stacks.
+- 5th KPI #gis-kpi-reports. .gis-page-header navy-gradient banner + gold radial glow; accent bars .gis-side-reports::before green, .gis-side-ai::before purple, .gis-map-card::before gold→navy (system.css only — page never uses landing.css).
+
+CSS BUG CLASS (recurred twice this session)
+- [hidden] defeated by author display rules again: .gis-pin-form-label{display:block} and .gis-elements-panel{display:flex} both beat UA [hidden]. Fix each time: explicit `[hidden]{display:none}` companion rule. ANY new displayed GIS element that uses the hidden attribute needs one.
+- var(--white) undefined without css/shared.css (tokens live there) → chevron bg check failed in harness; added var(--white,#ffffff) fallback; harnesses must load shared.css.
+
+REMOVED/REVERTED THIS SESSION
+- Household column/data (residency, datasets, dashboards) — permanent removal.
+- "4ps" household category (migrated away, not renamed).
+- Static per-page filter buttons + static legends (replaced by engine injection).
+- setGisLayer single-value building filtering (replaced by type+sector dual filters; setGisLayer remains for map-element layer toggles).
+- All 6 native confirm() dialogs.
+- Hack container.closeTypesPanelForEditOff (replaced by inline closure reset in edit-toggle handler).
+
+VERIFICATION METHOD THIS SESSION
+- python -m http.server (8791) + headless Edge (`--headless=new --dump-dom/--screenshot`, fresh --user-data-dir per run — reused profile once produced no screenshot) against temporary test-gis-harness.html (always deleted after). Gotcha: measure geometry AFTER document.getAnimations().forEach(a=>a.finish()) — gisFoldUp/gisSlideIn transforms corrupt rects at first frame under virtual time. Final run 16/16 PASS incl. confirm-poisoning guard.
+
+OPEN ITEMS
+- Google Open Buildings / Microsoft Building Footprints merge: prompt written, delivered as chat text only; execution and saving prompt to docs/ both pending user confirmation.
+- AI Narrative Report panel is a placeholder — no generation logic exists.
+
+=== SESSION: Square draw shape (rotate/resize), movable+deletable draw/measure points, whole-shape drag, shape-selector panel — 2026-07-10 ===
+
+FILES CHANGED
+- js/gis-map.js: all feature logic below.
+- css/system.css: all new styles below. landing.css deliberately NOT mirrored — every element this session is editable/edit-mode-only (draw dock, previews); public index.html never renders them. Mirror rule still applies to anything public-visible.
+
+EARLY-SESSION TWEAKS (pre-square work, same conversation)
+- .gis-draw-segment-label font 16/zoom (was smaller); white halo/stroke behind edge labels removed (stroke in map units balloons with zoom into a blob — never re-add paint-order/stroke halos to zoom-scaled text).
+- .gis-measure-readout: distance chips container restyled to match .gis-legend-overlay (same translucent bg/border/blur), positioned bottom-left ABOVE legend; offset tracks legendEl.offsetHeight live in updateDrawUI().
+- Right-button drag ALWAYS pans, even mid-draw/report mode (svg mousedown button===2 → startPan). contextmenu suppressed on container.closest('.gis-map-card')||container, except INPUT/TEXTAREA/contentEditable.
+
+SQUARE SHAPE MODE
+- State: state.drawShape 'freeform'|'square' (persists across arms), state.squareRotation (radians), state.squareHover ([lng,lat] live 2nd corner while pending). All reset in cancelDrawing()/armTool()/edit-off.
+- SQUARE_TOOLS = Set(building, vegetation, construction). isSquareMode() = drawShape==='square' && SQUARE_TOOLS.has(drawTool). Road/pings/measure/vegetation-cut unaffected.
+- GIS_ICON_PATHS additions: square, rotate.
+- computeSquareCorners(): drawPoints[0] + (drawPoints[1]||squareHover) projected → axis-aligned box → each corner rotated by squareRotation about box center. Returns {localCorners, lnglatCorners, centerLocal, topEdgeMid, handlePos(26/zoom above top edge)}. null until 2 corners.
+- gisSvgEl(tag, attrs): namespaced SVG element helper.
+- renderSquarePreview(): outline path + 4 corner dots + 4 edge meter labels + rotate handle (only when both corners placed). Called from renderDrawPreview() before the freeform branch.
+- addDrawVertex(): square branch caps drawPoints at 2; further map clicks ignored.
+- updateSquareHover(evt) on window mousemove: live box preview between clicks 1 and 2; guarded by dragging/rotatingSquare/pointDragIndex/squareCornerDrag/shapeDrag.
+- tryFinishShape(): square baked to 4 lnglat corners in state.drawPoints, rotation/hover reset, then falls through to existing finish paths unchanged (building ring = 5-pt closed, stored {id, coordinates} via gisAddCustomBuilding — record key is `coordinates`, NOT `ring`).
+- updateDrawUI(): Finish min = 2 in square mode (else MIN_POINTS); hint = DRAW_HINTS.square.
+- Rotate: handle mousedown (button 0, stopPropagation) sets rotatingSquare; mousemove sets squareRotation = atan2(my-cy, mx-cx)+PI/2 around centerLocal. CSS: .gis-draw-rotate-handle/-stem/-bg/-icon (gold #c9a227 scheme, non-scaling strokes).
+
+SHAPE SELECTOR PANEL (reworked mid-session per feedback)
+- First version injected Freeform/Square buttons inside the types list — REMOVED. Now a static own dock box: [data-gis-shape-panel] .gis-draw-panel.gis-draw-shape-panel (width 185px, title "Shape") in the LEFT dock column, DOM order actions-panel → shape-panel → types-panel, so it renders directly ABOVE the types panel.
+- openTypesPanel(group): shows shape panel only when SQUARE_TOOLS.has(group), syncs .active per state.drawShape, replays fold animation (hidden=true; void offsetWidth; hidden=false pattern). closeTypesPanel() + edit-off branch hide it.
+- Dedicated click handler on shapePanelEl (buttons [data-gis-shape]): sets state.drawShape, toggles .active, calls cancelDrawing(); does NOT arm/disarm the tool. typesListEl handler no longer handles shapes.
+- CSS: .gis-draw-shape-opts stripped of old divider (margin/padding-bottom/border-bottom removed); .gis-draw-shape-btn unchanged.
+
+POINT MOVE + CLICK-DELETE (all draw tools + measure)
+- ALL freeform/measure vertex dots (not just measure) now r=5/zoom, class .gis-draw-preview-vertex.gis-draw-point-draggable (pointer-events:auto — preview layer elements are pointer-events:none by default, every interactive preview element needs an explicit auto).
+- Dot mousedown (button 0, stopPropagation, preventDefault): pointDragIndex=i, pointDragMoved=false, gestureStart={clientX,clientY}, suppressClickAdd=true.
+- pastSlop(evt): >3px from gestureStart (same slop as pan). mousemove: below slop → point stays put; past → pointDragMoved=true, point follows cursor via project.invert(gisScreenToSvg(...)).
+- mouseup: if !pointDragMoved → state.drawPoints.splice(index,1) = click-to-delete. Either way suppressClickAdd=true so trailing click adds nothing.
+- Square corners (only when both corners placed): mousedown sets squareCornerDrag={anchorLocal: localCorners[(i+2)%4]} (diagonal opposite pinned). mousemove: midpoint(anchor,mouse)=box center (invariant under rotation about center), un-rotate both about it by -squareRotation → new axis-aligned drawPoints pair; rotation preserved. No click-delete for square corners (would degenerate the box).
+
+WHOLE-SHAPE MOVE
+- .gis-draw-shape-movable {pointer-events:auto; cursor:move} added to preview path when freeform polygon pts>2 (building/vegetation/construction/vegetation-cut; lines/measure excluded) or square fully placed.
+- startShapeMove(e): records startLocal + origPoints snapshot; does NOT stopPropagation, so a clean click inside a formed shape still falls through to svg click → addDrawVertex (concave shapes remain drawable). mousemove past slop: all points translated by local-space delta (origPoints.map(project → +d → invert)). mouseup: suppressClickAdd=true only if moved.
+- Gesture var set: dragging/dragStart/dragMoved (pan), pointDragIndex/pointDragMoved/gestureStart, squareCornerDrag, shapeDrag, rotatingSquare, suppressClickAdd. mousemove branch order: pointDrag → cornerDrag → shapeDrag → rotate → pan. svg click handler consumes suppressClickAdd first.
+
+MEASURE CLICK-VS-DRAG (completing prior requirement)
+- svg mousedown: measure tool left-drag starts pan (other draw tools/report mode: no left pan); point added ONLY by stationary click — any pan/point-move/rotate/corner/shape gesture sets suppressClickAdd.
+- DRAW_HINTS rewritten: building/road/vegetation/construction/measure mention drag-to-move / click-to-remove / drag-inside-to-move; square hint covers corner-resize/rotate/move.
+
+BUGS/GOTCHAS (test-side, no app-code bugs this session)
+- Playwright page.click() on dock buttons auto-scrolls the page → any .gis-svg bounding_box captured before is stale → mouse coords miss the svg and hit the card padding (symptom: clicks silently add no vertices). Always recompute bounding_box immediately before mouse sequences.
+- [data-gis-draw-group] buttons TOGGLE their types panel — clicking an already-open group closes it (check .open class before clicking in tests).
+
+VERIFICATION
+- python -m http.server 8123 + Playwright (Python sync) headless Chromium, session seeded pre-load via ctx.add_init_script localStorage ibmdss.session, ready-wait: '#gis-kpi-buildings' text !== '—'. 25/25 assertions: panel placement/visibility per group, freeform place/drag/delete/shape-move, square place/corner-resize/rotate/move/rotation-survives-move/Finish→gis_custom_buildings 5-pt ring, measure add/pan-no-add/point-move/point-delete. Zero console/page errors.
+
+OPEN ITEMS
+- None new this session. Prior open items (buildings merge prompt, AI Narrative placeholder) unchanged.

@@ -11,18 +11,23 @@ function gisPageEscapeHtml(str) {
   return div.innerHTML;
 }
 
+// Holds the live map instance so the report feed and the history modal can
+// drive it (fly-to) and refresh its pins after a resolve/reopen.
+let gisMapInstance = null;
+
 // "Recent Community Reports" side panel — newest resident-submitted pins,
-// straight from the same localStorage the map renders. Clicking an entry
-// flies the map to that pin.
+// straight from the same localStorage the map renders. Only ACTIVE (unresolved)
+// concerns appear here; the full history (including resolved) lives behind
+// "View All". Clicking an entry flies the map to that pin.
 function renderReportFeed() {
   const feedEl = document.getElementById("gis-report-feed");
   if (!feedEl) return;
   const reports = gisAllCommunityReports()
-    .slice()
+    .filter((r) => !r.resolved)
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     .slice(0, 8);
   if (!reports.length) {
-    feedEl.innerHTML = `<div class="gis-feed-empty">No community reports yet. Concerns residents pin on the public map will appear here.</div>`;
+    feedEl.innerHTML = `<div class="gis-feed-empty">No active community reports. Concerns residents pin on the public map appear here until an officer resolves them.</div>`;
     return;
   }
   feedEl.innerHTML = reports
@@ -38,6 +43,147 @@ function renderReportFeed() {
         </button>`;
     })
     .join("");
+}
+
+// ── Community Reports history modal — the complete log of concern pins,
+// active and resolved, with resolve/reopen moderation and fly-to. Built
+// on demand and appended to <body> so it isn't duplicated into every page's
+// static markup. Reuses the sitewide .modal-backdrop / .modal-box shell.
+function renderReportHistoryList() {
+  const listEl = document.getElementById("gis-history-list");
+  if (!listEl) return;
+  const reports = gisAllCommunityReports()
+    .slice()
+    // Active first (newest→oldest), then resolved (most recently resolved first).
+    .sort((a, b) => {
+      if (!!a.resolved !== !!b.resolved) return a.resolved ? 1 : -1;
+      if (a.resolved) return (b.resolvedAt || 0) - (a.resolvedAt || 0);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+  const activeCount = reports.filter((r) => !r.resolved).length;
+  const resolvedCount = reports.length - activeCount;
+  const countEl = document.getElementById("gis-history-count");
+  if (countEl) {
+    countEl.textContent = `${activeCount} active · ${resolvedCount} resolved`;
+  }
+  // "Clear Resolved" only offers itself when there's something to clear.
+  const clearBtn = document.getElementById("gis-history-clear");
+  if (clearBtn) {
+    clearBtn.hidden = resolvedCount === 0;
+    clearBtn.innerHTML = `${gisIcon("trash")} Clear Resolved (${resolvedCount})`;
+  }
+  // A pending confirm bar is stale once the list changes — hide it.
+  const confirmBar = document.getElementById("gis-history-confirm");
+  if (confirmBar) confirmBar.hidden = true;
+  if (!reports.length) {
+    listEl.innerHTML = `<div class="gis-feed-empty">No community reports have been submitted yet.</div>`;
+    return;
+  }
+  listEl.innerHTML = reports
+    .map((r) => {
+      const meta = GIS_REPORT_TYPE_META[r.reportType] || GIS_REPORT_TYPE_META.other;
+      const reporter = r.reporter || {};
+      const when = r.resolved
+        ? `Resolved ${gisPageEscapeHtml(gisTimeAgo(r.resolvedAt))}`
+        : `Reported ${gisPageEscapeHtml(gisTimeAgo(r.createdAt))}`;
+      return `
+        <div class="gis-history-item${r.resolved ? " resolved" : ""}">
+          <div class="gis-report-avatar gis-feed-avatar">${gisPageEscapeHtml(reporter.initials || "?")}</div>
+          <div class="gis-history-body">
+            <div class="gis-history-title">
+              ${gisIcon(meta.icon)} ${gisPageEscapeHtml(r.title)}
+              <span class="gis-history-badge ${r.resolved ? "resolved" : "active"}">${r.resolved ? "Resolved" : "Active"}</span>
+            </div>
+            <div class="gis-feed-sub">${gisPageEscapeHtml(reporter.name || "Resident")} · ${meta.label} · ${when}</div>
+            ${r.comment ? `<div class="gis-history-comment">${gisPageEscapeHtml(r.comment)}</div>` : ""}
+          </div>
+          <div class="gis-history-actions">
+            ${r.resolved
+              ? `<button type="button" class="btn btn-sm btn-outline" data-history-reopen="${gisPageEscapeHtml(r.id)}">Reopen</button>`
+              : `<button type="button" class="btn btn-sm btn-outline" data-history-show="${gisPageEscapeHtml(r.id)}">Show on map</button>
+                 <button type="button" class="btn btn-sm btn-gold" data-history-resolve="${gisPageEscapeHtml(r.id)}">Resolve</button>`}
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
+function openReportHistoryModal() {
+  let modal = document.getElementById("gis-history-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.className = "modal-backdrop";
+    modal.id = "gis-history-modal";
+    modal.innerHTML = `
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon">${gisIcon("pin")}</div>
+            Community Reports History
+          </div>
+          <button class="modal-close" data-history-close aria-label="Close">${gisIcon("cancelX")}</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-help-text">Every concern pin residents have submitted. Active concerns show on the map; resolving one clears it from the map and the Recent feed. <span id="gis-history-count" class="gis-history-count"></span></p>
+          <div class="gis-history-confirm" id="gis-history-confirm" hidden>
+            <span class="gis-history-confirm-msg">${gisIcon("warningTriangle")} Permanently delete all resolved reports? This can't be undone.</span>
+            <div class="gis-history-confirm-actions">
+              <button class="btn btn-sm btn-outline" data-history-clear-cancel>Cancel</button>
+              <button class="btn btn-sm btn-danger" data-history-clear-confirm>Delete Permanently</button>
+            </div>
+          </div>
+          <div class="gis-history-list" id="gis-history-list"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger gis-history-clear" id="gis-history-clear" data-history-clear-start hidden></button>
+          <button class="btn btn-outline" data-history-close>Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    // Backdrop click (outside the box) and the two Close buttons dismiss it.
+    modal.addEventListener("click", (evt) => {
+      if (evt.target === modal || evt.target.closest("[data-history-close]")) {
+        modal.classList.remove("open");
+      }
+    });
+    // Delegated moderation actions on the history rows and footer.
+    modal.addEventListener("click", (evt) => {
+      const resolveBtn = evt.target.closest("[data-history-resolve]");
+      const reopenBtn = evt.target.closest("[data-history-reopen]");
+      const showBtn = evt.target.closest("[data-history-show]");
+      const confirmBar = document.getElementById("gis-history-confirm");
+      if (resolveBtn) {
+        gisSetCommunityReportResolved(resolveBtn.getAttribute("data-history-resolve"), true);
+        afterReportModeration("Concern marked as resolved", "check");
+      } else if (reopenBtn) {
+        gisSetCommunityReportResolved(reopenBtn.getAttribute("data-history-reopen"), false);
+        afterReportModeration("Concern reopened", "refresh");
+      } else if (showBtn) {
+        modal.classList.remove("open");
+        if (gisMapInstance) gisMapInstance.flyToReport(showBtn.getAttribute("data-history-show"));
+      } else if (evt.target.closest("[data-history-clear-start]")) {
+        // Two-step: reveal the confirm bar rather than deleting immediately.
+        if (confirmBar) confirmBar.hidden = false;
+      } else if (evt.target.closest("[data-history-clear-cancel]")) {
+        if (confirmBar) confirmBar.hidden = true;
+      } else if (evt.target.closest("[data-history-clear-confirm]")) {
+        const removed = gisClearResolvedCommunityReports();
+        if (confirmBar) confirmBar.hidden = true;
+        afterReportModeration(`${removed} resolved report${removed === 1 ? "" : "s"} cleared`, "trash");
+      }
+    });
+  }
+  renderReportHistoryList();
+  modal.classList.add("open");
+}
+
+// Shared refresh after a resolve/reopen from the history modal: re-render map
+// pins, the active feed, and the modal list, then toast.
+function afterReportModeration(message, icon) {
+  if (gisMapInstance && typeof gisMapInstance.refreshAll === "function") gisMapInstance.refreshAll();
+  renderReportFeed();
+  renderReportHistoryList();
+  if (typeof showToast === "function") showToast(message, gisIcon(icon));
 }
 
 async function renderGISPage() {
@@ -58,6 +204,7 @@ async function renderGISPage() {
         <div class="card gis-side-panel gis-side-reports">
           <div class="card-header">
             <div class="card-title">Recent Community Reports</div>
+            <button type="button" class="btn btn-sm btn-outline gis-view-all-btn" id="gis-view-all-reports">View All</button>
           </div>
           <div class="gis-report-feed" id="gis-report-feed"></div>
         </div>
@@ -90,6 +237,7 @@ async function renderGISPage() {
   // stay read-only.
   const instance = await initGisMap("gis-map-page", { editable: true });
   if (!instance || typeof instance.getStats !== "function") return;
+  gisMapInstance = instance;
 
   renderReportFeed();
   document.getElementById("gis-report-feed").addEventListener("click", (evt) => {
@@ -97,6 +245,7 @@ async function renderGISPage() {
     if (!btn) return;
     instance.flyToReport(btn.getAttribute("data-report-id"));
   });
+  document.getElementById("gis-view-all-reports").addEventListener("click", openReportHistoryModal);
 
   // KPIs are pulled straight from the map's own data (OSM + custom features,
   // minus soft-deletes) so they always track what's actually plotted below,
