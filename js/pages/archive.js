@@ -18,7 +18,7 @@ function renderArchive() {
     <div class="card">
       <div class="card-header">
         <div class="card-title">Backup Archives</div>
-        <button class="btn btn-sm btn-gold" onclick="showToast('Backup started...','<i data-icon=database></i>')"><i data-icon=database></i> Manual Backup</button>
+        <button class="btn btn-sm btn-gold" onclick="startManualBackup()"><i data-icon=database></i> Manual Backup</button>
       </div>
       ${[
         ["<i data-icon=database></i>","backup_2025-05-02_02-00.zip","98.4 MB · Today, 02:00 AM",          "Verified"],
@@ -34,8 +34,8 @@ function renderArchive() {
             <div class="archive-info">${info} · <span class="archive-status">${status}</span></div>
           </div>
           <div class="archive-actions">
-            <button class="btn btn-sm btn-outline" onclick="showToast('Restore initiated','<i data-icon=refresh></i>')">Restore</button>
-            <button class="btn btn-sm btn-outline" onclick="showToast('Downloading...','<i data-icon=download></i>')"><i data-icon=download></i></button>
+            <button class="btn btn-sm btn-outline" onclick="restoreBackupArchive('${name}')">Restore</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadBackupArchive('${name}')"><i data-icon=download></i></button>
           </div>
         </div>`)
         .join("")}
@@ -47,6 +47,24 @@ function renderArchive() {
       <div id="archived-buildings-list">${renderArchivedBuildingsList()}</div>
     </div>
   `);
+}
+
+function startManualBackup() {
+  if (typeof logAudit === "function")
+    logAudit("ARCHIVE_BACKUP", "Manual backup started from Archive module", "info", "archive");
+  showToast("Backup started...", "<i data-icon=database></i>");
+}
+
+function restoreBackupArchive(name) {
+  if (typeof logAudit === "function")
+    logAudit("ARCHIVE_RESTORE", `Restore initiated from backup ${name}`, "warning", "archive");
+  showToast("Restore initiated", "<i data-icon=refresh></i>");
+}
+
+function downloadBackupArchive(name) {
+  if (typeof logAudit === "function")
+    logAudit("ARCHIVE_DOWNLOAD", `Backup ${name} downloaded`, "info", "archive");
+  showToast("Downloading...", "<i data-icon=download></i>");
 }
 
 function archiveEscapeHtml(str) {

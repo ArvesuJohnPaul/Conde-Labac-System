@@ -1,115 +1,120 @@
-// js/pages/incidents.js
+// js/pages/incidents.js — Blotter / Incident Reports.
+//
+// Data-driven from the unified incident/concern store (gisAllCommunityReports,
+// js/gis-map.js) — the same records filed through the "File an Incident /
+// Concern" modal and shown as pins on the GIS map and in the GIS "Recent
+// Community Reports" feed. Blotter reporting and concern reporting are one
+// feature now, so there is no separate mock data here.
 window.CURRENT_PAGE = "incidents";
+
+// Cross-page handoff: the blotter has no map of its own, so "View on Map"
+// stashes a report id and sends the user to the GIS page, which flies to it.
+const INCIDENT_FOCUS_KEY = "ibmdss.focusReport";
 
 function renderPage() {
   renderIncidentsPage();
 }
 
+function incidentEscape(str) {
+  const div = document.createElement("div");
+  div.textContent = String(str == null ? "" : str);
+  return div.innerHTML;
+}
+
+function incidentDateFiled(ts) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function viewIncidentOnMap(id) {
+  try {
+    sessionStorage.setItem(INCIDENT_FOCUS_KEY, String(id));
+  } catch (e) {
+    /* non-fatal */
+  }
+  nav(null, "gis");
+}
+
+function resolveIncident(id) {
+  if (typeof gisSetCommunityReportResolved === "function") gisSetCommunityReportResolved(id, true);
+  if (typeof showToast === "function") showToast("Incident marked as resolved", "<i data-icon=check></i>");
+  renderIncidentsPage();
+}
+
+function reopenIncident(id) {
+  if (typeof gisSetCommunityReportResolved === "function") gisSetCommunityReportResolved(id, false);
+  if (typeof showToast === "function") showToast("Incident reopened", "<i data-icon=refresh></i>");
+  renderIncidentsPage();
+}
+
 function renderIncidentsPage() {
+  const reports = (typeof gisAllCommunityReports === "function" ? gisAllCommunityReports() : [])
+    .slice()
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  const active = reports.filter((r) => !r.resolved).length;
+  const resolved = reports.length - active;
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const thisMonth = reports.filter((r) => (r.createdAt || 0) >= monthStart.getTime()).length;
+
   setContent(`
     <div class="page-header">
       <h2 class="page-title">Blotter / Incident Reports</h2>
-      <p class="page-desc">Log, track, and resolve community incidents and complaints</p>
+      <p class="page-desc">Incidents and community concerns filed by residents — logged, tracked, and resolved</p>
     </div>
     <div class="kpi-grid">
-      <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value">3</div></div>
-      <div class="kpi-card warning"><div class="kpi-label">Under Investigation</div><div class="kpi-value">8</div></div>
-      <div class="kpi-card success"><div class="kpi-label">Resolved (30 days)</div><div class="kpi-value">24</div></div>
-      <div class="kpi-card"><div class="kpi-label">Total Blotter Entries</div><div class="kpi-value">142</div></div>
+      <div class="kpi-card danger"><div class="kpi-label">Active</div><div class="kpi-value">${active}</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Resolved</div><div class="kpi-value">${resolved}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Filed This Month</div><div class="kpi-value">${thisMonth}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Blotter Entries</div><div class="kpi-value">${reports.length}</div></div>
     </div>
-    <div class="alert alert-danger"><span class="alert-icon"><i data-icon=triangle-alert></i></span><strong>INC-2025-041</strong> — Critical: Flooding at Purok 3. 14 families displaced. Active response underway.</div>
     <div class="card">
       <div class="card-header">
         <div class="card-title">Incident Blotter</div>
         <div class="btn-group">
           <button class="btn btn-sm btn-gold" onclick="openServicePopup('incidents')">⊕ File Incident</button>
-          <button class="btn btn-sm btn-outline"><i data-icon=download></i> Export</button>
         </div>
       </div>
       <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Case No.</th><th>Type</th><th>Location</th><th>Severity</th><th>Date Filed</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${[
-              [
-                "INC-2025-041",
-                "Flooding / Natural Hazard",
-                "Purok 3 — Sitio Malinis",
-                "critical",
-                "May 2, 2025",
-                "Active",
-              ],
-              [
-                "INC-2025-040",
-                "Domestic Disturbance",
-                "Purok 1, Blk 4",
-                "high",
-                "May 1, 2025",
-                "Under Investigation",
-              ],
-              [
-                "INC-2025-039",
-                "Property Dispute",
-                "Purok 2",
-                "medium",
-                "Apr 30, 2025",
-                "Under Investigation",
-              ],
-              [
-                "INC-2025-038",
-                "Noise Complaint",
-                "Purok 5",
-                "low",
-                "Apr 30, 2025",
-                "Resolved",
-              ],
-              [
-                "INC-2025-037",
-                "Theft / Robbery",
-                "Purok 4",
-                "high",
-                "Apr 29, 2025",
-                "Resolved",
-              ],
-              [
-                "INC-2025-036",
-                "Vandalism",
-                "Purok 3",
-                "medium",
-                "Apr 28, 2025",
-                "Resolved",
-              ],
-            ]
-              .map(([no, type, loc, sev, date, status]) => {
-                const sbadge = {
-                  critical: "sev-critical",
-                  high: "sev-high",
-                  medium: "sev-medium",
-                  low: "sev-low",
-                }[sev];
-                const stbadge = {
-                  Active: "badge-danger",
-                  "Under Investigation": "badge-warning",
-                  Resolved: "badge-success",
-                }[status];
-                const notifyBtn =
-                  status === "Active" || sev === "critical"
-                    ? `<button class="btn btn-sm btn-danger" onclick="sendIncidentAlert('${no}')">Notify</button>`
-                    : "";
-                return `<tr>
-                <td class="table-mono">${no}</td>
-                <td class="table-text-sm">${type}</td>
-                <td class="table-muted">${loc}</td>
-                <td><span class="sev-badge ${sbadge}">${sev.charAt(0).toUpperCase() + sev.slice(1)}</span></td>
-                <td class="table-muted">${date}</td>
-                <td><span class="badge ${stbadge}">${status}</span></td>
-                <td><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="showToast('Viewing ${no}')">View</button>${notifyBtn}</div></td>
-              </tr>`;
-              })
-              .join("")}
-          </tbody>
-        </table>
+        ${reports.length ? renderIncidentsTable(reports) : renderIncidentsEmpty()}
       </div>
     </div>
   `);
+}
+
+function renderIncidentsEmpty() {
+  return `<div class="resident-empty">No incidents filed yet. Use <strong>File Incident</strong> to log one — it drops a pin on the map and appears here and in the GIS Recent Community Reports feed.</div>`;
+}
+
+function renderIncidentsTable(reports) {
+  const rows = reports
+    .map((r) => {
+      const meta = (typeof GIS_REPORT_TYPE_META !== "undefined" && GIS_REPORT_TYPE_META[r.reportType]) || null;
+      const typeLabel = meta ? meta.label : r.reportType || "Incident";
+      const complainant = r.complainant || r.reporter?.name || "—";
+      const statusBadge = r.resolved ? "badge-success" : "badge-danger";
+      const statusText = r.resolved ? "Resolved" : "Active";
+      const caseNo = r.caseNo || r.id;
+      const actions = r.resolved
+        ? `<button class="btn btn-sm btn-outline" onclick="viewIncidentOnMap('${incidentEscape(r.id)}')">View on Map</button>
+           <button class="btn btn-sm btn-outline" onclick="reopenIncident('${incidentEscape(r.id)}')">Reopen</button>`
+        : `<button class="btn btn-sm btn-outline" onclick="viewIncidentOnMap('${incidentEscape(r.id)}')">View on Map</button>
+           <button class="btn btn-sm btn-gold" onclick="resolveIncident('${incidentEscape(r.id)}')">Resolve</button>`;
+      return `<tr>
+        <td class="table-mono">${incidentEscape(caseNo)}</td>
+        <td class="table-text-sm">${incidentEscape(typeLabel)}</td>
+        <td class="table-name">${incidentEscape(complainant)}</td>
+        <td class="table-muted">${incidentEscape(incidentDateFiled(r.createdAt))}</td>
+        <td><span class="badge ${statusBadge}">${statusText}</span></td>
+        <td><div class="btn-group">${actions}</div></td>
+      </tr>`;
+    })
+    .join("");
+  return `
+    <table class="data-table">
+      <thead><tr><th>Case No.</th><th>Type</th><th>Complainant</th><th>Date Filed</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }

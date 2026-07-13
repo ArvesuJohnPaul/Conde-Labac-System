@@ -5,6 +5,12 @@ function renderPage() {
   renderAccountsPage();
 }
 
+function approveAccountClaim(ref, applicant) {
+  if (typeof logAudit === "function")
+    logAudit("ACC_CLAIM_APPROVE", `Account claim ${ref} approved for ${applicant}`, "info", "auth");
+  showToast(`${ref} approved!`, "<i data-icon=check></i>");
+}
+
 function renderAccountsPage() {
   setContent(`
     <div class="page-header">
@@ -41,7 +47,7 @@ function renderAccountsPage() {
                 <td><span class="badge ${badge}">${status}</span></td>
                 <td><div class="btn-group">
                   <button class="btn btn-sm btn-outline" onclick="showToast('Viewing ${ref}')">View</button>
-                  ${status !== "Approved" ? `<button class="btn btn-sm btn-gold" onclick="showToast('${ref} approved!','<i data-icon=check></i>')">Approve</button>` : ""}
+                  ${status !== "Approved" ? `<button class="btn btn-sm btn-gold" onclick="approveAccountClaim('${ref}', '${name.replace(/'/g, "\\'")}')">Approve</button>` : ""}
                 </div></td>
               </tr>`;
               })

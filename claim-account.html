@@ -104,6 +104,7 @@
       }
     </style>
       <script src="js/icons.js"></script>
+    <script src="js/audit-log.js"></script>
   </head>
   <body>
     <div class="claim-card">
@@ -309,6 +310,16 @@
           document.getElementById("acc-footer").innerHTML =
             '<a class="btn btn-gold" href="system.html">Done — Go to Sign In <i data-icon=arrow-right></i></a>';
           accStep = 3;
+          if (typeof logAudit === "function") {
+            const fname = document.getElementById("acc-fname").value.trim();
+            const lname = document.getElementById("acc-lname").value.trim();
+            logAudit(
+              "ACC_CLAIM_SUBMIT",
+              `Account claim submitted by ${fname} ${lname} <${email}> (Ref: ACC-2025-0048)`,
+              "info",
+              "auth",
+            );
+          }
           showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=check></i>");
         }
       }

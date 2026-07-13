@@ -15,30 +15,35 @@ function gisPageEscapeHtml(str) {
 // drive it (fly-to) and refresh its pins after a resolve/reopen.
 let gisMapInstance = null;
 
-// "Recent Community Reports" side panel — newest resident-submitted pins,
-// straight from the same localStorage the map renders. Only ACTIVE (unresolved)
-// concerns appear here; the full history (including resolved) lives behind
-// "View All". Clicking an entry flies the map to that pin.
+// "Recent Community Reports" side panel — mirrors the Blotter page: the same
+// unified incident/concern records (newest first), showing the case number,
+// type, complainant, and status. Clicking an entry flies the map to that pin.
+// "View All" opens the full Blotter page.
 function renderReportFeed() {
   const feedEl = document.getElementById("gis-report-feed");
   if (!feedEl) return;
   const reports = gisAllCommunityReports()
-    .filter((r) => !r.resolved)
+    .slice()
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     .slice(0, 8);
   if (!reports.length) {
-    feedEl.innerHTML = `<div class="gis-feed-empty">No active community reports. Concerns residents pin on the public map appear here until an officer resolves them.</div>`;
+    feedEl.innerHTML = `<div class="gis-feed-empty">No incidents filed yet. Reports filed through "File an Incident / Concern" appear here and on the Blotter page.</div>`;
     return;
   }
   feedEl.innerHTML = reports
     .map((r) => {
       const meta = GIS_REPORT_TYPE_META[r.reportType] || GIS_REPORT_TYPE_META.other;
+      const complainant = r.complainant || r.reporter?.name || "Resident";
+      const statusBadge = r.resolved ? "resolved" : "active";
+      const statusText = r.resolved ? "Resolved" : "Active";
       return `
         <button type="button" class="gis-feed-item" data-report-id="${gisPageEscapeHtml(r.id)}" title="Show on map">
           <div class="gis-report-avatar gis-feed-avatar">${gisPageEscapeHtml(r.reporter?.initials || "?")}</div>
           <div class="gis-feed-body">
-            <div class="gis-feed-title">${gisIcon(meta.icon)} ${gisPageEscapeHtml(r.title)}</div>
-            <div class="gis-feed-sub">${gisPageEscapeHtml(r.reporter?.name || "Resident")} · ${gisPageEscapeHtml(gisTimeAgo(r.createdAt))}</div>
+            <div class="gis-feed-title">${gisIcon(meta.icon)} ${gisPageEscapeHtml(meta.label)}
+              <span class="gis-history-badge ${statusBadge}">${statusText}</span>
+            </div>
+            <div class="gis-feed-sub">${gisPageEscapeHtml(r.caseNo || "")}${r.caseNo ? " · " : ""}${gisPageEscapeHtml(complainant)} · ${gisPageEscapeHtml(gisTimeAgo(r.createdAt))}</div>
           </div>
         </button>`;
     })
@@ -204,7 +209,7 @@ async function renderGISPage() {
         <div class="card gis-side-panel gis-side-reports">
           <div class="card-header">
             <div class="card-title">Recent Community Reports</div>
-            <button type="button" class="btn btn-sm btn-outline gis-view-all-btn" id="gis-view-all-reports">View All</button>
+            <button type="button" class="btn btn-sm btn-outline gis-view-all-btn" id="gis-view-all-reports">Open Blotter <i data-icon=arrow-right></i></button>
           </div>
           <div class="gis-report-feed" id="gis-report-feed"></div>
         </div>
@@ -245,7 +250,22 @@ async function renderGISPage() {
     if (!btn) return;
     instance.flyToReport(btn.getAttribute("data-report-id"));
   });
-  document.getElementById("gis-view-all-reports").addEventListener("click", openReportHistoryModal);
+  // "View All" now opens the Blotter page — the two features are merged, so the
+  // full list lives there rather than in a separate history modal.
+  document.getElementById("gis-view-all-reports").addEventListener("click", () => nav(null, "incidents"));
+
+  // Handoff from the Blotter page's "View on Map" action: fly to the report
+  // whose id was stashed in sessionStorage, then clear it so a later plain
+  // visit to this page doesn't re-trigger.
+  try {
+    const focusId = sessionStorage.getItem("ibmdss.focusReport");
+    if (focusId) {
+      sessionStorage.removeItem("ibmdss.focusReport");
+      setTimeout(() => instance.flyToReport(focusId), 300);
+    }
+  } catch (e) {
+    /* non-fatal */
+  }
 
   // KPIs are pulled straight from the map's own data (OSM + custom features,
   // minus soft-deletes) so they always track what's actually plotted below,

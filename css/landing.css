@@ -99,6 +99,92 @@ body {
   color: var(--navy);
 }
 
+/* ─── NAV USER MENU (landing) ──────────────────── */
+/* Clickable user pill with a Settings / Sign Out dropdown. Kept separate from
+   the MIS `.nav-user-pill` styles so it stays visible (and works) on mobile. */
+.nav-user {
+  position: relative;
+}
+
+.nav-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 12px 6px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+.nav-user-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-user-caret {
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s;
+}
+.nav-user-btn[aria-expanded="true"] .nav-user-caret {
+  transform: rotate(180deg);
+  color: var(--yellow);
+}
+
+.nav-user-menu-drop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: rgba(13, 27, 62, 0.98);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  border-radius: 12px;
+  padding: 6px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(13, 27, 62, 0.4);
+  z-index: 1200;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-user-menu-drop.open {
+  display: flex;
+}
+
+.nav-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  transition: background 0.15s, color 0.15s;
+}
+.nav-user-menu-item i[data-icon] {
+  font-size: 1rem;
+  color: var(--yellow);
+}
+.nav-user-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.nav-user-menu-item-danger:hover {
+  background: rgba(220, 38, 38, 0.14);
+  color: #fca5a5;
+}
+.nav-user-menu-item-danger:hover i[data-icon] {
+  color: #fca5a5;
+}
+
 /* ─── HERO ─────────────────────────────────────── */
 .hero {
   position: relative;
@@ -1768,6 +1854,37 @@ section {
 .gis-report-pin:hover path {
   fill: #166534;
 }
+/* The incident modal's "you picked here" marker — brand gold so it stands
+   apart from the green community-report pins already on the map. */
+.gis-pick-pin path {
+  fill: #c79a3b;
+  stroke: #ffffff;
+}
+.gis-pick-pin {
+  pointer-events: none;
+}
+/* Minimal map embed (incident modal): drop the layer/filter controls and the
+   legend overlay so the pick-a-location map gets the full modal width. */
+.gis-minimal .gis-toolbar-row-wrap,
+.gis-minimal .gis-legend-overlay {
+  display: none;
+}
+/* Incident modal helper text under the embedded pick-a-location map + the
+   "auto-filled from your record" hint under read-only complainant fields. */
+.inc-pick-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+.inc-pick-status.picked {
+  color: #15803d;
+  font-weight: 600;
+}
+.inc-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+}
 .gis-dot-reports {
   background: #15803d;
 }
@@ -2306,9 +2423,9 @@ section {
 }
 
 .official-avatar {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 14px;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 16px;
   border-radius: 50%;
   background: var(--navy);
   color: var(--gold-light);
@@ -2317,8 +2434,21 @@ section {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.7rem;
   letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+.official-avatar.has-photo {
+  background: var(--navy);
+}
+
+.official-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .official-name {

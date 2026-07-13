@@ -53,6 +53,9 @@ function doLogin() {
     user,
   });
 
+  if (typeof logAudit === "function")
+    logAudit("LOGIN", `${displayName} signed in as ${currentRole} (${user})`, "info", "auth");
+
   if (currentRole === "Resident") {
     window.location.href = "../index.html";
   } else {
@@ -175,6 +178,10 @@ function applySessionToApp(session) {
 }
 
 function doLogout() {
+  const session = getSession();
+  // Log before the session is cleared so the entry still knows who left.
+  if (typeof logAudit === "function")
+    logAudit("LOGOUT", `${session?.displayName || "User"} signed out`, "info", "auth");
   clearSession();
   window.location.href = "../index.html";
 }
@@ -373,6 +380,12 @@ function generateAiSummary(scope = "dashboard") {
 
 // ════════════════════ SERVICE POPUP HELPERS ════════════════════
 function openServicePopup(service) {
+  // The blotter/incident service is the unified "File an Incident / Concern"
+  // modal (js/incident-report.js) — it builds its own body and embedded map.
+  if (service === "incidents" && typeof openIncidentModal === "function") {
+    openIncidentModal();
+    return;
+  }
   document.getElementById("modal-" + service).classList.add("open");
   if (service === "residency") renderResidentResults("");
   if (service === "gis") {
@@ -608,6 +621,8 @@ function submitCertificate() {
     return;
   }
   closeServiceModal("certificates");
+  if (typeof logAudit === "function")
+    logAudit("CERT_REQUEST", `${selectedCert} requested by ${fname} ${lname} (Ref: CERT-2025-088)`, "info", "certificate");
   showToast(`${selectedCert} request submitted! Ref: CERT-2025-088`, "<i data-icon=file-text></i>");
 }
 
@@ -619,6 +634,8 @@ function submitBlotter() {
     return;
   }
   closeServiceModal("incidents");
+  if (typeof logAudit === "function")
+    logAudit("BLOTTER_SUBMIT", `Blotter/incident report filed (Case No: INC-2025-042)`, "info", "concern");
   showToast("Blotter report submitted! Case No: INC-2025-042", "<i data-icon=siren></i>");
 }
 
@@ -639,7 +656,17 @@ function submitFeedback() {
     alert("Please enter a comment or suggestion.");
     return;
   }
+  const category = document.getElementById("fb-category")?.value || "Other";
+  const name = document.getElementById("fb-name")?.value.trim() || "";
+  const contact = document.getElementById("fb-contact")?.value.trim() || "";
+  // Persist so the submission shows up in the Feedback page's Recent list.
+  if (window.FeedbackStore)
+    FeedbackStore.add({ rating: feedbackRating, category, comment, name, contact });
   closeServiceModal("feedback");
+  if (typeof logAudit === "function")
+    logAudit("FEEDBACK_SUBMIT", `Feedback submitted — rated ${feedbackRating}/5 (${ratingLabels[feedbackRating]})`, "info", "feedback");
+  // If we're on the Feedback page, refresh the list immediately.
+  if (typeof refreshRecentFeedback === "function") refreshRecentFeedback();
   showToast("Feedback submitted! Thank you for your input.", "<i data-icon=message-square></i>");
 }
 
@@ -689,6 +716,11 @@ function accNextStep() {
     document.getElementById("acc-footer").innerHTML =
       '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done <i data-icon=check></i></button>';
     accStep = 3;
+    if (typeof logAudit === "function") {
+      const fname = document.getElementById("acc-fname").value.trim();
+      const lname = document.getElementById("acc-lname").value.trim();
+      logAudit("ACC_CLAIM_SUBMIT", `Account claim submitted by ${fname} ${lname} <${email}> (Ref: ACC-2025-0048)`, "info", "auth");
+    }
     showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=key></i>");
   }
 }

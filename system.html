@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/shared.css" />
     <link rel="stylesheet" href="css/system.css" />
       <script src="js/icons.js"></script>
+    <script src="js/audit-log.js"></script>
   </head>
   <body>
     <!-- ═══════════════════════════════ LOGIN SCREEN ═══════════════════════════════ -->
@@ -114,6 +115,9 @@
           initials: init,
           user,
         });
+
+        if (typeof logAudit === "function")
+          logAudit("LOGIN", `${displayName} signed in as ${currentRole} (${user})`, "info", "auth");
 
         if (currentRole === "Resident") {
           window.location.href = "index.html";

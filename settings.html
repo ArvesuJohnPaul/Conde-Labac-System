@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Customization | Barangay Conde Labac</title>
+    <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/shared.css" />
+    <link rel="stylesheet" href="css/landing.css?v=20260712" />
+    <script src="js/icons.js"></script>
+    <script src="js/audit-log.js"></script>
+    <script src="js/site-config.js"></script>
+    <style>
+      .settings-main {
+        padding: calc(var(--masthead-h) + var(--navbar-h) + 44px) 0 90px;
+        background: var(--cream);
+        min-height: 100vh;
+      }
+      .settings-head {
+        margin-bottom: 26px;
+      }
+      .settings-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--gold-dim);
+        background: var(--gold-pale);
+        border: 1px solid rgba(201, 162, 39, 0.25);
+        padding: 6px 14px;
+        border-radius: 100px;
+        margin-bottom: 14px;
+      }
+      .settings-title {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--navy);
+        margin-bottom: 8px;
+      }
+      .settings-desc {
+        color: var(--text-secondary);
+        max-width: 640px;
+        line-height: 1.6;
+      }
+      .settings-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 10px 30px rgba(13, 27, 62, 0.06);
+      }
+      .settings-card-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 18px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--border);
+      }
+      .settings-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--navy);
+        color: var(--gold-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+      }
+      .settings-card-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--navy);
+      }
+      .settings-card-sub {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+      }
+      .official-editor {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 24px;
+        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        margin-bottom: 18px;
+        background: var(--cream);
+      }
+      .official-editor-preview {
+        align-self: start;
+      }
+      .official-editor-preview .official-card {
+        margin: 0;
+      }
+      .official-editor-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .form-group-honorific {
+        max-width: 130px;
+      }
+      .photo-field {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .btn-photo {
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .photo-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .btn-remove-photo {
+        color: #b91c1c;
+        border-color: rgba(185, 28, 28, 0.3);
+      }
+      .btn-remove-photo:hover {
+        background: rgba(185, 28, 28, 0.08);
+      }
+      .photo-hint {
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+      .btn-remove-official {
+        align-self: flex-start;
+        color: #b91c1c;
+        border-color: rgba(185, 28, 28, 0.3);
+      }
+      .btn-remove-official:hover {
+        background: rgba(185, 28, 28, 0.08);
+      }
+      .settings-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+      }
+      .settings-actions .settings-actions-spacer {
+        flex: 1;
+      }
+      @media (max-width: 700px) {
+        .official-editor {
+          grid-template-columns: 1fr;
+        }
+        .settings-actions-spacer {
+          display: none;
+        }
+        .settings-actions .btn {
+          flex: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- --- OFFICIAL MASTHEAD --- -->
+    <div class="gov-masthead">
+      <span class="gov-flag" aria-hidden="true"
+        ><span></span><span></span><span></span
+      ></span>
+      <span class="gov-masthead-text">
+        The Official Web Portal of Barangay Conde Labac, Batangas City
+      </span>
+      <span class="gov-masthead-gov">Republic of the Philippines</span>
+    </div>
+
+    <!-- --- NAVBAR --- -->
+    <nav class="navbar">
+      <a href="index.html" class="nav-logo">
+        <img
+          src="img/conde%20labac%20logo.png"
+          onerror="
+            this.style.display = 'none';
+            this.nextElementSibling.classList.remove('is-hidden');
+            this.nextElementSibling.style.display = 'flex';
+          "
+          alt="Conde Labac Seal"
+        />
+        <div class="nav-logo-fallback is-hidden">
+          <i data-icon="landmark"></i>
+        </div>
+        <span class="nav-brand">C.A.R.E.S.<br />Barangay Conde Labac</span>
+      </a>
+
+      <div class="nav-right">
+        <a href="index.html" class="btn-nav-signin">
+          <i data-icon="arrow-left"></i> Back to Site
+        </a>
+      </div>
+    </nav>
+
+    <!-- --- SETTINGS --- -->
+    <main class="settings-main">
+      <div class="container">
+        <div class="settings-head">
+          <div class="settings-kicker">
+            <i data-icon="settings"></i> System Customization
+          </div>
+          <h1 class="settings-title">Settings</h1>
+          <p class="settings-desc">
+            Customize parts of the public C.A.R.E.S. website. Changes are saved
+            to this device and applied immediately to the homepage.
+          </p>
+        </div>
+
+        <!-- Barangay Officials editor -->
+        <section class="settings-card">
+          <div class="settings-card-head">
+            <div class="settings-card-icon"><i data-icon="users"></i></div>
+            <div>
+              <div class="settings-card-title">Barangay Officials</div>
+              <div class="settings-card-sub">
+                Edit the leadership cards shown in the “Barangay Officials”
+                section of the homepage.
+              </div>
+            </div>
+          </div>
+
+          <div id="officials-editor">
+            <!-- editor rows rendered by JS -->
+          </div>
+
+          <button class="btn btn-outline" onclick="addOfficial()">
+            <i data-icon="plus"></i> Add Official
+          </button>
+
+          <div class="settings-actions">
+            <button class="btn btn-outline" onclick="resetOfficials()">
+              <i data-icon="refresh"></i> Reset to Defaults
+            </button>
+            <span class="settings-actions-spacer"></span>
+            <a class="btn btn-outline" href="index.html#team">Preview on Site</a>
+            <button class="btn btn-gold" onclick="saveOfficials()">
+              <i data-icon="check"></i> Save Changes
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- -- SUCCESS TOAST -- -->
+    <div id="toast" class="toast">
+      <span id="toast-icon"><i data-icon="check"></i></span>
+      <span id="toast-msg">Success</span>
+    </div>
+
+    <script>
+      const SESSION_KEY = "ibmdss.session";
+      function getSession() {
+        try {
+          return JSON.parse(localStorage.getItem(SESSION_KEY));
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function showToast(msg, icon = "<i data-icon=check></i>") {
+        const t = document.getElementById("toast");
+        document.getElementById("toast-msg").textContent = msg;
+        document.getElementById("toast-icon").innerHTML = icon;
+        t.style.transform = "translateY(0)";
+        t.style.opacity = "1";
+        setTimeout(() => {
+          t.style.transform = "translateY(100px)";
+          t.style.opacity = "0";
+        }, 3500);
+      }
+
+      let workingOfficials = [];
+
+      function officialRowHtml(o, i) {
+        const esc = SiteConfig.escapeHtml;
+        return `
+        <div class="official-editor">
+          <div class="official-editor-preview">
+            <article class="official-card">
+              <div class="official-avatar${o.photo ? " has-photo" : ""}" id="prev-avatar-${i}">${SiteConfig.avatarInner(o)}</div>
+              <div class="official-name" id="prev-name-${i}">${esc(SiteConfig.displayName(o) || "Full Name")}</div>
+              <div class="official-role" id="prev-role-${i}">${esc(o.role || "Position / Role")}</div>
+              <p class="official-desc" id="prev-desc-${i}">${esc(o.desc || "Short description…")}</p>
+            </article>
+          </div>
+          <div class="official-editor-fields">
+            <div class="form-row">
+              <div class="form-group form-group-honorific">
+                <label class="form-label">Honorific</label>
+                <input class="form-control" value="${esc(o.honorific)}" placeholder="Hon." oninput="updateOfficial(${i},'honorific',this.value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-control" value="${esc(o.name)}" placeholder="Juan Dela Cruz" oninput="updateOfficial(${i},'name',this.value)" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Position / Role</label>
+              <input class="form-control" value="${esc(o.role)}" placeholder="Punong Barangay" oninput="updateOfficial(${i},'role',this.value)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" placeholder="Short description of this official's responsibilities" oninput="updateOfficial(${i},'desc',this.value)">${esc(o.desc)}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Photo (avatar)</label>
+              <div class="photo-field">
+                <label class="btn btn-outline btn-photo">
+                  <i data-icon="plus"></i> Upload Photo
+                  <input type="file" accept="image/*" class="photo-input" onchange="uploadPhoto(${i}, this)" />
+                </label>
+                <button type="button" class="btn btn-outline btn-remove-photo${o.photo ? "" : " is-hidden"}" id="rmphoto-${i}" onclick="removePhoto(${i})">
+                  <i data-icon="trash"></i> Remove Photo
+                </button>
+              </div>
+              <div class="photo-hint">Square images work best. Large photos are automatically resized.</div>
+            </div>
+            <button type="button" class="btn btn-outline btn-remove-official" onclick="removeOfficial(${i})">
+              <i data-icon="trash"></i> Remove Official
+            </button>
+          </div>
+        </div>`;
+      }
+
+      function renderEditor() {
+        const container = document.getElementById("officials-editor");
+        container.innerHTML = workingOfficials
+          .map((o, i) => officialRowHtml(o, i))
+          .join("");
+        if (typeof hydrateIcons === "function") hydrateIcons(container);
+      }
+
+      // Refresh a preview avatar (photo or auto-initials) without re-rendering
+      // the whole editor row (which would drop input focus).
+      function refreshAvatar(i) {
+        const o = workingOfficials[i];
+        const el = document.getElementById("prev-avatar-" + i);
+        if (!el) return;
+        el.className = "official-avatar" + (o.photo ? " has-photo" : "");
+        el.innerHTML = SiteConfig.avatarInner(o);
+      }
+
+      function updateOfficial(i, field, value) {
+        workingOfficials[i][field] = value;
+        const o = workingOfficials[i];
+        if (field === "honorific" || field === "name") {
+          document.getElementById("prev-name-" + i).textContent =
+            SiteConfig.displayName(o) || "Full Name";
+          if (!o.photo) refreshAvatar(i); // update auto-initials
+        } else if (field === "role") {
+          document.getElementById("prev-role-" + i).textContent =
+            value || "Position / Role";
+        } else if (field === "desc") {
+          document.getElementById("prev-desc-" + i).textContent =
+            value || "Short description…";
+        }
+      }
+
+      function uploadPhoto(i, input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        SiteConfig.readImage(file, 320, function (dataUrl) {
+          workingOfficials[i].photo = dataUrl;
+          refreshAvatar(i);
+          const rm = document.getElementById("rmphoto-" + i);
+          if (rm) rm.classList.remove("is-hidden");
+        });
+        input.value = ""; // allow re-selecting the same file later
+      }
+
+      function removePhoto(i) {
+        workingOfficials[i].photo = "";
+        refreshAvatar(i);
+        const rm = document.getElementById("rmphoto-" + i);
+        if (rm) rm.classList.add("is-hidden");
+      }
+
+      function addOfficial() {
+        workingOfficials.push({
+          honorific: "",
+          name: "",
+          role: "",
+          desc: "",
+          photo: "",
+        });
+        renderEditor();
+      }
+
+      function removeOfficial(i) {
+        workingOfficials.splice(i, 1);
+        renderEditor();
+      }
+
+      function saveOfficials() {
+        // Drop rows with no content at all.
+        const cleaned = workingOfficials.filter(
+          (o) =>
+            (o.name || "").trim() ||
+            (o.role || "").trim() ||
+            (o.desc || "").trim() ||
+            o.photo,
+        );
+        SiteConfig.save({ officials: cleaned });
+        workingOfficials = cleaned.map(SiteConfig.cloneOfficial);
+        renderEditor();
+        if (typeof logAudit === "function")
+          logAudit(
+            "SETTINGS_UPDATE",
+            `Barangay Officials section updated (${cleaned.length} official${cleaned.length !== 1 ? "s" : ""})`,
+            "info",
+            "settings",
+          );
+        showToast("Officials saved — changes are now live on the homepage.");
+      }
+
+      function resetOfficials() {
+        if (
+          !confirm(
+            "Reset the officials section to the original default entries? Unsaved edits will be lost.",
+          )
+        )
+          return;
+        workingOfficials = SiteConfig.DEFAULT_OFFICIALS.map(
+          SiteConfig.cloneOfficial,
+        );
+        renderEditor();
+        showToast("Reverted to defaults — click Save Changes to apply.");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const session = getSession();
+        if (!session) {
+          // Settings is only reachable when signed in.
+          window.location.href = "system.html";
+          return;
+        }
+        workingOfficials = SiteConfig.get().officials.map(
+          SiteConfig.cloneOfficial,
+        );
+        renderEditor();
+      });
+    </script>
+  </body>
+</html>

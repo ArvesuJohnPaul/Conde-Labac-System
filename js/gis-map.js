@@ -123,15 +123,23 @@ const GIS_ACCIDENT_TYPE_META = {
 // render time so the icon stays a constant, legible size on screen.
 const GIS_ACCIDENT_ICON_SIZE = 42;
 
-// Community Reports — concern pins placed by residents from the public
-// landing-page map. Rendered on every embed; placement is its own one-shot
-// mode (see beginCommunityReport) that never unlocks the staff edit tools.
+// Incident / concern reports — the single combined "blotter report" model
+// (concern reporting and blotter reporting were merged). Pins are placed from
+// the "File an Incident" modal's embedded map (see js/incident-report.js) and
+// stored via gisAddCommunityReport; the same records drive the map pins, the
+// GIS "Recent Community Reports" feed, and the Blotter page.
+//
+// `interpersonal: true` types involve another party, so the incident modal
+// reveals the Respondent/Subject and Witness Names fields only for those.
 const GIS_REPORT_TYPE_META = {
-  road: { label: "Road / Infrastructure", icon: "cone" },
-  flooding: { label: "Flooding / Drainage", icon: "waves" },
-  garbage: { label: "Garbage / Sanitation", icon: "trash" },
-  safety: { label: "Safety / Security", icon: "siren" },
-  other: { label: "Other Concern", icon: "alertCircle" },
+  noise: { label: "Noise Complaint", icon: "siren", interpersonal: false },
+  dispute: { label: "Property Dispute", icon: "alertCircle", interpersonal: true },
+  altercation: { label: "Physical Altercation", icon: "siren", interpersonal: true },
+  theft: { label: "Theft / Robbery", icon: "siren", interpersonal: true },
+  vandalism: { label: "Vandalism", icon: "alertCircle", interpersonal: false },
+  domestic: { label: "Domestic Disturbance", icon: "siren", interpersonal: true },
+  flooding: { label: "Flooding / Natural Hazard", icon: "waves", interpersonal: false },
+  other: { label: "Other", icon: "alertCircle", interpersonal: false },
 };
 const GIS_REPORT_ICON_SIZE = 44;
 
@@ -272,6 +280,8 @@ function gisAddCustomBuilding(ring) {
   const id = gisNewId("bld");
   list.push({ id, coordinates: ring });
   gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit("MAP_BUILDING_ADD", `New building outline drawn on map (${id})`, "info", "map");
   return id;
 }
 function gisDeleteCustomBuilding(id) {
@@ -303,6 +313,13 @@ function gisArchiveBuilding(entry) {
   const list = gisLoadArchivedBuildings();
   list.push({ ...entry, archivedAt: Date.now() });
   gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit(
+      "MAP_BUILDING_DELETE",
+      `Building "${entry.tag?.name || "Untagged"}" (${entry.id}) deleted from map — moved to Archive`,
+      "warning",
+      "map",
+    );
 }
 function gisRemoveArchivedBuilding(id) {
   gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, gisLoadArchivedBuildings().filter((b) => String(b.id) !== String(id)));
@@ -322,6 +339,13 @@ function gisRestoreArchivedBuilding(id) {
   }
   if (entry.tag) gisSaveBuildingTag(entry.id, gisNormalizeBuildingTag(entry.tag));
   gisRemoveArchivedBuilding(entry.id);
+  if (typeof logAudit === "function")
+    logAudit(
+      "ARCHIVE_BUILDING_RESTORE",
+      `Building "${entry.tag?.name || "Untagged"}" (${entry.id}) restored to map from Archive`,
+      "info",
+      "archive",
+    );
   return true;
 }
 
@@ -337,6 +361,8 @@ function gisAddCustomRoad(line, name, roadType) {
   const id = gisNewId("road");
   list.push({ id, coordinates: line, name, roadType });
   gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit("MAP_ROAD_ADD", `Road "${name || "Unnamed"}" (${roadType}) drawn on map`, "info", "map");
   return id;
 }
 function gisUpdateCustomRoad(id, name, roadType) {
@@ -346,10 +372,16 @@ function gisUpdateCustomRoad(id, name, roadType) {
     road.name = name;
     road.roadType = roadType;
     gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list);
+    if (typeof logAudit === "function")
+      logAudit("MAP_ROAD_EDIT", `Road "${name || "Unnamed"}" (${roadType}) updated`, "info", "map");
   }
 }
 function gisDeleteCustomRoad(id) {
-  gisSaveJSON(GIS_CUSTOM_ROADS_KEY, gisLoadJSON(GIS_CUSTOM_ROADS_KEY, []).filter((r) => r.id !== id));
+  const list = gisLoadJSON(GIS_CUSTOM_ROADS_KEY, []);
+  const road = list.find((r) => r.id === id);
+  gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list.filter((r) => r.id !== id));
+  if (typeof logAudit === "function")
+    logAudit("MAP_ROAD_DELETE", `Road "${road?.name || id}" deleted from map`, "warning", "map");
 }
 
 function gisCustomVegetationFeatures() {
@@ -364,6 +396,8 @@ function gisAddCustomVegetation(ring, kind, notes) {
   const id = gisNewId("veg");
   list.push({ id, coordinates: ring, kind, notes });
   gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit("MAP_VEGETATION_ADD", `Vegetation area (${kind || "unspecified"}) drawn on map (${id})`, "info", "map");
   return id;
 }
 function gisUpdateCustomVegetation(id, kind, notes) {
@@ -373,11 +407,15 @@ function gisUpdateCustomVegetation(id, kind, notes) {
     v.kind = kind;
     v.notes = notes;
     gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, list);
+    if (typeof logAudit === "function")
+      logAudit("MAP_VEGETATION_EDIT", `Vegetation area ${id} updated (${kind || "unspecified"})`, "info", "map");
   }
 }
 function gisDeleteCustomVegetation(id) {
   gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, gisLoadJSON(GIS_CUSTOM_VEGETATION_KEY, []).filter((v) => v.id !== id));
   gisClearVegetationCuts(id);
+  if (typeof logAudit === "function")
+    logAudit("MAP_VEGETATION_DELETE", `Vegetation area ${id} deleted from map`, "warning", "map");
 }
 
 // Vegetation "cut" tool — trims a bite out of a vegetation area (custom-drawn
@@ -395,6 +433,8 @@ function gisAddVegetationCut(vegId, cutRing) {
   if (!cuts[vegId]) cuts[vegId] = [];
   cuts[vegId].push(cutRing);
   gisSaveJSON(GIS_VEGETATION_CUTS_KEY, cuts);
+  if (typeof logAudit === "function")
+    logAudit("MAP_VEGETATION_TRIM", `Vegetation area ${vegId} trimmed (cut applied)`, "info", "map");
 }
 function gisClearVegetationCuts(vegId) {
   const cuts = gisLoadVegetationCuts();
@@ -416,6 +456,8 @@ function gisAddConstruction(ring, name, status, notes) {
   const id = gisNewId("con");
   list.push({ id, coordinates: ring, name, status, notes });
   gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit("MAP_CONSTRUCTION_ADD", `Construction area "${name || "Unnamed"}" (${status}) added to map`, "info", "map");
   return id;
 }
 function gisUpdateConstruction(id, name, status, notes) {
@@ -424,10 +466,16 @@ function gisUpdateConstruction(id, name, status, notes) {
   if (c) {
     Object.assign(c, { name, status, notes });
     gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list);
+    if (typeof logAudit === "function")
+      logAudit("MAP_CONSTRUCTION_EDIT", `Construction area "${name || "Unnamed"}" updated (${status})`, "info", "map");
   }
 }
 function gisDeleteConstruction(id) {
-  gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, gisLoadJSON(GIS_CUSTOM_CONSTRUCTION_KEY, []).filter((c) => c.id !== id));
+  const list = gisLoadJSON(GIS_CUSTOM_CONSTRUCTION_KEY, []);
+  const c = list.find((x) => x.id === id);
+  gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list.filter((x) => x.id !== id));
+  if (typeof logAudit === "function")
+    logAudit("MAP_CONSTRUCTION_DELETE", `Construction area "${c?.name || id}" deleted from map`, "warning", "map");
 }
 
 // Hazard zones are ping-only (a general-area marker with an adjustable
@@ -450,6 +498,13 @@ function gisAddHazardPing(point, radius, hazardType, severity, notes) {
   const id = gisNewId("haz");
   list.push({ id, point, radius, hazardType, severity, notes });
   gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit(
+      "MAP_HAZARD_ADD",
+      `Hazard zone marked on map — ${hazardType || "unspecified"} (${severity || "unrated"} severity)`,
+      severity === "critical" ? "critical" : "warning",
+      "map",
+    );
   return id;
 }
 function gisUpdateHazard(id, hazardType, severity, notes) {
@@ -458,10 +513,21 @@ function gisUpdateHazard(id, hazardType, severity, notes) {
   if (h) {
     Object.assign(h, { hazardType, severity, notes });
     gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
+    if (typeof logAudit === "function")
+      logAudit(
+        "MAP_HAZARD_EDIT",
+        `Hazard zone ${id} updated — ${hazardType || "unspecified"} (${severity || "unrated"} severity)`,
+        severity === "critical" ? "critical" : "info",
+        "map",
+      );
   }
 }
 function gisDeleteHazard(id) {
-  gisSaveJSON(GIS_HAZARD_ZONES_KEY, gisLoadJSON(GIS_HAZARD_ZONES_KEY, []).filter((h) => h.id !== id));
+  const list = gisLoadJSON(GIS_HAZARD_ZONES_KEY, []);
+  const h = list.find((x) => x.id === id);
+  gisSaveJSON(GIS_HAZARD_ZONES_KEY, list.filter((x) => x.id !== id));
+  if (typeof logAudit === "function")
+    logAudit("MAP_HAZARD_DELETE", `Hazard zone (${h?.hazardType || id}) removed from map`, "warning", "map");
 }
 
 // Accidents/incidents — point markers rendered as an icon per incident type.
@@ -477,6 +543,8 @@ function gisAddAccident(point, incidentType, notes) {
   const id = gisNewId("acc");
   list.push({ id, point, incidentType, notes });
   gisSaveJSON(GIS_ACCIDENTS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit("MAP_INCIDENT_ADD", `Accident/incident marker (${incidentType || "unspecified"}) placed on map`, "warning", "map");
   return id;
 }
 function gisUpdateAccident(id, incidentType, notes) {
@@ -485,10 +553,16 @@ function gisUpdateAccident(id, incidentType, notes) {
   if (a) {
     Object.assign(a, { incidentType, notes });
     gisSaveJSON(GIS_ACCIDENTS_KEY, list);
+    if (typeof logAudit === "function")
+      logAudit("MAP_INCIDENT_EDIT", `Accident/incident marker ${id} updated (${incidentType || "unspecified"})`, "info", "map");
   }
 }
 function gisDeleteAccident(id) {
-  gisSaveJSON(GIS_ACCIDENTS_KEY, gisLoadJSON(GIS_ACCIDENTS_KEY, []).filter((a) => a.id !== id));
+  const list = gisLoadJSON(GIS_ACCIDENTS_KEY, []);
+  const a = list.find((x) => x.id === id);
+  gisSaveJSON(GIS_ACCIDENTS_KEY, list.filter((x) => x.id !== id));
+  if (typeof logAudit === "function")
+    logAudit("MAP_INCIDENT_DELETE", `Accident/incident marker (${a?.incidentType || id}) removed from map`, "warning", "map");
 }
 
 // Community reports — resident-submitted concern pins with reporter details.
@@ -500,6 +574,7 @@ function gisAllReportFeatures() {
     type: "Feature",
     properties: {
       id: r.id,
+      caseNo: r.caseNo || null,
       reportType: r.reportType,
       title: r.title,
       comment: r.comment,
@@ -511,25 +586,52 @@ function gisAllReportFeatures() {
     geometry: { type: "Point", coordinates: r.point },
   }));
 }
+// Sequential blotter case number, e.g. "INC-2026-001". Numbering restarts each
+// calendar year; the sequence is the count of reports already filed this year.
+function gisNextCaseNo(existing) {
+  const year = new Date().getFullYear();
+  const soFar = existing.filter((r) => new Date(r.createdAt || 0).getFullYear() === year).length;
+  return `INC-${year}-${String(soFar + 1).padStart(3, "0")}`;
+}
+// Files one combined incident/concern report. Beyond the map-pin fields
+// (reportType/title/comment/reporter) it carries the blotter fields entered in
+// the "File an Incident" modal: complainant, contact, and — for interpersonal
+// incident types only — respondent and witnesses. The incident date/time is
+// always "now" (createdAt), so the modal shows it read-only instead of asking.
 function gisAddCommunityReport(point, data) {
   const list = gisAllCommunityReports();
   const record = {
     id: gisNewId("rpt"),
+    caseNo: gisNextCaseNo(list),
     point,
     reportType: data.reportType,
     title: data.title,
     comment: data.comment || "",
     reporter: data.reporter || null,
+    complainant: data.complainant || data.reporter?.name || "",
+    contact: data.contact || "",
+    respondent: data.respondent || "",
+    witnesses: data.witnesses || "",
     createdAt: Date.now(),
     resolved: false,
     resolvedAt: null,
   };
   list.push(record);
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit(
+      "INCIDENT_FILE",
+      `Incident/concern "${record.title}" (${GIS_REPORT_TYPE_META[record.reportType]?.label || record.reportType || "general"}) filed as ${record.caseNo}${record.complainant ? " by " + record.complainant : ""}`,
+      "info",
+      "concern",
+    );
   return record;
 }
 function gisDeleteCommunityReport(id) {
+  const record = gisAllCommunityReports().find((r) => String(r.id) === String(id));
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, gisAllCommunityReports().filter((r) => r.id !== id));
+  if (typeof logAudit === "function")
+    logAudit("CONCERN_DELETE", `Resident concern "${record?.title || id}" deleted`, "warning", "concern");
 }
 // Resolving a concern pin hides it from the map and the "Recent Community
 // Reports" feed (which only shows active/unresolved pins) — it stays in the
@@ -542,6 +644,13 @@ function gisSetCommunityReportResolved(id, resolved) {
   record.resolved = !!resolved;
   record.resolvedAt = resolved ? Date.now() : null;
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
+  if (typeof logAudit === "function")
+    logAudit(
+      resolved ? "CONCERN_RESOLVE" : "CONCERN_REOPEN",
+      `Resident concern "${record.title}" marked as ${resolved ? "resolved" : "reopened"}`,
+      "info",
+      "concern",
+    );
 }
 // Permanently drops every resolved concern from storage (the "Clear Resolved"
 // action in the history modal). Active reports are untouched. Returns the
@@ -550,7 +659,10 @@ function gisClearResolvedCommunityReports() {
   const list = gisAllCommunityReports();
   const kept = list.filter((r) => !r.resolved);
   gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, kept);
-  return list.length - kept.length;
+  const removed = list.length - kept.length;
+  if (removed > 0 && typeof logAudit === "function")
+    logAudit("CONCERN_PURGE", `${removed} resolved resident concern${removed === 1 ? "" : "s"} permanently cleared`, "warning", "concern");
+  return removed;
 }
 
 // Compact relative timestamp for report cards/feeds ("5m ago", "2d ago"...).
@@ -811,6 +923,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // "Household" type tag survives. Opt in per initGisMap() call.
   const anonymous = !!opts.anonymous;
 
+  // Minimal embeds (the "File an Incident / Concern" modal's pick-a-location
+  // map) drop the layer-toggle/filter controls and the legend overlay so the
+  // map itself gets the full width — the resident only needs to drop a pin.
+  const minimal = !!opts.minimal;
+
   // The extractor includes surroundings a few hundred meters past the border
   // for context. A feature counts as part of the barangay if ANY part of it
   // touches the boundary — only features entirely outside render faded and
@@ -847,6 +964,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     showReports: true,
     reportMode: false, // resident "place a community report" one-shot mode
     pendingReporter: null, // reporter details captured when report mode was armed
+    pickMode: false, // lightweight "pick a location" mode for the incident modal's embedded map
+    pickCallback: null, // called with [lng, lat] each time a spot is picked
+    pickPoint: null, // the currently-picked [lng, lat], drawn as a marker
     editMode: false,
     drawTool: null, // null | 'building' | 'road' | 'vegetation' | 'construction' | 'hazard-ping' | 'accident-ping' | 'vegetation-cut'
     drawSubtype: null, // the specific type picked in the draw panel (e.g. 'flood' for a hazard ping)
@@ -1080,6 +1200,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       );
   }
   const toggleButtonsHost = filterRowEl || container;
+  // Minimal embeds keep the controls in the DOM (the engine wires them) but
+  // hide the filter row and legend via CSS so the map fills the width.
+  if (minimal) container.classList.add("gis-minimal");
 
   // Legend — generated by the engine as a translucent overlay in the map's
   // bottom-left corner, one column per filter dropdown in the same order
@@ -1538,24 +1661,25 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   function attachFeatureInteraction(el, { hoverHtml, onOpen }) {
     el.classList.add("gis-interactive-feature");
     el.addEventListener("mouseenter", (evt) => {
-      if (state.drawTool || state.editMode || state.reportMode || expandedCardOpen()) return;
+      if (state.drawTool || state.editMode || state.reportMode || state.pickMode || expandedCardOpen()) return;
       const svgRect = svg.getBoundingClientRect();
       showInfoPopup(hoverHtml(), evt.clientX - svgRect.left, evt.clientY - svgRect.top);
     });
     el.addEventListener("mousemove", (evt) => {
-      if (state.drawTool || state.editMode || state.reportMode) return;
+      if (state.drawTool || state.editMode || state.reportMode || state.pickMode) return;
       if (popupEl.hidden || !popupEl.classList.contains("gis-popup-readonly")) return;
       const svgRect = svg.getBoundingClientRect();
       positionFloatingEl(popupEl, evt.clientX - svgRect.left, evt.clientY - svgRect.top, container);
     });
     el.addEventListener("mouseleave", () => {
-      if (state.drawTool || state.editMode || state.reportMode || expandedCardOpen()) return;
+      if (state.drawTool || state.editMode || state.reportMode || state.pickMode || expandedCardOpen()) return;
       hidePopup();
     });
     el.addEventListener("click", (evt) => {
-      // While placing a community report, let the click fall through to the
-      // map's own click handler (features cover most of the map surface).
-      if (state.drawTool || state.reportMode) return;
+      // While placing a community report or picking an incident location, let
+      // the click fall through to the map's own handler (features cover most
+      // of the map surface).
+      if (state.drawTool || state.reportMode || state.pickMode) return;
       evt.stopPropagation();
       if (!state.editMode) return;
       onOpen(evt);
@@ -1718,6 +1842,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     });
     popupEl.querySelector("[data-gis-untag-building]")?.addEventListener("click", () => {
       gisClearBuildingTag(buildingId);
+      if (typeof logAudit === "function")
+        logAudit("MAP_TAG_REMOVE", `Tag "${tag?.name || "Untagged"}" removed from building ${buildingId}`, "info", "map");
       hidePopup();
       renderBuildings();
     });
@@ -1885,6 +2011,13 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         }
         groupIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId }));
         exitGroupSelect(); // also hides the form and re-renders
+        if (typeof logAudit === "function")
+          logAudit(
+            "MAP_TAG_SAVE",
+            `Group tag "${name}" (${GIS_BUILDING_TYPE_META[type]?.label || type}) applied to ${groupIds.length} building${groupIds.length === 1 ? "" : "s"}`,
+            "info",
+            "map",
+          );
         if (typeof showToast === "function")
           showToast(`${groupIds.length} building${groupIds.length === 1 ? "" : "s"} tagged`, typeIcon);
         return;
@@ -1896,12 +2029,26 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         memberIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId: normalized.groupId }));
         hideForm();
         renderBuildings();
+        if (typeof logAudit === "function")
+          logAudit(
+            "MAP_TAG_SAVE",
+            `Group tag "${name}" updated (${memberIds.length} building${memberIds.length === 1 ? "" : "s"})`,
+            "info",
+            "map",
+          );
         if (typeof showToast === "function") showToast(`Group updated (${memberIds.length} buildings)`, typeIcon);
         return;
       }
       gisSaveBuildingTag(buildingId, tagValue);
       hideForm();
       renderBuildings();
+      if (typeof logAudit === "function")
+        logAudit(
+          "MAP_TAG_SAVE",
+          `Building ${buildingId} tagged "${name}" (${GIS_BUILDING_TYPE_META[type]?.label || type})`,
+          "info",
+          "map",
+        );
       if (typeof showToast === "function") showToast("Building tagged", typeIcon);
     });
     formEl.addEventListener("click", (e) => e.stopPropagation());
@@ -2129,6 +2276,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       gisClearVegetationCuts(props.id);
       hidePopup();
       renderVegetation();
+      if (typeof logAudit === "function")
+        logAudit("MAP_VEGETATION_RESTORE", `Vegetation area ${props.id} restored to full shape (cuts cleared)`, "info", "map");
       if (typeof showToast === "function") showToast("Vegetation area restored", gisIcon("refresh"));
     });
   }
@@ -2527,23 +2676,35 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // ───────── Community Reports (resident-submitted concern pins) ─────────
   function renderReports() {
     reportsLayer.innerHTML = "";
-    if (!state.showReports) return;
-
-    gisAllReportFeatures().forEach((feature) => {
-      const props = feature.properties;
-      // Resolved concerns drop off the map — they live on only in the history.
-      if (props.resolved) return;
-      const [x, y] = project(...feature.geometry.coordinates);
-      // Constant on-screen size (same trick as accidents), but translated so
-      // the pin's TIP — not its center — sits on the reported location.
+    if (state.showReports) {
+      gisAllReportFeatures().forEach((feature) => {
+        const props = feature.properties;
+        // Resolved concerns drop off the map — they live on only in the history.
+        if (props.resolved) return;
+        const [x, y] = project(...feature.geometry.coordinates);
+        // Constant on-screen size (same trick as accidents), but translated so
+        // the pin's TIP — not its center — sits on the reported location.
+        const size = GIS_REPORT_ICON_SIZE / state.zoom;
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "gis-report-pin");
+        g.setAttribute("transform", `translate(${x - size / 2} ${y - size}) scale(${size / 24})`);
+        g.innerHTML = GIS_ICON_PATHS.pin;
+        attachReportInteraction(g, props);
+        reportsLayer.appendChild(g);
+      });
+    }
+    // The incident modal's "pick a location" marker — drawn on top of the
+    // report pins (and independent of the reports layer's visibility) so the
+    // resident can always see the spot they just chose.
+    if (state.pickMode && state.pickPoint) {
+      const [x, y] = project(...state.pickPoint);
       const size = GIS_REPORT_ICON_SIZE / state.zoom;
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "gis-report-pin");
+      g.setAttribute("class", "gis-report-pin gis-pick-pin");
       g.setAttribute("transform", `translate(${x - size / 2} ${y - size}) scale(${size / 24})`);
       g.innerHTML = GIS_ICON_PATHS.pin;
-      attachReportInteraction(g, props);
       reportsLayer.appendChild(g);
-    });
+    }
   }
 
   function reportHoverHtml(props) {
@@ -2654,7 +2815,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   function attachReportInteraction(g, props) {
     g.classList.add("gis-interactive-feature");
     g.addEventListener("mouseenter", (evt) => {
-      if (state.drawTool || state.reportMode || expandedCardOpen()) return;
+      if (state.drawTool || state.reportMode || state.pickMode || expandedCardOpen()) return;
       cancelHidePopup();
       const svgRect = svg.getBoundingClientRect();
       openReportHoverCard(props, evt.clientX - svgRect.left, evt.clientY - svgRect.top);
@@ -2666,7 +2827,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     // Click (and tap — touch devices have no hover) opens the full card
     // directly; doubles as a shortcut past the hover step.
     g.addEventListener("click", (evt) => {
-      if (state.drawTool || state.reportMode) return;
+      if (state.drawTool || state.reportMode || state.pickMode) return;
       evt.stopPropagation();
       const svgRect = svg.getBoundingClientRect();
       showExpandedReportCard(props, evt.clientX - svgRect.left, evt.clientY - svgRect.top);
@@ -2696,6 +2857,37 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     state.pendingReporter = null;
     hideForm();
     updateReportModeUI();
+  }
+
+  // ── Location-pick mode — a lightweight point picker used by the "File an
+  // Incident" modal's embedded map. Unlike beginCommunityReport (which opens
+  // the map's own concern form on click), this only captures a coordinate,
+  // drops a marker, and reports it back through the callback; the modal owns
+  // the form and the actual persistence. Re-clicking moves the marker.
+  function updatePickModeUI() {
+    container.classList.toggle("gis-reporting", state.pickMode);
+    reportHintEl.hidden = !state.pickMode;
+    reportHintEl.textContent = state.pickMode
+      ? "Click the spot on the map where the incident happened."
+      : "";
+  }
+
+  function beginLocationPick(onPick) {
+    state.pickMode = true;
+    state.pickCallback = typeof onPick === "function" ? onPick : null;
+    state.pickPoint = null;
+    hidePopup();
+    hideForm();
+    updatePickModeUI();
+    renderReports();
+  }
+
+  function endLocationPick() {
+    state.pickMode = false;
+    state.pickCallback = null;
+    state.pickPoint = null;
+    updatePickModeUI();
+    renderReports();
   }
 
   function showCommunityReportForm(point, screenX, screenY) {
@@ -3731,6 +3923,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       suppressClickAdd = false;
       return;
     }
+    if (state.pickMode) {
+      const svgPoint = gisScreenToSvg(svg, evt.clientX, evt.clientY);
+      const [lng, lat] = project.invert(svgPoint);
+      state.pickPoint = [lng, lat];
+      renderReports();
+      if (state.pickCallback) state.pickCallback([lng, lat]);
+      return;
+    }
     if (state.reportMode) {
       const svgPoint = gisScreenToSvg(svg, evt.clientX, evt.clientY);
       const [lng, lat] = project.invert(svgPoint);
@@ -3820,6 +4020,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     beginCommunityReport,
     cancelCommunityReport,
     flyToReport,
+    // Location picker for the "File an Incident" modal's embedded map.
+    beginLocationPick,
+    endLocationPick,
   };
 }
 

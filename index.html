@@ -11,8 +11,11 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/landing.css?v=20260710" />
+    <link rel="stylesheet" href="css/landing.css?v=20260712" />
     <script src="js/icons.js"></script>
+    <script src="js/audit-log.js"></script>
+    <script src="js/site-config.js"></script>
+    <script src="js/feedback-store.js"></script>
   </head>
   <body>
     <!-- --- OFFICIAL MASTHEAD --- -->
@@ -69,10 +72,49 @@
           </svg>
           Sign In
         </a>
-        <div class="nav-user-pill is-hidden" id="nav-user-pill">
-          <div class="nav-user-avatar" id="nav-avatar">JD</div>
-          <span class="nav-user-name" id="nav-user-name">Juan D.</span>
-          <button class="nav-logout-btn" onclick="signOut()">Sign Out</button>
+        <div class="nav-user is-hidden" id="nav-user-pill">
+          <button
+            type="button"
+            class="nav-user-btn"
+            id="nav-user-trigger"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <div class="nav-user-avatar" id="nav-avatar">JD</div>
+            <span class="nav-user-name" id="nav-user-name">Juan D.</span>
+            <svg
+              class="nav-user-caret"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          <div class="nav-user-menu-drop" id="nav-user-dropdown">
+            <a
+              class="nav-user-menu-item is-hidden"
+              id="nav-user-mis"
+              href="system.html"
+            >
+              <i data-icon="chart"></i> MIS Dashboard
+            </a>
+            <a class="nav-user-menu-item" href="settings.html">
+              <i data-icon="settings"></i> Settings
+            </a>
+            <button
+              type="button"
+              class="nav-user-menu-item nav-user-menu-item-danger"
+              onclick="signOut()"
+            >
+              <i data-icon="log-out"></i> Sign Out
+            </button>
+          </div>
         </div>
         <button
           class="nav-toggle"
@@ -242,29 +284,6 @@
         </div>
 
         <div class="gis-section-panel reveal">
-          <div class="gis-report-bar">
-            <button class="btn btn-sm btn-gold" id="gis-report-btn" hidden>
-              <svg
-                class="gis-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 21s7-6.5 7-11.6A7 7 0 0 0 5 9.4C5 14.5 12 21 12 21Z"
-                />
-                <circle cx="12" cy="9.4" r="2.4" />
-              </svg>
-              Report a Concern
-            </button>
-            <span class="gis-report-signin-hint" id="gis-report-signin-hint">
-              Sign in as a resident to report a concern on the map.
-            </span>
-          </div>
           <div class="gis-filter-row"></div>
 
           <div class="gis-modal-map gis-section-map" id="gis-map-section"></div>
@@ -288,31 +307,8 @@
             The current elected officials serving Barangay Conde Labac.
           </p>
         </div>
-        <div class="officials-grid reveal">
-          <article class="official-card">
-            <div class="official-avatar">JD</div>
-            <div class="official-name">Hon. Juan Dela Cruz</div>
-            <div class="official-role">Punong Barangay</div>
-            <p class="official-desc">
-              Leads the barangay administration and community programs.
-            </p>
-          </article>
-          <article class="official-card">
-            <div class="official-avatar">MS</div>
-            <div class="official-name">Hon. Maria Santos</div>
-            <div class="official-role">Kagawad — Public Safety</div>
-            <p class="official-desc">
-              Oversees public safety, peace and order, and disaster response.
-            </p>
-          </article>
-          <article class="official-card">
-            <div class="official-avatar">PR</div>
-            <div class="official-name">Hon. Pedro Reyes</div>
-            <div class="official-role">Kagawad — Health &amp; Sanitation</div>
-            <p class="official-desc">
-              Manages health programs, sanitation, and community welfare.
-            </p>
-          </article>
+        <div class="officials-grid reveal" id="officials-grid">
+          <!-- populated from site config (js/site-config.js) -->
         </div>
       </div>
     </section>
@@ -935,54 +931,23 @@
     </footer>
 
     <script src="js/gis-map.js"></script>
+    <script src="js/incident-report.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // Render the (customizable) Barangay Officials section from site config.
+        if (window.SiteConfig) SiteConfig.renderOfficials("officials-grid");
+
+        // Wire the user-pill dropdown (Settings / Sign Out).
+        initUserMenu();
+
         // Initialize the GIS section map on the landing page. Anonymous mode
         // keeps tagged households private (no names/classification) and hides
         // reporter names on community-concern pins.
         setTimeout(() => initGisMap("gis-map-section", { anonymous: true }), 200);
 
-        // Community Reports — signed-in visitors can drop a concern pin on
-        // the map; everyone else sees a sign-in hint instead of the button.
-        const reportBtn = document.getElementById("gis-report-btn");
-        const reportSigninHint = document.getElementById(
-          "gis-report-signin-hint",
-        );
-        const reportSession = getSession();
-        if (reportBtn && reportSession) {
-          reportBtn.hidden = false;
-          if (reportSigninHint) reportSigninHint.hidden = true;
-          reportBtn.addEventListener("click", async () => {
-            const instance =
-              gisInstances["gis-map-section"] ||
-              (await initGisMap("gis-map-section", { anonymous: true }));
-            if (
-              !instance ||
-              typeof instance.beginCommunityReport !== "function"
-            )
-              return;
-            // The mock session has no purok, so best-effort match the
-            // reporter's surname against the resident directory for one.
-            const surname = (reportSession.displayName || "")
-              .trim()
-              .split(" ")
-              .pop();
-            const residentMatch =
-              surname && typeof RESIDENTS_DATA !== "undefined"
-                ? RESIDENTS_DATA.find(
-                    (r) =>
-                      r.name.split(",")[0].trim().toLowerCase() ===
-                      surname.toLowerCase(),
-                  )
-                : null;
-            instance.beginCommunityReport({
-              name: reportSession.displayName || "Resident",
-              initials: reportSession.initials || "",
-              role: reportSession.role || "Resident",
-              purok: residentMatch ? residentMatch.purok : null,
-            });
-          });
-        }
+        // Reporting a concern is now filed through the unified "File an
+        // Incident / Concern" service modal (with its own embedded pin-picker
+        // map), so the on-map "Report a Concern" button was removed here.
 
         const accessBtn = document.getElementById("access-system-btn");
         if (accessBtn) {
@@ -1075,11 +1040,40 @@
         } else {
           misLi.classList.add("is-hidden");
         }
+
+        // MIS shortcut inside the user dropdown — staff only.
+        const misMenuItem = document.getElementById("nav-user-mis");
+        if (misMenuItem) misMenuItem.classList.toggle("is-hidden", !isStaff);
       }
 
       function signOut() {
+        const session = getSession();
+        // Log before the session is cleared so the entry still knows who left.
+        if (typeof logAudit === "function")
+          logAudit("LOGOUT", `${session?.displayName || "User"} signed out`, "info", "auth");
         clearSession();
         applySessionToNav(null);
+      }
+
+      // Toggle the user-pill dropdown (Settings / Sign Out) and close it when
+      // clicking elsewhere.
+      function initUserMenu() {
+        const trigger = document.getElementById("nav-user-trigger");
+        const dropdown = document.getElementById("nav-user-dropdown");
+        if (!trigger || !dropdown) return;
+
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const open = dropdown.classList.toggle("open");
+          trigger.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove("open");
+            trigger.setAttribute("aria-expanded", "false");
+          }
+        });
       }
 
       applySessionToNav(getSession());
@@ -1100,6 +1094,12 @@
       }
 
       function openServicePopup(service) {
+        // Blotter/incident filing uses the unified modal (incident-report.js),
+        // which builds its own body and embedded pin-picker map.
+        if (service === "incidents" && typeof openIncidentModal === "function") {
+          openIncidentModal();
+          return;
+        }
         document.getElementById("modal-" + service).classList.add("open");
         if (service === "residency") renderResidentResults("");
       }
@@ -1249,6 +1249,13 @@
           return;
         }
         closeServiceModal("certificates");
+        if (typeof logAudit === "function")
+          logAudit(
+            "CERT_REQUEST",
+            `${selectedCert} requested by ${fname} ${lname} (Ref: CERT-2025-088)`,
+            "info",
+            "certificate",
+          );
         showToast(
           `${selectedCert} request submitted! Ref: CERT-2025-088`,
           "<i data-icon=check></i>",
@@ -1262,6 +1269,13 @@
           return;
         }
         closeServiceModal("incidents");
+        if (typeof logAudit === "function")
+          logAudit(
+            "BLOTTER_SUBMIT",
+            "Blotter/incident report filed (Case No: INC-2025-042)",
+            "info",
+            "concern",
+          );
         showToast(
           "Blotter report submitted! Case No: INC-2025-042",
           "<i data-icon=check></i>",
@@ -1291,7 +1305,28 @@
           alert("Please enter a comment or suggestion.");
           return;
         }
+        const category =
+          document.getElementById("fb-category")?.value || "Other";
+        const name = document.getElementById("fb-name")?.value.trim() || "";
+        const contact =
+          document.getElementById("fb-contact")?.value.trim() || "";
+        // Persist so barangay staff see it in the Feedback page's Recent list.
+        if (window.FeedbackStore)
+          FeedbackStore.add({
+            rating: feedbackRating,
+            category,
+            comment,
+            name,
+            contact,
+          });
         closeServiceModal("feedback");
+        if (typeof logAudit === "function")
+          logAudit(
+            "FEEDBACK_SUBMIT",
+            `Feedback submitted — rated ${feedbackRating}/5 (${ratingLabels[feedbackRating]})`,
+            "info",
+            "feedback",
+          );
         showToast(
           "Feedback submitted! Thank you for your input.",
           "<i data-icon=check></i>",

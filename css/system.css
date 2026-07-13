@@ -1145,6 +1145,56 @@ body {
   line-height: 1.6;
 }
 
+/* Recent Feedback pagination */
+.feedback-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 16px;
+  margin-top: 4px;
+}
+.feedback-page-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.feedback-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fb-page-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.fb-page-btn:hover:not(:disabled) {
+  border-color: var(--yellow);
+  color: var(--navy);
+}
+.fb-page-btn.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+.fb-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ─── INSIGHTS ─────────────────────────────────── */
 .insight-card {
   background: var(--surface);
@@ -2513,6 +2563,37 @@ body {
 }
 .gis-report-pin:hover path {
   fill: #166534;
+}
+/* The incident modal's "you picked here" marker — brand gold so it stands
+   apart from the green community-report pins already on the map. */
+.gis-pick-pin path {
+  fill: #c79a3b;
+  stroke: #ffffff;
+}
+.gis-pick-pin {
+  pointer-events: none;
+}
+/* Minimal map embed (incident modal): drop the layer/filter controls and the
+   legend overlay so the pick-a-location map gets the full modal width. */
+.gis-minimal .gis-toolbar-row-wrap,
+.gis-minimal .gis-legend-overlay {
+  display: none;
+}
+/* Incident modal helper text under the embedded pick-a-location map + the
+   "auto-filled from your record" hint under read-only complainant fields. */
+.inc-pick-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+.inc-pick-status.picked {
+  color: #15803d;
+  font-weight: 600;
+}
+.inc-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
 }
 .gis-dot-reports {
   background: #15803d;

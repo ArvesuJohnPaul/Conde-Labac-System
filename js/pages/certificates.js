@@ -5,6 +5,12 @@ function renderPage() {
   renderCertificatesPage();
 }
 
+function approveCertRequest(no, applicant, type) {
+  if (typeof logAudit === "function")
+    logAudit("CERT_APPROVE", `${type} (${no}) approved for ${applicant}`, "info", "certificate");
+  showToast(`${no} approved!`, "<i data-icon=check></i>");
+}
+
 function renderCertificatesPage() {
   setContent(`
     <div class="page-header">
@@ -48,7 +54,7 @@ function renderCertificatesPage() {
                 <td><span class="badge ${badge}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
                 <td><div class="btn-group">
                   <button class="btn btn-sm btn-outline" onclick="showToast('Viewing ${no}')">View</button>
-                  ${status === "pending" ? `<button class="btn btn-sm btn-gold" onclick="showToast('${no} approved!','<i data-icon=check></i>')">Approve</button>` : ""}
+                  ${status === "pending" ? `<button class="btn btn-sm btn-gold" onclick="approveCertRequest('${no}', '${name.replace(/'/g, "\\'")}', '${type}')">Approve</button>` : ""}
                 </div></td>
               </tr>`;
               })
