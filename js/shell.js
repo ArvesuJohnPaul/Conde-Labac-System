@@ -23,44 +23,11 @@ function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-// ════════════════════ ROLE SELECTION ════════════════════
-function selectRole(el, role) {
-  document
-    .querySelectorAll(".role-chip")
-    .forEach((c) => c.classList.remove("active"));
-  el.classList.add("active");
-  currentRole = role;
-}
-
 // ════════════════════ LOGIN ════════════════════
+// Real sign-in lives on system.html (POST /api/auth/login — the DB decides the
+// role). This stub only exists in case stale markup still calls doLogin().
 function doLogin() {
-  const user = document.getElementById("login-user").value.trim() || "User";
-  const names = {
-    Admin: "Juan D. Administrator",
-    Officer: "Maria R. Officer",
-    Resident: "Pedro S. Santos",
-  };
-  const initials = { Admin: "JD", Officer: "MR", Resident: "PS" };
-  const displayName = names[currentRole];
-  const init = initials[currentRole];
-  const shortName = displayName.split(" ").slice(0, 2).join(" ");
-
-  setSession({
-    role: currentRole,
-    displayName,
-    shortName,
-    initials: init,
-    user,
-  });
-
-  if (typeof logAudit === "function")
-    logAudit("LOGIN", `${displayName} signed in as ${currentRole} (${user})`, "info", "auth");
-
-  if (currentRole === "Resident") {
-    window.location.href = "../index.html";
-  } else {
-    window.location.href = "pages/dashboard.html";
-  }
+  window.location.href = "../system.html";
 }
 
 function applySessionToApp(session) {
@@ -387,7 +354,8 @@ function openServicePopup(service) {
     return;
   }
   document.getElementById("modal-" + service).classList.add("open");
-  if (service === "residency") renderResidentResults("");
+  if (service === "residency") loadSearchResidents();
+  if (service === "accounts") resetAccountClaiming();
   if (service === "gis") {
     setTimeout(() => initGisMap("gis-map-modal"), 120);
   }
@@ -482,78 +450,47 @@ function renderResidentPortal() {
 }
 
 // ════════════════════ RESIDENCY MODAL LOGIC ════════════════════
-const RESIDENTS_DATA = [
-  {
-    name: "Santos, Pedro J.",
-    age: 34,
-    purok: "Purok 1",
-    cat: "",
-    status: "Active",
-  },
-  {
-    name: "dela Cruz, Maria L.",
-    age: 67,
-    purok: "Purok 2",
-    cat: "Senior Citizen",
-    status: "Active",
-  },
-  {
-    name: "Reyes, Jose B.",
-    age: 45,
-    purok: "Purok 3",
-    cat: "Indigent Family",
-    status: "Active",
-  },
-  {
-    name: "Aquino, Ana M.",
-    age: 29,
-    purok: "Purok 1",
-    cat: "Solo Parent",
-    status: "Active",
-  },
-  {
-    name: "Bautista, Carlos F.",
-    age: 52,
-    purok: "Purok 4",
-    cat: "PWD",
-    status: "Active",
-  },
-  {
-    name: "Villanueva, Rosa T.",
-    age: 78,
-    purok: "Purok 5",
-    cat: "Senior Citizen",
-    status: "Active",
-  },
-  {
-    name: "Garcia, Luis N.",
-    age: 38,
-    purok: "Purok 2",
-    cat: "",
-    status: "Active",
-  },
-  {
-    name: "Mendoza, Elena P.",
-    age: 44,
-    purok: "Purok 3",
-    cat: "Indigent Family",
-    status: "Inactive",
-  },
-  {
-    name: "Santos, Juan R.",
-    age: 22,
-    purok: "Purok 1",
-    cat: "",
-    status: "Active",
-  },
-  {
-    name: "Cruz, Nora T.",
-    age: 61,
-    purok: "Purok 5",
-    cat: "Senior Citizen",
-    status: "Active",
-  },
-];
+// The resident-search popup is now backed by the live API (same /api/residents
+// the residency page uses), replacing the old hardcoded RESIDENTS_DATA.
+let SEARCH_RESIDENTS = [];
+const SEARCH_CAT_LABELS = {
+  senior: "Senior Citizen",
+  pwd: "PWD",
+  "solo-parent": "Solo Parent",
+  indigent: "Indigent Family",
+};
+
+function escResident(s) {
+  return String(s == null ? "" : s).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+  );
+}
+
+// Fetch residents when the search popup opens, then render.
+async function loadSearchResidents() {
+  const container = document.getElementById("resident-results");
+  if (typeof apiGet !== "function") {
+    if (container)
+      container.innerHTML =
+        '<div class="resident-empty">Search is unavailable (API not loaded on this page).</div>';
+    return;
+  }
+  if (container)
+    container.innerHTML =
+      '<div class="resident-summary">Loading residents…</div>';
+  try {
+    SEARCH_RESIDENTS = await apiGet("/api/residents");
+    filterResidents();
+  } catch (err) {
+    if (container)
+      container.innerHTML =
+        '<div class="resident-empty">Could not reach the server (' +
+        escResident(err && err.message ? err.message : "error") +
+        ").</div>";
+  }
+}
 
 function filterResidents() {
   const nameQ =
@@ -561,19 +498,23 @@ function filterResidents() {
   const purokQ = document.getElementById("res-search-purok")?.value || "";
   const catQ = document.getElementById("res-search-cat")?.value || "";
   const statusQ = document.getElementById("res-search-status")?.value || "";
-  const filtered = RESIDENTS_DATA.filter((r) => {
+  const filtered = SEARCH_RESIDENTS.filter((r) => {
+    const catLabels = (r.cats || []).map((c) => SEARCH_CAT_LABELS[c] || c);
+    // "Active" = account claimed (only); anything else = unclaimed.
+    const statusLabel = r.claimed === true ? "Active" : "Unclaimed";
     return (
-      (!nameQ || r.name.toLowerCase().includes(nameQ)) &&
-      (!purokQ || r.purok === purokQ.split(" — ")[0] || purokQ === "") &&
-      (!catQ || r.cat === catQ) &&
-      (!statusQ || r.status === statusQ)
+      (!nameQ || (r.name || "").toLowerCase().includes(nameQ)) &&
+      // purok option is e.g. "Purok 1 Sitio Maliwanag"; API purok is "Purok 1".
+      (!purokQ || (r.purok && purokQ.indexOf(r.purok) === 0)) &&
+      (!catQ || catLabels.indexOf(catQ) !== -1) &&
+      (!statusQ || statusLabel === statusQ)
     );
   });
   renderResidentResults(filtered);
 }
 
 function renderResidentResults(filtered) {
-  const list = Array.isArray(filtered) ? filtered : RESIDENTS_DATA;
+  const list = Array.isArray(filtered) ? filtered : SEARCH_RESIDENTS;
   const container = document.getElementById("resident-results");
   if (!container) return;
   if (list.length === 0) {
@@ -584,17 +525,26 @@ function renderResidentResults(filtered) {
   container.innerHTML =
     `<div class="resident-summary">Showing ${list.length} result${list.length !== 1 ? "s" : ""}</div>` +
     list
-      .map(
-        (r) => `
+      .map((r) => {
+        const claimed = r.claimed === true;
+        const catLabel = (r.cats || [])
+          .map((c) => SEARCH_CAT_LABELS[c] || c)
+          .join(", ");
+        const parts = (r.name || "").split(",");
+        const initials =
+          ((parts[1] ? parts[1].trim()[0] : "") +
+            (parts[0] ? parts[0][0] : "")) ||
+          "?";
+        return `
       <div class="resident-card">
-        <div class="resident-avatar-sm">${r.name.split(",")[1]?.trim()[0] || "?"}${r.name.split(",")[0][0]}</div>
+        <div class="resident-avatar-sm">${escResident(initials)}</div>
         <div class="resident-info">
-          <h4>${r.name}</h4>
-          <p>${r.age} yrs · ${r.purok}${r.cat ? " · " + r.cat : ""}</p>
+          <h4>${escResident(r.name)}</h4>
+          <p>${r.age == null ? "—" : r.age + " yrs"} · ${escResident(r.purok || "—")}${catLabel ? " · " + escResident(catLabel) : ""}</p>
         </div>
-        <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
-      </div>`,
-      )
+        <span class="badge ${claimed ? "badge-success" : "badge-gray"} badge-align-right">${claimed ? "Active" : "Unclaimed"}</span>
+      </div>`;
+      })
       .join("");
 }
 
@@ -671,13 +621,87 @@ function submitFeedback() {
 }
 
 // ════════════════════ ACCOUNT CLAIMING STEPS ════════════════════
-function accNextStep() {
+// Real two-phase claiming against the DB:
+//   Step 1 "Verify Identity" → POST /api/residents/claim/verify — matches
+//     name + birthdate, shows the found record (or the rejection) inline.
+//   Step 2 "Set Credentials"  → POST /api/residents/claim — flips
+//     account_claimed = true, so the resident's status becomes "Active".
+let accVerifiedResident = null;
+let accFooterOriginal = null; // captured on first open so reset can restore it
+
+// Put the wizard back to step 1 every time the modal opens (previously a
+// finished/half-done wizard stayed stuck where it left off).
+function resetAccountClaiming() {
+  accStep = 1;
+  accVerifiedResident = null;
+  const s1 = document.getElementById("acc-step-1");
+  if (!s1) return;
+  s1.style.display = "";
+  s1.classList.remove("is-hidden");
+  document.getElementById("acc-step-2")?.classList.add("is-hidden");
+  document.getElementById("acc-step-3")?.classList.add("is-hidden");
+  ["step-1-dot", "step-2-dot", "step-3-dot"].forEach((id, i) => {
+    const d = document.getElementById(id);
+    if (!d) return;
+    d.style.background = "";
+    d.style.color = "";
+    d.textContent = String(i + 1);
+  });
+  ["step-line-1", "step-line-2"].forEach((id) => {
+    const l = document.getElementById(id);
+    if (l) l.style.background = "";
+  });
+  const resultEl = document.getElementById("acc-verify-result");
+  if (resultEl) {
+    resultEl.classList.add("is-hidden");
+    resultEl.innerHTML = "";
+  }
+  const footer = document.getElementById("acc-footer");
+  if (footer) {
+    if (accFooterOriginal === null) accFooterOriginal = footer.innerHTML;
+    else footer.innerHTML = accFooterOriginal;
+  }
+  const btn = document.getElementById("acc-next-btn");
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = "Verify Identity <i data-icon=arrow-right></i>";
+  }
+}
+
+async function accNextStep() {
   if (accStep === 1) {
     const fname = document.getElementById("acc-fname").value.trim();
     const lname = document.getElementById("acc-lname").value.trim();
+    const dob = document.getElementById("acc-dob")?.value || "";
     if (!fname || !lname) {
       alert("Please fill in your name to continue.");
       return;
+    }
+    // Verify against the resident database before allowing the next step.
+    if (typeof apiPost === "function") {
+      const resultEl = document.getElementById("acc-verify-result");
+      const btn = document.getElementById("acc-next-btn");
+      if (btn) btn.disabled = true;
+      if (resultEl) {
+        resultEl.classList.remove("is-hidden");
+        resultEl.innerHTML = `<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Verifying your record…</div>`;
+      }
+      try {
+        accVerifiedResident = await apiPost("/api/residents/claim/verify", {
+          first_name: fname,
+          last_name: lname,
+          birthdate: dob || null,
+        });
+        if (resultEl)
+          resultEl.innerHTML = `<div class="alert alert-success"><span class="alert-icon"><i data-icon=check></i></span> <strong>Record found:</strong> ${accVerifiedResident.name}${accVerifiedResident.purok ? " · " + accVerifiedResident.purok : ""}${accVerifiedResident.household_no ? " · Household " + accVerifiedResident.household_no : ""}</div>`;
+      } catch (err) {
+        accVerifiedResident = null;
+        if (resultEl)
+          resultEl.innerHTML = `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> ${err.message}</div>`;
+        if (btn) btn.disabled = false;
+        return; // stay on step 1 until identity verifies
+      }
+      if (btn) btn.disabled = false;
     }
     document.getElementById("acc-step-1").style.display = "none";
     document.getElementById("acc-step-2").style.display = "";
@@ -706,6 +730,34 @@ function accNextStep() {
       alert("Password must be at least 8 characters.");
       return;
     }
+    // Claim the account for real: creates the resident_account row (email +
+    // hashed password) linked to the resident verified in step 1. The row's
+    // existence is what makes the resident "Active". Blocks the flow if the
+    // record vanished / was claimed meanwhile / email already in use.
+    if (typeof apiPost === "function") {
+      const btn = document.getElementById("acc-next-btn");
+      if (btn) btn.disabled = true;
+      const who = accVerifiedResident
+        ? { resident_id: accVerifiedResident.id }
+        : {
+            first_name: document.getElementById("acc-fname").value.trim(),
+            last_name: document.getElementById("acc-lname").value.trim(),
+            birthdate: document.getElementById("acc-dob")?.value || null,
+          };
+      try {
+        await apiPost("/api/residents/claim", {
+          ...who,
+          email: email,
+          mobile_no: document.getElementById("acc-mobile")?.value.trim() || null,
+          password: pass,
+        });
+      } catch (err) {
+        alert("Could not claim account: " + err.message);
+        if (btn) btn.disabled = false;
+        return;
+      }
+      if (btn) btn.disabled = false;
+    }
     document.getElementById("acc-step-2").classList.add("is-hidden");
     document.getElementById("acc-step-3").classList.remove("is-hidden");
     document.getElementById("step-2-dot").style.background = "#22c55e";
@@ -716,12 +768,27 @@ function accNextStep() {
     document.getElementById("acc-footer").innerHTML =
       '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done <i data-icon=check></i></button>';
     accStep = 3;
+    // Claiming is now instant (the DB flag just flipped) — make the success
+    // step say so instead of the old "review within 12 working days" copy,
+    // and use a real reference derived from the resident id.
+    const ref = accVerifiedResident
+      ? "ACC-" + String(accVerifiedResident.id).padStart(4, "0")
+      : "ACC-" + Date.now().toString().slice(-6);
+    const refEl = document.getElementById("acc-ref-num");
+    if (refEl) refEl.textContent = ref;
+    const titleEl = document.querySelector("#acc-step-3 .acc-success-title");
+    if (titleEl) titleEl.textContent = "Account Claimed!";
+    const copyEl = document.querySelector("#acc-step-3 .acc-success-copy");
+    if (copyEl)
+      copyEl.textContent = accVerifiedResident
+        ? `The resident record for ${accVerifiedResident.name} is now linked to your account and marked Active.`
+        : "Your account has been claimed and is now marked Active.";
     if (typeof logAudit === "function") {
       const fname = document.getElementById("acc-fname").value.trim();
       const lname = document.getElementById("acc-lname").value.trim();
-      logAudit("ACC_CLAIM_SUBMIT", `Account claim submitted by ${fname} ${lname} <${email}> (Ref: ACC-2025-0048)`, "info", "auth");
+      logAudit("ACC_CLAIM_SUBMIT", `Account claimed by ${fname} ${lname} <${email}> (Ref: ${ref})`, "info", "auth");
     }
-    showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=key></i>");
+    showToast("Account claimed! Ref: " + ref, "<i data-icon=key></i>");
   }
 }
 

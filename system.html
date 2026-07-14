@@ -12,6 +12,8 @@
     />
     <link rel="stylesheet" href="css/shared.css" />
     <link rel="stylesheet" href="css/system.css" />
+      <script src="js/api-config.js"></script>
+      <script src="js/api.js"></script>
       <script src="js/icons.js"></script>
     <script src="js/audit-log.js"></script>
   </head>
@@ -28,25 +30,14 @@
           Integrated Barangay Management System · Batangas City
         </p>
 
-        <div class="login-roles">
-          <button class="role-chip active" onclick="selectRole(this, 'Admin')">
-            Admin
-          </button>
-          <button class="role-chip" onclick="selectRole(this, 'Officer')">
-            Officer
-          </button>
-          <button class="role-chip" onclick="selectRole(this, 'Resident')">
-            Resident
-          </button>
-        </div>
-
+        <!-- Role is determined by the account itself (app_user.role for staff,
+             resident_account = Resident) — no self-selected role chips. -->
         <label class="login-label">Username / Email</label>
         <input
           class="login-input"
           type="text"
           id="login-user"
           placeholder="e.g. admin@condelabac.gov.ph"
-          value="admin@condelabac.gov.ph"
         />
 
         <label class="login-label">Password</label>
@@ -55,10 +46,11 @@
           type="password"
           id="login-pass"
           placeholder="••••••••"
-          value="••••••••"
         />
 
-        <button class="login-btn" onclick="doLogin()">Sign In to System</button>
+        <div id="login-error" style="color:#fca5a5;font-size:13px;min-height:18px;margin:6px 0"></div>
+
+        <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In to System</button>
 
         <div class="login-claim">
           New resident?
@@ -73,7 +65,6 @@
 
     <script>
       const SESSION_KEY = "ibmdss.session";
-      let currentRole = "Admin";
 
       function getSession() {
         try {
@@ -87,44 +78,72 @@
         localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       }
 
-      function selectRole(el, role) {
-        document
-          .querySelectorAll(".role-chip")
-          .forEach((c) => c.classList.remove("active"));
-        el.classList.add("active");
-        currentRole = role;
+      // "Arvesu, John Paul A." → { initials: "JA", shortName: "John Arvesu" }
+      function nameBits(name) {
+        const parts = name.split(",");
+        const last = (parts[0] || "").trim();
+        const first = (parts[1] || "").trim();
+        return {
+          initials: ((first[0] || "") + (last[0] || "")).toUpperCase() || "U",
+          shortName: ((first.split(" ")[0] || "") + " " + last).trim() || name,
+        };
       }
 
-      function doLogin() {
-        const user =
-          document.getElementById("login-user").value.trim() || "User";
-        const names = {
-          Admin: "Juan D. Administrator",
-          Officer: "Maria R. Officer",
-          Resident: "Pedro S. Santos",
-        };
-        const initials = { Admin: "JD", Officer: "MR", Resident: "PS" };
-        const displayName = names[currentRole];
-        const init = initials[currentRole];
-        const shortName = displayName.split(" ").slice(0, 2).join(" ");
+      // Real login: the API answers with the account's kind and role — which
+      // table the credentials matched decides staff vs resident.
+      async function doLogin() {
+        const user = document.getElementById("login-user").value.trim();
+        const pass = document.getElementById("login-pass").value;
+        const errEl = document.getElementById("login-error");
+        const btn = document.getElementById("login-btn");
+        errEl.textContent = "";
+        if (!user || !pass) {
+          errEl.textContent = "Please enter your email/username and password.";
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = "Signing in…";
+        let acct;
+        try {
+          acct = await apiPost("/api/auth/login", {
+            username: user,
+            password: pass,
+          });
+        } catch (err) {
+          errEl.textContent = err.message;
+          btn.disabled = false;
+          btn.textContent = "Sign In to System";
+          return;
+        }
 
+        const bits = nameBits(acct.name);
         setSession({
-          role: currentRole,
-          displayName,
-          shortName,
-          initials: init,
-          user,
+          role: acct.role, // from the DB, not a chip
+          kind: acct.kind, // "staff" | "resident"
+          displayName: acct.name,
+          shortName: bits.shortName,
+          initials: bits.initials,
+          user: acct.username,
+          user_id: acct.user_id || null,
+          resident_id: acct.resident_id || null,
         });
 
         if (typeof logAudit === "function")
-          logAudit("LOGIN", `${displayName} signed in as ${currentRole} (${user})`, "info", "auth");
+          logAudit("LOGIN", `${acct.name} signed in as ${acct.role} (${acct.username})`, "info", "auth");
 
-        if (currentRole === "Resident") {
+        if (acct.role === "Resident") {
           window.location.href = "index.html";
         } else {
           window.location.href = "pages/dashboard.html";
         }
       }
+
+      // Submit on Enter from either field.
+      ["login-user", "login-pass"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (e) => {
+          if (e.key === "Enter") doLogin();
+        });
+      });
 
       // If already logged in, redirect immediately
       const existing = getSession();

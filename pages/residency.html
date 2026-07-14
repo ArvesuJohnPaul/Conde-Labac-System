@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="../css/shared.css" />
     <link rel="stylesheet" href="../css/system.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+      <script src="../js/api-config.js"></script>
+      <script src="../js/api.js"></script>
       <script src="../js/icons.js"></script>
       <script src="../js/audit-log.js"></script>
       <script src="../js/feedback-store.js"></script>
@@ -280,8 +282,7 @@
               >
                 <option value="">All Statuses</option>
                 <option>Active</option>
-                <option>Inactive</option>
-                <option>Deceased</option>
+                <option>Unclaimed</option>
               </select>
             </div>
           </div>
@@ -748,24 +749,6 @@
                 <label class="form-label">Date of Birth</label
                 ><input class="form-control" type="date" id="acc-dob" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Purok / Zone</label
-                ><select class="form-control" id="acc-purok">
-                  <option>Purok 1 Sitio Maliwanag</option>
-                  <option>Purok 2 Sitio Masagana</option>
-                  <option>Purok 3 Sitio Malinis</option>
-                  <option>Purok 4 Sitio Mapayapa</option>
-                  <option>Purok 5 Sitio Bagong Pag-Asa</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Mother's Maiden Name</label
-              ><input
-                class="form-control"
-                id="acc-mother"
-                placeholder="For identity verification"
-              />
             </div>
             <div id="acc-verify-result" class="is-hidden"></div>
           </div>

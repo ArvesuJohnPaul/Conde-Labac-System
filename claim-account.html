@@ -103,6 +103,8 @@
         }
       }
     </style>
+      <script src="js/api-config.js"></script>
+      <script src="js/api.js"></script>
       <script src="js/icons.js"></script>
     <script src="js/audit-log.js"></script>
   </head>
@@ -152,24 +154,6 @@
             <label class="form-label">Date of Birth</label>
             <input class="form-control" type="date" id="acc-dob" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Purok / Zone</label>
-            <select class="form-control" id="acc-purok">
-              <option>Purok 1 – Sitio Maliwanag</option>
-              <option>Purok 2 – Sitio Masagana</option>
-              <option>Purok 3 – Sitio Malinis</option>
-              <option>Purok 4 – Sitio Mapayapa</option>
-              <option>Purok 5 – Sitio Bagong Pag-Asa</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mother's Maiden Name</label>
-          <input
-            class="form-control"
-            id="acc-mother"
-            placeholder="For identity verification"
-          />
         </div>
         <div id="acc-verify-result" class="is-hidden"></div>
       </div>
@@ -218,18 +202,16 @@
         </div>
         <div class="alert alert-info">
           <span class="alert-icon"><i data-icon=info></i></span> Your account will be linked to your
-          existing barangay record. A barangay official will verify and activate
-          it within 24 hours.
+          verified barangay record and activated immediately.
         </div>
       </div>
 
       <div id="acc-step-3" class="acc-step-complete is-hidden">
         <div class="acc-success-icon"><i data-icon=check></i></div>
-        <h3 class="acc-success-title">Account Request Submitted!</h3>
-        <p class="acc-success-copy">
-          Your account claiming request has been received. A barangay official
-          will review and activate your account within 1–2 working days. You
-          will receive an SMS confirmation.
+        <h3 class="acc-success-title">Account Claimed!</h3>
+        <p class="acc-success-copy" id="acc-success-copy">
+          Your account is now linked to your barangay record and active. You
+          can sign in with your email and password.
         </p>
         <div class="acc-ref-box">
           <div class="acc-ref-label">Reference Number</div>
@@ -268,22 +250,57 @@
         }, 3500);
       }
 
-      function accNextStep() {
+      // Wired to the real API (same endpoints as the in-app modal):
+      //   step 1 → POST /api/residents/claim/verify  (name + birthdate match)
+      //   step 2 → POST /api/residents/claim         (creates resident_account)
+      // NOTE: steps are shown/hidden via the is-hidden CLASS — the old demo
+      // toggled style.display, which the class overrode, so step 2 (the email
+      // form) never appeared. That bug is why this page looked email-less.
+      let accVerified = null;
+
+      function accShowStep(n) {
+        ["acc-step-1", "acc-step-2", "acc-step-3"].forEach((id, i) => {
+          document.getElementById(id).classList.toggle("is-hidden", i !== n - 1);
+        });
+      }
+
+      async function accNextStep() {
+        const btn = document.getElementById("acc-next-btn");
         if (accStep === 1) {
           const fname = document.getElementById("acc-fname").value.trim();
           const lname = document.getElementById("acc-lname").value.trim();
+          const dob = document.getElementById("acc-dob").value;
           if (!fname || !lname) {
             alert("Please fill in your name to continue.");
             return;
           }
-          document.getElementById("acc-step-1").style.display = "none";
-          document.getElementById("acc-step-2").style.display = "";
+          const resultEl = document.getElementById("acc-verify-result");
+          resultEl.classList.remove("is-hidden");
+          resultEl.innerHTML =
+            '<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Verifying your record…</div>';
+          btn.disabled = true;
+          try {
+            accVerified = await apiPost("/api/residents/claim/verify", {
+              first_name: fname,
+              last_name: lname,
+              birthdate: dob || null,
+            });
+          } catch (err) {
+            accVerified = null;
+            resultEl.innerHTML =
+              '<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> ' +
+              err.message + "</div>";
+            btn.disabled = false;
+            return;
+          }
+          btn.disabled = false;
+          resultEl.classList.add("is-hidden");
+          accShowStep(2);
           document.getElementById("step-1-dot").style.background = "#22c55e";
           document.getElementById("step-1-dot").innerHTML = "<i data-icon=check></i>";
           document.getElementById("step-2-dot").classList.add("active");
           document.getElementById("step-line-1").style.background = "#22c55e";
-          document.getElementById("acc-next-btn").innerHTML =
-            "Create Account <i data-icon=arrow-right></i>";
+          btn.innerHTML = "Create Account <i data-icon=arrow-right></i>";
           accStep = 2;
         } else if (accStep === 2) {
           const email = document.getElementById("acc-email").value.trim();
@@ -301,12 +318,36 @@
             alert("Password must be at least 8 characters.");
             return;
           }
-          document.getElementById("acc-step-2").style.display = "none";
-          document.getElementById("acc-step-3").style.display = "";
+          btn.disabled = true;
+          try {
+            await apiPost("/api/residents/claim", {
+              resident_id: accVerified ? accVerified.id : undefined,
+              first_name: document.getElementById("acc-fname").value.trim(),
+              last_name: document.getElementById("acc-lname").value.trim(),
+              birthdate: document.getElementById("acc-dob").value || null,
+              email: email,
+              mobile_no: document.getElementById("acc-mobile").value.trim() || null,
+              password: pass,
+            });
+          } catch (err) {
+            alert("Could not claim account: " + err.message);
+            btn.disabled = false;
+            return;
+          }
+          btn.disabled = false;
+          accShowStep(3);
           document.getElementById("step-2-dot").style.background = "#22c55e";
           document.getElementById("step-2-dot").innerHTML = "<i data-icon=check></i>";
           document.getElementById("step-3-dot").classList.add("active");
           document.getElementById("step-line-2").style.background = "#22c55e";
+          const ref = accVerified
+            ? "ACC-" + String(accVerified.id).padStart(4, "0")
+            : "ACC-" + Date.now().toString().slice(-6);
+          document.getElementById("acc-ref-num").textContent = ref;
+          if (accVerified)
+            document.getElementById("acc-success-copy").textContent =
+              "The record for " + accVerified.name +
+              " is now linked to your account and active. You can sign in with your email and password.";
           document.getElementById("acc-footer").innerHTML =
             '<a class="btn btn-gold" href="system.html">Done — Go to Sign In <i data-icon=arrow-right></i></a>';
           accStep = 3;
@@ -315,12 +356,12 @@
             const lname = document.getElementById("acc-lname").value.trim();
             logAudit(
               "ACC_CLAIM_SUBMIT",
-              `Account claim submitted by ${fname} ${lname} <${email}> (Ref: ACC-2025-0048)`,
+              `Account claimed by ${fname} ${lname} <${email}> (Ref: ${ref})`,
               "info",
               "auth",
             );
           }
-          showToast("Account request submitted! Ref: ACC-2025-0048", "<i data-icon=check></i>");
+          showToast("Account claimed! Ref: " + ref, "<i data-icon=check></i>");
         }
       }
     </script>
