@@ -368,12 +368,53 @@ function closeServiceModal(service, e) {
 
 // ════════════════════ RESIDENT PORTAL ════════════════════
 function renderResidentPortal() {
+  const session = getSession();
+  const portalName = escResident(session?.displayName || "Resident");
   setContent(`
     <div class="resident-portal">
       <div class="portal-welcome">
         <div class="portal-welcome-content">
-          <h2>Mabuhay, <span class="gold">Pedro S. Santos</span>!</h2>
+          <h2>Mabuhay, <span class="gold">${portalName}</span>!</h2>
           <p>Welcome to the Barangay Conde Labac Resident Portal. Access your barangay services below — request certificates, file reports, and stay connected with your community.</p>
+        </div>
+      </div>
+
+      <div id="account-section">
+        <div class="services-title">Your Account</div>
+        <div class="services-subtitle">Track your requests and stay updated</div>
+        <div class="services-grid">
+          <div class="service-card sc-blue" onclick="openMyInfo()">
+            <div class="service-icon-wrap"><i data-icon=user></i></div>
+            <div>
+              <div class="service-title">My Information</div>
+              <div class="service-desc">View your account details and your barangay record on file.</div>
+            </div>
+            <div class="service-arrow">View my info <i data-icon=arrow-right></i></div>
+          </div>
+          <div class="service-card sc-gold" onclick="openMyRequests()">
+            <div class="service-icon-wrap"><i data-icon=file-text></i></div>
+            <div>
+              <div class="service-title">My Requests</div>
+              <div class="service-desc">Track the status of the certificates and clearances you requested.</div>
+            </div>
+            <div class="service-arrow">Track requests <i data-icon=arrow-right></i></div>
+          </div>
+          <div class="service-card sc-red" onclick="openActivityHistory()">
+            <div class="service-icon-wrap"><i data-icon=clock></i></div>
+            <div>
+              <div class="service-title">Activity History</div>
+              <div class="service-desc">See the incident reports you filed and the feedback you have given.</div>
+            </div>
+            <div class="service-arrow">View history <i data-icon=arrow-right></i></div>
+          </div>
+          <div class="service-card sc-green" onclick="openNotifications()">
+            <div class="service-icon-wrap"><i data-icon=bell></i></div>
+            <div>
+              <div class="service-title">Notifications</div>
+              <div class="service-desc">Updates on your requests and messages from the barangay office.</div>
+            </div>
+            <div class="service-arrow">Open inbox <i data-icon=arrow-right></i></div>
+          </div>
         </div>
       </div>
 
@@ -730,7 +771,7 @@ async function accNextStep() {
       alert("Password must be at least 8 characters.");
       return;
     }
-    // Claim the account for real: creates the resident_account row (email +
+    // Claim the account for real: creates the account row (email +
     // hashed password) linked to the resident verified in step 1. The row's
     // existence is what makes the resident "Active". Blocks the flow if the
     // record vanished / was claimed meanwhile / email already in use.

@@ -33,4 +33,5 @@ async function apiRequest(method, path, body) {
 const apiGet = (p) => apiRequest("GET", p);
 const apiPost = (p, b) => apiRequest("POST", p, b);
 const apiPut = (p, b) => apiRequest("PUT", p, b);
+const apiPatch = (p, b) => apiRequest("PATCH", p, b);
 const apiDelete = (p) => apiRequest("DELETE", p);

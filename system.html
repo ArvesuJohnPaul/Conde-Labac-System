@@ -30,8 +30,8 @@
           Integrated Barangay Management System · Batangas City
         </p>
 
-        <!-- Role is determined by the account itself (app_user.role for staff,
-             resident_account = Resident) — no self-selected role chips. -->
+        <!-- Role is determined by the account itself (account.role) —
+             no self-selected role chips. -->
         <label class="login-label">Username / Email</label>
         <input
           class="login-input"
@@ -124,7 +124,7 @@
           shortName: bits.shortName,
           initials: bits.initials,
           user: acct.username,
-          user_id: acct.user_id || null,
+          account_id: acct.account_id || null,
           resident_id: acct.resident_id || null,
         });
 

@@ -7,6 +7,10 @@
 
 const GIS_DATA_PREFIX = location.pathname.includes("/pages/") ? "../data/" : "data/";
 
+// Base layers are served from PostGIS (/api/gis/layers/*, populated by
+// server/import-base-layers.js). The static data/*.geojson files remain as a
+// fallback so the map still renders when the API is unreachable (e.g. the
+// GitHub Pages demo with the tunnel down).
 const GIS_BOUNDARY_URL =
   window.GIS_BOUNDARY_URL_OVERRIDE || GIS_DATA_PREFIX + "conde-labak-boundary.geojson";
 const GIS_BUILDINGS_URL =
@@ -17,6 +21,33 @@ const GIS_WATER_URL =
   window.GIS_WATER_URL_OVERRIDE || GIS_DATA_PREFIX + "conde-labak-water.geojson";
 const GIS_VEGETATION_URL =
   window.GIS_VEGETATION_URL_OVERRIDE || GIS_DATA_PREFIX + "conde-labak-vegetation.geojson";
+
+// Fetches one base layer: PostGIS first, static file second. Returns null when
+// both fail (callers already treat a null layer as "unavailable"). Plain fetch
+// rather than apiGet — most map pages don't load js/api.js. window.API_BASE is
+// set by api-config.js where present; same-origin otherwise (the Express
+// server serves the site, so a relative /api path works in local dev).
+async function gisFetchBaseLayer(apiName, staticUrl, label) {
+  try {
+    const res = await fetch((window.API_BASE || "") + "/api/gis/layers/" + apiName, {
+      headers: { "ngrok-skip-browser-warning": "true" },
+    });
+    if (res.ok) {
+      const fc = await res.json();
+      if (fc && Array.isArray(fc.features) && fc.features.length) return fc;
+    }
+    console.warn(`[gis-map] ${label}: API gave no features, using static file`);
+  } catch (e) {
+    console.warn(`[gis-map] ${label}: API unavailable, using static file`, e);
+  }
+  try {
+    const res = await fetch(staticUrl);
+    return await res.json();
+  } catch (e) {
+    console.warn(`[gis-map] ${label} layer unavailable`, e);
+    return null;
+  }
+}
 
 // ───────── Icon system ─────────
 // Small hand-authored stroke-icon set (24x24, currentColor) so the map UI
@@ -260,11 +291,57 @@ function gisSaveBuildingTag(buildingId, tag) {
   const tags = gisLoadBuildingTags();
   tags[buildingId] = tag;
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
+  gisPushBuildingTag(buildingId, tag);
 }
 function gisClearBuildingTag(buildingId) {
   const tags = gisLoadBuildingTags();
   delete tags[buildingId];
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
+  // Mirror the removal into the shared DB so the mobile app drops it too.
+  if (typeof apiDelete === "function")
+    apiDelete("/api/gis/building-tags/" + encodeURIComponent(buildingId)).catch(() => {});
+}
+
+// Mirrors one tag into the shared DB (PUT /api/gis/building-tags/:key) so the
+// mobile app's map shows the same tagged buildings. Fire-and-forget: a failed
+// push only means the tag stays local until the next save. groupId is a
+// browser-side concept and is not sent.
+function gisPushBuildingTag(buildingId, tag) {
+  if (typeof apiPut !== "function" || !tag) return;
+  apiPut("/api/gis/building-tags/" + encodeURIComponent(buildingId), {
+    name: tag.name || "",
+    type: tag.type || "",
+    subcat: tag.subcat || "",
+    notes: tag.notes || "",
+  }).catch(() => {});
+}
+
+// One-time reconciliation with the shared DB trail (GET /api/gis/state):
+// server tags this browser doesn't know yet are merged in, and local-only
+// tags (saved before tags synced to the API) are pushed up. Local edits win
+// on conflict — the browser is where tagging happens.
+let gisTagsSynced = false;
+async function gisSyncBuildingTags() {
+  if (gisTagsSynced || typeof apiGet !== "function") return;
+  gisTagsSynced = true;
+  try {
+    const state = await apiGet("/api/gis/state");
+    const serverTags = (state && state.buildingTags) || {};
+    const local = gisLoadBuildingTags();
+    let changed = false;
+    Object.keys(serverTags).forEach((id) => {
+      if (!local[id]) {
+        local[id] = gisNormalizeBuildingTag(serverTags[id]);
+        changed = true;
+      }
+    });
+    Object.keys(local).forEach((id) => {
+      if (!serverTags[id]) gisPushBuildingTag(id, local[id]);
+    });
+    if (changed) gisSaveJSON(GIS_BUILDING_TAGS_KEY, local);
+  } catch (e) {
+    gisTagsSynced = false; // retry on the next map init
+  }
 }
 
 // ── Custom-drawn features: merged with OSM-sourced features at render time ──
@@ -602,7 +679,9 @@ function gisAddCommunityReport(point, data) {
   const list = gisAllCommunityReports();
   const record = {
     id: gisNewId("rpt"),
-    caseNo: gisNextCaseNo(list),
+    // When the report was already filed to the API, reuse the server's
+    // case number so the pin, the DB row, and the app all agree.
+    caseNo: data.caseNo || gisNextCaseNo(list),
     point,
     reportType: data.reportType,
     title: data.title,
@@ -858,6 +937,13 @@ async function initGisMap(targetId, opts = {}) {
   // One-time write-back of any old-shape {category} building tags.
   gisMigrateBuildingTags();
 
+  // Reconcile tags with the shared DB (pull server tags / push local-only
+  // ones), then repaint so merged tags show without a reload.
+  gisSyncBuildingTags().then(() => {
+    if (gisInstances[targetId] && typeof gisInstances[targetId].refreshAll === "function")
+      gisInstances[targetId].refreshAll();
+  });
+
   // Always recenter to the fitted view when a map is (re)opened, even if an
   // instance is already cached (e.g. reopening the "Open Full Map" modal).
   if (gisInstances[targetId]) {
@@ -866,32 +952,19 @@ async function initGisMap(targetId, opts = {}) {
     return gisInstances[targetId];
   }
 
-  let geojson;
-  try {
-    const res = await fetch(GIS_BOUNDARY_URL);
-    geojson = await res.json();
-  } catch (e) {
+  const geojson = await gisFetchBaseLayer("boundary", GIS_BOUNDARY_URL, "boundary");
+  if (!geojson) {
     container.innerHTML =
       '<div class="gis-load-error">Unable to load map boundary data.</div>';
-    console.error("[gis-map] failed to load boundary geojson", e);
+    console.error("[gis-map] failed to load boundary geojson");
     return;
   }
 
-  async function fetchOptionalLayer(url, label) {
-    try {
-      const res = await fetch(url);
-      return await res.json();
-    } catch (e) {
-      console.warn(`[gis-map] ${label} layer unavailable`, e);
-      return null;
-    }
-  }
-
   const [buildingsGeojson, roadsGeojson, waterGeojson, vegetationGeojson] = await Promise.all([
-    fetchOptionalLayer(GIS_BUILDINGS_URL, "buildings"),
-    fetchOptionalLayer(GIS_ROADS_URL, "roads"),
-    fetchOptionalLayer(GIS_WATER_URL, "water"),
-    fetchOptionalLayer(GIS_VEGETATION_URL, "vegetation"),
+    gisFetchBaseLayer("buildings", GIS_BUILDINGS_URL, "buildings"),
+    gisFetchBaseLayer("roads", GIS_ROADS_URL, "roads"),
+    gisFetchBaseLayer("water", GIS_WATER_URL, "water"),
+    gisFetchBaseLayer("vegetation", GIS_VEGETATION_URL, "vegetation"),
   ]);
 
   const bbox = gisComputeBBox(geojson);

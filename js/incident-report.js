@@ -114,7 +114,7 @@ function ensureIncidentModalShell() {
       <div id="inc-fields"></div>
       <div class="alert alert-info">
         <span class="alert-icon"><i data-icon="info"></i></span>
-        Your report will be assigned a case number and reviewed by a barangay official.
+        Your report will be reviewed by a barangay official. You will receive a phone notification with any updates.
       </div>
     </div>
     <div class="modal-footer">
@@ -232,7 +232,7 @@ function openIncidentModal() {
   }, 160);
 }
 
-function submitIncidentReport() {
+async function submitIncidentReport() {
   const typeEl = document.getElementById("inc-type");
   const type = typeEl ? typeEl.value : "other";
   const meta = GIS_REPORT_TYPE_META[type] || {};
@@ -268,6 +268,37 @@ function submitIncidentReport() {
     purok: null,
   };
 
+  // File to the shared database first (the same POST the mobile app uses),
+  // so the report reaches the MIS and the incident table — the pin point is
+  // [lng, lat]. Falls back to local-only if the server can't be reached.
+  let serverCaseNo = null;
+  if (typeof apiPost === "function") {
+    let s = null;
+    try {
+      s = JSON.parse(localStorage.getItem("ibmdss.session"));
+    } catch (e) {
+      /* signed out */
+    }
+    try {
+      const res = await apiPost("/api/incidents", {
+        report_type: type,
+        title: meta.label || "Incident",
+        narration: narration,
+        complainant_name: complainant,
+        contact: contact || null,
+        respondent: respondent || null,
+        witnesses: witnesses || null,
+        lng: incidentPickPoint[0],
+        lat: incidentPickPoint[1],
+        complainant_id: s?.resident_id || null,
+        account_id: s?.account_id || null,
+      });
+      serverCaseNo = res.case_no;
+    } catch (err) {
+      console.warn("[incident] API filing failed, keeping local copy:", err.message);
+    }
+  }
+
   const record = gisAddCommunityReport(incidentPickPoint, {
     reportType: type,
     // The incident type doubles as the pin/feed headline; the narration is the
@@ -279,6 +310,7 @@ function submitIncidentReport() {
     contact,
     respondent,
     witnesses,
+    caseNo: serverCaseNo,
   });
 
   if (incidentMapInstance && typeof incidentMapInstance.endLocationPick === "function")

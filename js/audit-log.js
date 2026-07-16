@@ -15,23 +15,42 @@
 const AUDIT_LOG_KEY = "ibmdss.audit_log";
 const AUDIT_LOG_MAX = 500;
 
+// "Logs were cleared" marker entries: immune to clearing (every wipe must
+// stay on record) but expire on their own after 90 days.
+const AUDIT_CLEAR_ACTION = "AUDIT_CLEAR";
+const AUDIT_CLEAR_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+
 function auditGetLogs() {
   try {
     const raw = localStorage.getItem(AUDIT_LOG_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) return [];
+    // Expired clear markers drop off the trail on read.
+    return list.filter(
+      (e) =>
+        e.action !== AUDIT_CLEAR_ACTION ||
+        Date.now() - (e.ts || 0) <= AUDIT_CLEAR_RETENTION_MS,
+    );
   } catch (e) {
     return [];
   }
 }
 
 function auditClearLogs() {
-  localStorage.removeItem(AUDIT_LOG_KEY);
+  // A clear never removes the protected AUDIT_CLEAR markers — the record of
+  // every previous wipe (within its 90-day retention) survives.
+  try {
+    const keep = auditGetLogs().filter((e) => e.action === AUDIT_CLEAR_ACTION);
+    localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(keep));
+  } catch (e) {
+    localStorage.removeItem(AUDIT_LOG_KEY);
+  }
 }
 
 // Records one audit entry. Never throws — auditing must not break the action
 // being audited (e.g. localStorage full or disabled).
 function logAudit(action, details, level = "info", category = "system") {
+  let accountId = null;
   try {
     let user = "Guest";
     let role = "Visitor";
@@ -40,6 +59,7 @@ function logAudit(action, details, level = "info", category = "system") {
       if (session) {
         user = session.displayName || session.user || "User";
         role = session.role || role;
+        accountId = session.account_id || null;
       }
     } catch (e) {
       /* stay Guest */
@@ -56,6 +76,21 @@ function logAudit(action, details, level = "info", category = "system") {
     });
     if (list.length > AUDIT_LOG_MAX) list.length = AUDIT_LOG_MAX;
     localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(list));
+
+    // Mirror the entry into the shared DB trail (POST /api/audit) so web
+    // actions show up alongside the mobile app's and the DB triggers'.
+    // Fire-and-forget: a failed push only means the entry stays local.
+    if (typeof apiPost === "function") {
+      apiPost("/api/audit", {
+        action: String(action || "UNKNOWN"),
+        details: String(details == null ? "" : details),
+        level: level,
+        category: category,
+        actor_name: user,
+        actor_role: role,
+        account_id: accountId,
+      }).catch(() => {});
+    }
   } catch (e) {
     /* auditing is best-effort */
   }

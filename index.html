@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="css/shared.css" />
     <link rel="stylesheet" href="css/landing.css?v=20260712" />
     <script src="js/icons.js"></script>
+    <script src="js/api-config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/audit-log.js"></script>
     <script src="js/site-config.js"></script>
     <script src="js/feedback-store.js"></script>
@@ -104,6 +106,38 @@
             >
               <i data-icon="chart"></i> MIS Dashboard
             </a>
+            <button
+              type="button"
+              class="nav-user-menu-item"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openNotifications()"
+            >
+              <i data-icon="bell"></i> Notifications
+              <span
+                id="nav-notif-badge"
+                style="display: none; margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--yellow, #eab308); color: #0b1d3a; font-size: 11px; font-weight: 800; align-items: center; justify-content: center;"
+              ></span>
+            </button>
+            <button
+              type="button"
+              class="nav-user-menu-item"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyInfo()"
+            >
+              <i data-icon="user"></i> My Information
+            </button>
+            <button
+              type="button"
+              class="nav-user-menu-item"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyRequests()"
+            >
+              <i data-icon="file-text"></i> My Requests
+            </button>
+            <button
+              type="button"
+              class="nav-user-menu-item"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openActivityHistory()"
+            >
+              <i data-icon="clock"></i> Activity History
+            </button>
             <a class="nav-user-menu-item" href="settings.html">
               <i data-icon="settings"></i> Settings
             </a>
@@ -594,7 +628,7 @@
           </div>
           <div class="alert alert-info">
             <span class="alert-icon"><i data-icon="info"></i></span> You will
-            receive an SMS notification once your certificate is ready for
+            receive a phone notification once your certificate is ready for
             pickup at the barangay hall.
           </div>
         </div>
@@ -730,8 +764,8 @@
 
           <div class="alert alert-info">
             <span class="alert-icon"><i data-icon="info"></i></span> Your
-            blotter report will be assigned a case number. You will be contacted
-            by a barangay official within 24 hours.
+            blotter report will be reviewed by a barangay official within 24
+            hours. You will receive a phone notification with any updates.
           </div>
         </div>
         <div class="modal-footer">
@@ -1333,5 +1367,8 @@
         );
       }
     </script>
+    <!-- Loaded last on purpose: upgrades the demo handlers above to the real
+         API-backed versions and adds the account panels + notifications. -->
+    <script src="js/portal-account.js"></script>
   </body>
 </html>
