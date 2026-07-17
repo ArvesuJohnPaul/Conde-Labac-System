@@ -297,17 +297,36 @@ function gisClearBuildingTag(buildingId) {
   const tags = gisLoadBuildingTags();
   delete tags[buildingId];
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
-  // Mirror the removal into the shared DB so the mobile app drops it too.
-  if (typeof apiDelete === "function")
+  // Mirror the removal into the shared DB so the mobile app drops it too
+  // (temp-id buildings never reached the DB, so there's nothing to remove).
+  if (typeof apiDelete === "function" && gisIsServerId(buildingId))
     apiDelete("/api/gis/building-tags/" + encodeURIComponent(buildingId)).catch(() => {});
 }
 
-// Mirrors one tag into the shared DB (PUT /api/gis/building-tags/:key) so the
-// mobile app's map shows the same tagged buildings. Fire-and-forget: a failed
-// push only means the tag stays local until the next save. groupId is a
-// browser-side concept and is not sent.
+// ───────── Shared-DB sync layer ─────────
+// Every map store below is mirrored into the API (PostGIS) so the web system
+// (localhost + GitHub Pages) and the Flutter app all see ONE map. Writes are
+// optimistic: localStorage updates immediately (instant UI + offline
+// fallback), the API call rides along fire-and-forget, and a one-time sync at
+// map init reconciles both directions.
+
+// A server-issued id is numeric (map_feature rows) or 'c<n>' (custom
+// buildings). Anything else is a browser temp id (gisNewId) that hasn't
+// reached the DB yet.
+function gisIsServerId(id) {
+  return /^\d+$/.test(String(id)) || /^c\d+$/.test(String(id));
+}
+
+// Features deleted while their create-POST was still in flight: remember the
+// temp id so the create can be undone when the server id arrives.
+const gisPendingDeletes = new Set();
+
+// Mirrors one tag into the shared DB (PUT /api/gis/building-tags/:key).
+// Temp-id buildings are skipped — gisMigrateLocalId re-pushes the tag once
+// the building's real id arrives. groupId is browser-side and not sent.
 function gisPushBuildingTag(buildingId, tag) {
   if (typeof apiPut !== "function" || !tag) return;
+  if (!gisIsServerId(buildingId)) return;
   apiPut("/api/gis/building-tags/" + encodeURIComponent(buildingId), {
     name: tag.name || "",
     type: tag.type || "",
@@ -316,31 +335,225 @@ function gisPushBuildingTag(buildingId, tag) {
   }).catch(() => {});
 }
 
-// One-time reconciliation with the shared DB trail (GET /api/gis/state):
-// server tags this browser doesn't know yet are merged in, and local-only
-// tags (saved before tags synced to the API) are pushed up. Local edits win
-// on conflict — the browser is where tagging happens.
-let gisTagsSynced = false;
-async function gisSyncBuildingTags() {
-  if (gisTagsSynced || typeof apiGet !== "function") return;
-  gisTagsSynced = true;
+// Rewrites a temp local id to the server's id everywhere it can appear —
+// the feature store itself, building tags, vegetation cuts and archive
+// entries — then repaints every open map.
+function gisMigrateLocalId(storeKey, oldId, newId, kind) {
+  if (gisPendingDeletes.has(String(oldId))) {
+    gisPendingDeletes.delete(String(oldId));
+    if (typeof apiDelete === "function") {
+      const path =
+        kind === "building"
+          ? "/api/gis/custom-buildings/" + newId
+          : "/api/gis/features/" + newId;
+      apiDelete(path).catch(() => {});
+    }
+    return;
+  }
+  const list = gisLoadJSON(storeKey, []);
+  const entry = list.find((x) => String(x.id) === String(oldId));
+  if (entry) {
+    entry.id = newId;
+    gisSaveJSON(storeKey, list);
+  }
+  const tags = gisLoadJSON(GIS_BUILDING_TAGS_KEY, {});
+  if (tags[oldId]) {
+    tags[newId] = tags[oldId];
+    delete tags[oldId];
+    gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
+    gisPushBuildingTag(newId, tags[newId]);
+  }
+  const cuts = gisLoadJSON(GIS_VEGETATION_CUTS_KEY, {});
+  if (cuts[oldId]) {
+    cuts[newId] = cuts[oldId];
+    delete cuts[oldId];
+    gisSaveJSON(GIS_VEGETATION_CUTS_KEY, cuts);
+    gisPushVegetationCuts(newId, cuts[newId]);
+  }
+  const archived = gisLoadJSON(GIS_ARCHIVED_BUILDINGS_KEY, []);
+  const archEntry = archived.find((a) => String(a.id) === String(oldId));
+  if (archEntry) {
+    archEntry.id = newId;
+    gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, archived);
+  }
+  Object.values(gisInstances).forEach((inst) => {
+    if (inst && typeof inst.refreshAll === "function") inst.refreshAll();
+  });
+}
+
+// Mirrors a new map feature (road / vegetation / construction / hazard /
+// accident) into the DB, then swaps the temp id for the server's.
+function gisPushFeature(storeKey, localId, type, coordinates, properties) {
+  if (typeof apiPost !== "function") return;
+  apiPost("/api/gis/features", { type, coordinates, properties })
+    .then((res) => gisMigrateLocalId(storeKey, localId, res.id, "feature"))
+    .catch(() => {});
+}
+
+function gisPatchFeature(id, properties, coordinates) {
+  if (typeof apiPatch !== "function" || !gisIsServerId(id)) return;
+  const body = coordinates ? { properties, coordinates } : { properties };
+  apiPatch("/api/gis/features/" + id, body).catch(() => {});
+}
+
+function gisDeleteFeatureRemote(id) {
+  if (!gisIsServerId(id)) {
+    gisPendingDeletes.add(String(id));
+    return;
+  }
+  if (typeof apiDelete === "function")
+    apiDelete("/api/gis/features/" + id).catch(() => {});
+}
+
+// Upserts a vegetation area's full cut list into osm_edit (edit_type 'cut',
+// overrides {rings}). One row per vegetation id; each push replaces it.
+function gisPushVegetationCuts(vegId, rings) {
+  if (typeof apiPost !== "function" || !gisIsServerId(vegId)) return;
+  apiPost("/api/gis/osm-edits", {
+    osm_id: String(vegId),
+    feature_kind: "vegetation",
+    edit_type: "cut",
+    overrides: { rings: rings || [] },
+  }).catch(() => {});
+}
+
+// Reconciles one feature store with the server list: server rows become the
+// local list (server = source of truth), local temp-id entries survive and
+// get pushed up. fromServer maps a /state row to the local entry shape;
+// toPush returns [coordinates, properties] for the POST.
+function gisSyncFeatureList(storeKey, type, serverRows, fromServer, toPush) {
+  const local = gisLoadJSON(storeKey, []);
+  const server = (serverRows || []).map(fromServer);
+  const unsynced = local.filter((e) => !gisIsServerId(e.id));
+  gisSaveJSON(storeKey, server.concat(unsynced));
+  unsynced.forEach((e) => {
+    const pushed = toPush(e);
+    gisPushFeature(storeKey, e.id, type, pushed[0], pushed[1]);
+  });
+}
+
+// One-time full reconciliation with the shared DB (GET /api/gis/state):
+// pulls every feature type, pushes anything that only exists in this
+// browser's localStorage, and leaves localStorage holding the server state
+// (so the app still renders something when the server is unreachable).
+let gisStateSynced = false;
+async function gisSyncMapState() {
+  if (gisStateSynced || typeof apiGet !== "function") return;
+  gisStateSynced = true;
   try {
     const state = await apiGet("/api/gis/state");
+
+    // 1 — building tags (merge; local wins on conflict)
     const serverTags = (state && state.buildingTags) || {};
-    const local = gisLoadBuildingTags();
-    let changed = false;
+    const localTags = gisLoadBuildingTags();
+    let tagsChanged = false;
     Object.keys(serverTags).forEach((id) => {
-      if (!local[id]) {
-        local[id] = gisNormalizeBuildingTag(serverTags[id]);
-        changed = true;
+      if (!localTags[id]) {
+        localTags[id] = gisNormalizeBuildingTag(serverTags[id]);
+        tagsChanged = true;
       }
     });
-    Object.keys(local).forEach((id) => {
-      if (!serverTags[id]) gisPushBuildingTag(id, local[id]);
+    Object.keys(localTags).forEach((id) => {
+      if (!serverTags[id]) gisPushBuildingTag(id, localTags[id]);
     });
-    if (changed) gisSaveJSON(GIS_BUILDING_TAGS_KEY, local);
+    if (tagsChanged) gisSaveJSON(GIS_BUILDING_TAGS_KEY, localTags);
+
+    // 2 — custom buildings ('c<id>' locally, matching their tag key)
+    const localB = gisLoadJSON(GIS_CUSTOM_BUILDINGS_KEY, []);
+    const serverB = (state.customBuildings || []).map((b) => ({
+      id: "c" + b.id,
+      coordinates: b.coordinates,
+    }));
+    const unsyncedB = localB.filter((b) => !gisIsServerId(b.id));
+    gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, serverB.concat(unsyncedB));
+    unsyncedB.forEach((b) => {
+      apiPost("/api/gis/custom-buildings", { coordinates: b.coordinates })
+        .then((res) =>
+          gisMigrateLocalId(GIS_CUSTOM_BUILDINGS_KEY, b.id, "c" + res.id, "building"),
+        )
+        .catch(() => {});
+    });
+
+    // 3 — staff-drawn features by type
+    const f = state.features || {};
+    gisSyncFeatureList(
+      GIS_CUSTOM_ROADS_KEY, "road", f.road,
+      (x) => ({ id: x.id, coordinates: x.coordinates, name: x.name || "", roadType: x.roadType || "local" }),
+      (e) => [e.coordinates, { custom: true, name: e.name || "", roadType: e.roadType || "local" }],
+    );
+    gisSyncFeatureList(
+      GIS_CUSTOM_VEGETATION_KEY, "vegetation", f.vegetation,
+      (x) => ({ id: x.id, coordinates: x.coordinates[0], kind: x.kind || "", notes: x.notes || "" }),
+      (e) => [[e.coordinates], { custom: true, kind: e.kind || "", notes: e.notes || "" }],
+    );
+    gisSyncFeatureList(
+      GIS_CUSTOM_CONSTRUCTION_KEY, "construction", f.construction,
+      (x) => ({ id: x.id, coordinates: x.coordinates[0], name: x.name || "", status: x.status || "planned", notes: x.notes || "" }),
+      (e) => [[e.coordinates], { name: e.name || "", status: e.status || "planned", notes: e.notes || "" }],
+    );
+    gisSyncFeatureList(
+      GIS_HAZARD_ZONES_KEY, "hazard", f.hazard,
+      (x) => ({ id: x.id, point: x.coordinates, radius: x.radius || GIS_HAZARD_PING_RADIUS, hazardType: x.hazardType || "other", severity: x.severity || "", notes: x.notes || "" }),
+      (e) => [e.point, { hazardType: e.hazardType || "other", severity: e.severity || "", notes: e.notes || "", radius: e.radius || GIS_HAZARD_PING_RADIUS }],
+    );
+    gisSyncFeatureList(
+      GIS_ACCIDENTS_KEY, "accident", f.accident,
+      (x) => ({ id: x.id, point: x.coordinates, incidentType: x.incidentType || "other", notes: x.notes || "" }),
+      (e) => [e.point, { incidentType: e.incidentType || "other", notes: e.notes || "" }],
+    );
+
+    // 4 — tombstoned OSM buildings (osm_edit 'delete')
+    const edits = state.osmEdits || [];
+    const serverDeleted = edits
+      .filter((e) => e.edit_type === "delete" && e.feature_kind === "building")
+      .map((e) => String(e.osm_id));
+    const localDeleted = gisLoadDeletedBuildings().map(String);
+    localDeleted
+      .filter((id) => !serverDeleted.includes(id))
+      .forEach((id) => {
+        apiPost("/api/gis/osm-edits", {
+          osm_id: id,
+          feature_kind: "building",
+          edit_type: "delete",
+        }).catch(() => {});
+      });
+    gisSaveJSON(
+      GIS_DELETED_BUILDINGS_KEY,
+      Array.from(new Set(serverDeleted.concat(localDeleted))),
+    );
+
+    // 5 — vegetation cuts (osm_edit 'cut', overrides {rings})
+    const serverCuts = {};
+    edits
+      .filter((e) => e.edit_type === "cut" && e.feature_kind === "vegetation")
+      .forEach((e) => {
+        serverCuts[e.osm_id] = (e.overrides && e.overrides.rings) || [];
+      });
+    const localCuts = gisLoadJSON(GIS_VEGETATION_CUTS_KEY, {});
+    Object.keys(localCuts).forEach((vegId) => {
+      if (!serverCuts[vegId]) gisPushVegetationCuts(vegId, localCuts[vegId]);
+    });
+    gisSaveJSON(GIS_VEGETATION_CUTS_KEY, Object.assign({}, serverCuts, localCuts));
+
+    // 6 — archived buildings (shared archive table)
+    try {
+      const serverArch = await apiGet("/api/gis/archive");
+      const serverIds = new Set(serverArch.map((a) => String(a.id)));
+      const localOnly = gisLoadJSON(GIS_ARCHIVED_BUILDINGS_KEY, []).filter(
+        (a) => !serverIds.has(String(a.id)),
+      );
+      localOnly.forEach((a) => {
+        apiPost("/api/gis/archive", a).catch(() => {});
+      });
+      gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, serverArch.concat(localOnly));
+    } catch (e) {
+      /* archive list stays local */
+    }
+
+    // 7 — community reports now come from /api/incidents
+    await gisSyncCommunityReports();
   } catch (e) {
-    gisTagsSynced = false; // retry on the next map init
+    gisStateSynced = false; // retry on the next map init
   }
 }
 
@@ -357,6 +570,11 @@ function gisAddCustomBuilding(ring) {
   const id = gisNewId("bld");
   list.push({ id, coordinates: ring });
   gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, list);
+  // Mirror into the DB; the temp id becomes 'c<building_id>' when it lands.
+  if (typeof apiPost === "function")
+    apiPost("/api/gis/custom-buildings", { coordinates: ring })
+      .then((res) => gisMigrateLocalId(GIS_CUSTOM_BUILDINGS_KEY, id, "c" + res.id, "building"))
+      .catch(() => {});
   if (typeof logAudit === "function")
     logAudit("MAP_BUILDING_ADD", `New building outline drawn on map (${id})`, "info", "map");
   return id;
@@ -365,6 +583,11 @@ function gisDeleteCustomBuilding(id) {
   const list = gisLoadJSON(GIS_CUSTOM_BUILDINGS_KEY, []).filter((b) => b.id !== id);
   gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, list);
   gisClearBuildingTag(id);
+  if (!gisIsServerId(id)) {
+    gisPendingDeletes.add(String(id));
+  } else if (typeof apiDelete === "function") {
+    apiDelete("/api/gis/custom-buildings/" + encodeURIComponent(id)).catch(() => {});
+  }
 }
 
 // Pre-existing (OSM-sourced) buildings live in a static geojson file, so they
@@ -378,6 +601,13 @@ function gisSoftDeleteBuilding(id) {
   if (!list.includes(id)) list.push(id);
   gisSaveJSON(GIS_DELETED_BUILDINGS_KEY, list);
   gisClearBuildingTag(id);
+  // Tombstone in the shared DB so every client hides this OSM building.
+  if (typeof apiPost === "function")
+    apiPost("/api/gis/osm-edits", {
+      osm_id: String(id),
+      feature_kind: "building",
+      edit_type: "delete",
+    }).catch(() => {});
 }
 
 // Deleted buildings land here instead of just vanishing, so they can be
@@ -390,6 +620,10 @@ function gisArchiveBuilding(entry) {
   const list = gisLoadArchivedBuildings();
   list.push({ ...entry, archivedAt: Date.now() });
   gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, list);
+  // Snapshot into the shared archive table so the Archive page shows the
+  // same recycle bin on every device.
+  if (typeof apiPost === "function")
+    apiPost("/api/gis/archive", entry).catch(() => {});
   if (typeof logAudit === "function")
     logAudit(
       "MAP_BUILDING_DELETE",
@@ -411,9 +645,19 @@ function gisRestoreArchivedBuilding(id) {
     const list = gisLoadJSON(GIS_CUSTOM_BUILDINGS_KEY, []);
     list.push({ id: entry.id, coordinates: entry.coordinates });
     gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, list);
+    // A custom building that never reached the DB (temp id) is re-created
+    // there now; synced ones are re-activated by the archive/restore call.
+    if (!gisIsServerId(entry.id) && typeof apiPost === "function")
+      apiPost("/api/gis/custom-buildings", { coordinates: entry.coordinates })
+        .then((res) => gisMigrateLocalId(GIS_CUSTOM_BUILDINGS_KEY, entry.id, "c" + res.id, "building"))
+        .catch(() => {});
   } else if (!entry.isCustom) {
     gisSaveJSON(GIS_DELETED_BUILDINGS_KEY, gisLoadDeletedBuildings().filter((did) => String(did) !== String(entry.id)));
   }
+  // Server side: mark the snapshot restored, re-activate the building /
+  // remove the tombstone, and put the tag back on the row.
+  if (typeof apiPost === "function")
+    apiPost("/api/gis/archive/restore", { id: String(entry.id) }).catch(() => {});
   if (entry.tag) gisSaveBuildingTag(entry.id, gisNormalizeBuildingTag(entry.tag));
   gisRemoveArchivedBuilding(entry.id);
   if (typeof logAudit === "function")
@@ -438,6 +682,11 @@ function gisAddCustomRoad(line, name, roadType) {
   const id = gisNewId("road");
   list.push({ id, coordinates: line, name, roadType });
   gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list);
+  gisPushFeature(GIS_CUSTOM_ROADS_KEY, id, "road", line, {
+    custom: true,
+    name: name || "",
+    roadType: roadType || "local",
+  });
   if (typeof logAudit === "function")
     logAudit("MAP_ROAD_ADD", `Road "${name || "Unnamed"}" (${roadType}) drawn on map`, "info", "map");
   return id;
@@ -449,6 +698,7 @@ function gisUpdateCustomRoad(id, name, roadType) {
     road.name = name;
     road.roadType = roadType;
     gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list);
+    gisPatchFeature(id, { custom: true, name: name || "", roadType: roadType || "local" });
     if (typeof logAudit === "function")
       logAudit("MAP_ROAD_EDIT", `Road "${name || "Unnamed"}" (${roadType}) updated`, "info", "map");
   }
@@ -457,6 +707,7 @@ function gisDeleteCustomRoad(id) {
   const list = gisLoadJSON(GIS_CUSTOM_ROADS_KEY, []);
   const road = list.find((r) => r.id === id);
   gisSaveJSON(GIS_CUSTOM_ROADS_KEY, list.filter((r) => r.id !== id));
+  gisDeleteFeatureRemote(id);
   if (typeof logAudit === "function")
     logAudit("MAP_ROAD_DELETE", `Road "${road?.name || id}" deleted from map`, "warning", "map");
 }
@@ -473,6 +724,11 @@ function gisAddCustomVegetation(ring, kind, notes) {
   const id = gisNewId("veg");
   list.push({ id, coordinates: ring, kind, notes });
   gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, list);
+  gisPushFeature(GIS_CUSTOM_VEGETATION_KEY, id, "vegetation", [ring], {
+    custom: true,
+    kind: kind || "",
+    notes: notes || "",
+  });
   if (typeof logAudit === "function")
     logAudit("MAP_VEGETATION_ADD", `Vegetation area (${kind || "unspecified"}) drawn on map (${id})`, "info", "map");
   return id;
@@ -484,6 +740,7 @@ function gisUpdateCustomVegetation(id, kind, notes) {
     v.kind = kind;
     v.notes = notes;
     gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, list);
+    gisPatchFeature(id, { custom: true, kind: kind || "", notes: notes || "" });
     if (typeof logAudit === "function")
       logAudit("MAP_VEGETATION_EDIT", `Vegetation area ${id} updated (${kind || "unspecified"})`, "info", "map");
   }
@@ -491,6 +748,7 @@ function gisUpdateCustomVegetation(id, kind, notes) {
 function gisDeleteCustomVegetation(id) {
   gisSaveJSON(GIS_CUSTOM_VEGETATION_KEY, gisLoadJSON(GIS_CUSTOM_VEGETATION_KEY, []).filter((v) => v.id !== id));
   gisClearVegetationCuts(id);
+  gisDeleteFeatureRemote(id);
   if (typeof logAudit === "function")
     logAudit("MAP_VEGETATION_DELETE", `Vegetation area ${id} deleted from map`, "warning", "map");
 }
@@ -510,6 +768,7 @@ function gisAddVegetationCut(vegId, cutRing) {
   if (!cuts[vegId]) cuts[vegId] = [];
   cuts[vegId].push(cutRing);
   gisSaveJSON(GIS_VEGETATION_CUTS_KEY, cuts);
+  gisPushVegetationCuts(vegId, cuts[vegId]);
   if (typeof logAudit === "function")
     logAudit("MAP_VEGETATION_TRIM", `Vegetation area ${vegId} trimmed (cut applied)`, "info", "map");
 }
@@ -518,6 +777,10 @@ function gisClearVegetationCuts(vegId) {
   if (cuts[vegId]) {
     delete cuts[vegId];
     gisSaveJSON(GIS_VEGETATION_CUTS_KEY, cuts);
+    if (typeof apiDelete === "function" && gisIsServerId(vegId))
+      apiDelete(
+        `/api/gis/osm-edits?osm_id=${encodeURIComponent(vegId)}&feature_kind=vegetation&edit_type=cut`,
+      ).catch(() => {});
   }
 }
 
@@ -533,6 +796,11 @@ function gisAddConstruction(ring, name, status, notes) {
   const id = gisNewId("con");
   list.push({ id, coordinates: ring, name, status, notes });
   gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list);
+  gisPushFeature(GIS_CUSTOM_CONSTRUCTION_KEY, id, "construction", [ring], {
+    name: name || "",
+    status: status || "planned",
+    notes: notes || "",
+  });
   if (typeof logAudit === "function")
     logAudit("MAP_CONSTRUCTION_ADD", `Construction area "${name || "Unnamed"}" (${status}) added to map`, "info", "map");
   return id;
@@ -543,6 +811,7 @@ function gisUpdateConstruction(id, name, status, notes) {
   if (c) {
     Object.assign(c, { name, status, notes });
     gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list);
+    gisPatchFeature(id, { name: name || "", status: status || "planned", notes: notes || "" });
     if (typeof logAudit === "function")
       logAudit("MAP_CONSTRUCTION_EDIT", `Construction area "${name || "Unnamed"}" updated (${status})`, "info", "map");
   }
@@ -551,6 +820,7 @@ function gisDeleteConstruction(id) {
   const list = gisLoadJSON(GIS_CUSTOM_CONSTRUCTION_KEY, []);
   const c = list.find((x) => x.id === id);
   gisSaveJSON(GIS_CUSTOM_CONSTRUCTION_KEY, list.filter((x) => x.id !== id));
+  gisDeleteFeatureRemote(id);
   if (typeof logAudit === "function")
     logAudit("MAP_CONSTRUCTION_DELETE", `Construction area "${c?.name || id}" deleted from map`, "warning", "map");
 }
@@ -575,6 +845,12 @@ function gisAddHazardPing(point, radius, hazardType, severity, notes) {
   const id = gisNewId("haz");
   list.push({ id, point, radius, hazardType, severity, notes });
   gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
+  gisPushFeature(GIS_HAZARD_ZONES_KEY, id, "hazard", point, {
+    hazardType: hazardType || "other",
+    severity: severity || "",
+    notes: notes || "",
+    radius: radius || GIS_HAZARD_PING_RADIUS,
+  });
   if (typeof logAudit === "function")
     logAudit(
       "MAP_HAZARD_ADD",
@@ -590,6 +866,12 @@ function gisUpdateHazard(id, hazardType, severity, notes) {
   if (h) {
     Object.assign(h, { hazardType, severity, notes });
     gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
+    gisPatchFeature(id, {
+      hazardType: hazardType || "other",
+      severity: severity || "",
+      notes: notes || "",
+      radius: h.radius || GIS_HAZARD_PING_RADIUS,
+    });
     if (typeof logAudit === "function")
       logAudit(
         "MAP_HAZARD_EDIT",
@@ -603,6 +885,7 @@ function gisDeleteHazard(id) {
   const list = gisLoadJSON(GIS_HAZARD_ZONES_KEY, []);
   const h = list.find((x) => x.id === id);
   gisSaveJSON(GIS_HAZARD_ZONES_KEY, list.filter((x) => x.id !== id));
+  gisDeleteFeatureRemote(id);
   if (typeof logAudit === "function")
     logAudit("MAP_HAZARD_DELETE", `Hazard zone (${h?.hazardType || id}) removed from map`, "warning", "map");
 }
@@ -620,6 +903,10 @@ function gisAddAccident(point, incidentType, notes) {
   const id = gisNewId("acc");
   list.push({ id, point, incidentType, notes });
   gisSaveJSON(GIS_ACCIDENTS_KEY, list);
+  gisPushFeature(GIS_ACCIDENTS_KEY, id, "accident", point, {
+    incidentType: incidentType || "other",
+    notes: notes || "",
+  });
   if (typeof logAudit === "function")
     logAudit("MAP_INCIDENT_ADD", `Accident/incident marker (${incidentType || "unspecified"}) placed on map`, "warning", "map");
   return id;
@@ -630,6 +917,7 @@ function gisUpdateAccident(id, incidentType, notes) {
   if (a) {
     Object.assign(a, { incidentType, notes });
     gisSaveJSON(GIS_ACCIDENTS_KEY, list);
+    gisPatchFeature(id, { incidentType: incidentType || "other", notes: notes || "" });
     if (typeof logAudit === "function")
       logAudit("MAP_INCIDENT_EDIT", `Accident/incident marker ${id} updated (${incidentType || "unspecified"})`, "info", "map");
   }
@@ -638,12 +926,97 @@ function gisDeleteAccident(id) {
   const list = gisLoadJSON(GIS_ACCIDENTS_KEY, []);
   const a = list.find((x) => x.id === id);
   gisSaveJSON(GIS_ACCIDENTS_KEY, list.filter((x) => x.id !== id));
+  gisDeleteFeatureRemote(id);
   if (typeof logAudit === "function")
     logAudit("MAP_INCIDENT_DELETE", `Accident/incident marker (${a?.incidentType || id}) removed from map`, "warning", "map");
 }
 
 // Community reports — resident-submitted concern pins with reporter details.
+//
+// Single source of truth: the incident table (/api/incidents) — the same
+// records the Blotter page and the mobile app use. An in-memory cache holds
+// the rows in the legacy record shape every renderer already reads, and the
+// old localStorage key is kept only as a last-known snapshot for offline.
+let gisReportsCache = null;
+let gisReportsFetchedAt = 0;
+
+function gisReportFromIncident(row) {
+  const name = row.complainant_name || "Resident";
+  return {
+    id: row.id,
+    caseNo: row.case_no,
+    point: [Number(row.lng), Number(row.lat)],
+    reportType: row.report_type,
+    title: row.title || GIS_REPORT_TYPE_META[row.report_type]?.label || "Incident",
+    comment: row.narration || "",
+    reporter: { name, initials: name.charAt(0).toUpperCase(), role: "Resident", purok: null },
+    complainant: name,
+    contact: row.contact || "",
+    respondent: row.respondent || "",
+    witnesses: row.witnesses || "",
+    createdAt: Date.parse(row.created_at) || Date.now(),
+    resolved: row.status === "resolved" || row.status === "dismissed",
+    resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : null,
+  };
+}
+
+function gisSaveReportsCache() {
+  if (gisReportsCache) gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, gisReportsCache);
+}
+
+// Refreshes the cache from /api/incidents (throttled). Legacy local-only
+// reports (temp 'rpt_*' ids from before reports lived in the DB) are pushed
+// up once, then the server list wins. Re-renders the feed/blotter only when
+// the data actually changed, so render → sync → render can't loop.
+async function gisSyncCommunityReports() {
+  if (typeof apiGet !== "function") return;
+  if (Date.now() - gisReportsFetchedAt < 5000) return;
+  gisReportsFetchedAt = Date.now();
+  try {
+    let rows = await apiGet("/api/incidents");
+
+    // One-time migration: push reports that only exist in this browser.
+    const known = new Set(rows.map((r) => r.case_no));
+    const legacy = gisLoadJSON(GIS_COMMUNITY_REPORTS_KEY, []).filter(
+      (r) => !gisIsServerId(r.id) && !known.has(r.caseNo),
+    );
+    if (legacy.length) {
+      await Promise.all(
+        legacy.map((r) =>
+          apiPost("/api/incidents", {
+            report_type: r.reportType || "other",
+            title: r.title || "Incident",
+            narration: r.comment || r.title || "—",
+            complainant_name: r.complainant || r.reporter?.name || "Resident",
+            contact: r.contact || null,
+            respondent: r.respondent || null,
+            witnesses: r.witnesses || null,
+            lng: r.point?.[0],
+            lat: r.point?.[1],
+          }).catch(() => null),
+        ),
+      );
+      rows = await apiGet("/api/incidents");
+    }
+
+    const fresh = rows.map(gisReportFromIncident);
+    const changed = JSON.stringify(fresh) !== JSON.stringify(gisReportsCache);
+    gisReportsCache = fresh;
+    gisSaveReportsCache();
+    if (changed) {
+      if (typeof renderReportFeed === "function") renderReportFeed();
+      if (window.CURRENT_PAGE === "incidents" && typeof renderPage === "function") renderPage();
+      Object.values(gisInstances).forEach((inst) => {
+        if (inst && typeof inst.refreshAll === "function") inst.refreshAll();
+      });
+    }
+  } catch (e) {
+    /* offline — keep the last snapshot */
+  }
+}
+
 function gisAllCommunityReports() {
+  if (gisReportsCache) return gisReportsCache;
   return gisLoadJSON(GIS_COMMUNITY_REPORTS_KEY, []);
 }
 function gisAllReportFeatures() {
@@ -678,9 +1051,10 @@ function gisNextCaseNo(existing) {
 function gisAddCommunityReport(point, data) {
   const list = gisAllCommunityReports();
   const record = {
-    id: gisNewId("rpt"),
-    // When the report was already filed to the API, reuse the server's
-    // case number so the pin, the DB row, and the app all agree.
+    id: data.serverId || gisNewId("rpt"),
+    // When the report was already filed to the API (the incident modal does
+    // this itself), reuse the server's id + case number so the pin, the DB
+    // row, and the app all agree.
     caseNo: data.caseNo || gisNextCaseNo(list),
     point,
     reportType: data.reportType,
@@ -695,8 +1069,33 @@ function gisAddCommunityReport(point, data) {
     resolved: false,
     resolvedAt: null,
   };
-  list.push(record);
-  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
+  gisReportsCache = list.concat([record]);
+  gisSaveReportsCache();
+  // Not filed yet (the map's own report tool) → file it to the DB now, then
+  // swap in the server id + case number.
+  if (!data.caseNo && typeof apiPost === "function") {
+    apiPost("/api/incidents", {
+      report_type: record.reportType || "other",
+      title: record.title || "Incident",
+      narration: record.comment || record.title || "—",
+      complainant_name: record.complainant || "Resident",
+      contact: record.contact || null,
+      respondent: record.respondent || null,
+      witnesses: record.witnesses || null,
+      lng: point[0],
+      lat: point[1],
+    })
+      .then((res) => {
+        record.id = res.id;
+        record.caseNo = res.case_no;
+        gisSaveReportsCache();
+        if (typeof renderReportFeed === "function") renderReportFeed();
+        Object.values(gisInstances).forEach((inst) => {
+          if (inst && typeof inst.refreshAll === "function") inst.refreshAll();
+        });
+      })
+      .catch(() => {});
+  }
   if (typeof logAudit === "function")
     logAudit(
       "INCIDENT_FILE",
@@ -708,7 +1107,10 @@ function gisAddCommunityReport(point, data) {
 }
 function gisDeleteCommunityReport(id) {
   const record = gisAllCommunityReports().find((r) => String(r.id) === String(id));
-  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, gisAllCommunityReports().filter((r) => r.id !== id));
+  gisReportsCache = gisAllCommunityReports().filter((r) => String(r.id) !== String(id));
+  gisSaveReportsCache();
+  if (gisIsServerId(id) && typeof apiDelete === "function")
+    apiDelete("/api/incidents/" + id).catch(() => {});
   if (typeof logAudit === "function")
     logAudit("CONCERN_DELETE", `Resident concern "${record?.title || id}" deleted`, "warning", "concern");
 }
@@ -722,7 +1124,11 @@ function gisSetCommunityReportResolved(id, resolved) {
   if (!record) return;
   record.resolved = !!resolved;
   record.resolvedAt = resolved ? Date.now() : null;
-  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, list);
+  gisReportsCache = list;
+  gisSaveReportsCache();
+  // Same status transition the MIS blotter page and the app use.
+  if (gisIsServerId(id) && typeof apiPatch === "function")
+    apiPatch("/api/incidents/" + id, { status: resolved ? "resolved" : "open" }).catch(() => {});
   if (typeof logAudit === "function")
     logAudit(
       resolved ? "CONCERN_RESOLVE" : "CONCERN_REOPEN",
@@ -731,14 +1137,20 @@ function gisSetCommunityReportResolved(id, resolved) {
       "concern",
     );
 }
-// Permanently drops every resolved concern from storage (the "Clear Resolved"
-// action in the history modal). Active reports are untouched. Returns the
-// number removed. Irreversible — callers should confirm first.
+// Permanently drops every resolved concern (the "Clear Resolved" action in
+// the history modal) — including their DB rows. Active reports are
+// untouched. Returns the number removed. Irreversible — callers confirm
+// first; the DB audit trigger keeps each deleted row's snapshot.
 function gisClearResolvedCommunityReports() {
   const list = gisAllCommunityReports();
   const kept = list.filter((r) => !r.resolved);
-  gisSaveJSON(GIS_COMMUNITY_REPORTS_KEY, kept);
   const removed = list.length - kept.length;
+  if (typeof apiDelete === "function")
+    list
+      .filter((r) => r.resolved && gisIsServerId(r.id))
+      .forEach((r) => apiDelete("/api/incidents/" + r.id).catch(() => {}));
+  gisReportsCache = kept;
+  gisSaveReportsCache();
   if (removed > 0 && typeof logAudit === "function")
     logAudit("CONCERN_PURGE", `${removed} resolved resident concern${removed === 1 ? "" : "s"} permanently cleared`, "warning", "concern");
   return removed;
@@ -937,9 +1349,9 @@ async function initGisMap(targetId, opts = {}) {
   // One-time write-back of any old-shape {category} building tags.
   gisMigrateBuildingTags();
 
-  // Reconcile tags with the shared DB (pull server tags / push local-only
-  // ones), then repaint so merged tags show without a reload.
-  gisSyncBuildingTags().then(() => {
+  // Reconcile the whole map state with the shared DB (pull server features /
+  // push local-only ones), then repaint so merged data shows without a reload.
+  gisSyncMapState().then(() => {
     if (gisInstances[targetId] && typeof gisInstances[targetId].refreshAll === "function")
       gisInstances[targetId].refreshAll();
   });

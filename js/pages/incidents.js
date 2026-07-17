@@ -13,6 +13,10 @@ const INCIDENT_FOCUS_KEY = "ibmdss.focusReport";
 
 function renderPage() {
   renderIncidentsPage();
+  // Reports live in the shared incident table now — pull the latest; the
+  // sync re-renders this page only when something actually changed (and is
+  // throttled, so render → sync → render can't loop).
+  if (typeof gisSyncCommunityReports === "function") gisSyncCommunityReports();
 }
 
 function incidentEscape(str) {

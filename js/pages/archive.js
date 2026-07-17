@@ -3,6 +3,22 @@ window.CURRENT_PAGE = "archive";
 
 function renderPage() {
   renderArchive();
+  syncArchivedBuildingsFromServer();
+}
+
+// The archive list lives in the shared DB (archive table) so every device
+// sees the same recycle bin. Pull it, refresh the localStorage snapshot, and
+// repaint the list — the page shows the last-known snapshot until this lands.
+async function syncArchivedBuildingsFromServer() {
+  if (typeof apiGet !== "function") return;
+  try {
+    const rows = await apiGet("/api/gis/archive");
+    gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, rows);
+    const el = document.getElementById("archived-buildings-list");
+    if (el) el.innerHTML = renderArchivedBuildingsList();
+  } catch (e) {
+    /* offline — the local snapshot stays */
+  }
 }
 
 function renderArchive() {

@@ -272,6 +272,7 @@ async function submitIncidentReport() {
   // so the report reaches the MIS and the incident table — the pin point is
   // [lng, lat]. Falls back to local-only if the server can't be reached.
   let serverCaseNo = null;
+  let serverId = null;
   if (typeof apiPost === "function") {
     let s = null;
     try {
@@ -294,6 +295,7 @@ async function submitIncidentReport() {
         account_id: s?.account_id || null,
       });
       serverCaseNo = res.case_no;
+      serverId = res.id;
     } catch (err) {
       console.warn("[incident] API filing failed, keeping local copy:", err.message);
     }
@@ -311,6 +313,7 @@ async function submitIncidentReport() {
     respondent,
     witnesses,
     caseNo: serverCaseNo,
+    serverId,
   });
 
   if (incidentMapInstance && typeof incidentMapInstance.endLocationPick === "function")
