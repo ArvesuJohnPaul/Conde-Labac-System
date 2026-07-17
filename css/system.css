@@ -2547,44 +2547,53 @@ body {
 }
 
 /* ── Incident report pins & cards ──
-   One unified pin for community concerns AND accidents: the pin body is
-   colored by who filed it (resident green / official navy) and the report
-   type's icon sits in the head. Direct-child selectors keep the body
-   styling off the glyph's own paths. */
+   One unified marker for community concerns AND accidents: the report
+   type's icon, drawn bare on a transparent background and colored by who
+   filed it (resident green / official navy). */
 .gis-report-pin {
   cursor: pointer;
-}
-.gis-report-pin > path {
-  fill: #15803d;
-  stroke: #ffffff;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.gis-report-pin:hover > path {
-  fill: #166534;
-}
-.gis-report-pin-official > path {
-  fill: #1d4ed8;
-}
-.gis-report-pin-official:hover > path {
-  fill: #1e40af;
 }
 .gis-report-pin-glyph path,
 .gis-report-pin-glyph circle,
 .gis-report-pin-glyph line,
 .gis-report-pin-glyph polyline {
   fill: none;
-  stroke: #ffffff;
+  stroke: #15803d;
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.gis-report-pin:hover .gis-report-pin-glyph path,
+.gis-report-pin:hover .gis-report-pin-glyph circle,
+.gis-report-pin:hover .gis-report-pin-glyph line,
+.gis-report-pin:hover .gis-report-pin-glyph polyline {
+  stroke: #166534;
+}
+.gis-report-pin-official .gis-report-pin-glyph path,
+.gis-report-pin-official .gis-report-pin-glyph circle,
+.gis-report-pin-official .gis-report-pin-glyph line,
+.gis-report-pin-official .gis-report-pin-glyph polyline {
+  stroke: #1d4ed8;
+}
+.gis-report-pin-official:hover .gis-report-pin-glyph path,
+.gis-report-pin-official:hover .gis-report-pin-glyph circle,
+.gis-report-pin-official:hover .gis-report-pin-glyph line,
+.gis-report-pin-official:hover .gis-report-pin-glyph polyline {
+  stroke: #1e40af;
+}
 /* The incident modal's "you picked here" marker — brand gold so it stands
-   apart from the green community-report pins already on the map. */
+   apart from the report icons already on the map. (Still the classic pin
+   shape: it marks a choice, not a filed report.) */
 .gis-pick-pin path {
   fill: #c79a3b;
   stroke: #ffffff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gis-pick-pin circle {
+  fill: #ffffff;
+  stroke: none;
 }
 .gis-pick-pin {
   pointer-events: none;

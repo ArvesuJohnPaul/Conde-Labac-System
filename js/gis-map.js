@@ -3219,15 +3219,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         // the pin's TIP — not its center — sits on the reported location.
         const size = GIS_REPORT_ICON_SIZE / state.zoom;
         const meta = GIS_REPORT_TYPE_META[props.reportType] || GIS_REPORT_TYPE_META.other;
-        // Officials' pins are navy, residents' green — the report type's icon
-        // sits in the pin head (unified community + accident ping).
+        // Bare type icon on a transparent background, centered on the
+        // reported location — colored by who filed it (resident green /
+        // official navy). No pin body.
         const official = ["Admin", "Officer", "Staff"].includes(props.reporterRole || "");
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "gis-report-pin" + (official ? " gis-report-pin-official" : ""));
-        g.setAttribute("transform", `translate(${x - size / 2} ${y - size}) scale(${size / 24})`);
-        g.innerHTML =
-          '<path d="M12 21s7-6.5 7-11.6A7 7 0 0 0 5 9.4C5 14.5 12 21 12 21Z"/>' +
-          `<g class="gis-report-pin-glyph" transform="translate(6.9 4.3) scale(0.425)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
+        g.setAttribute("transform", `translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`);
+        g.innerHTML = `<g class="gis-report-pin-glyph">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
         attachReportInteraction(g, props);
         reportsLayer.appendChild(g);
       });
