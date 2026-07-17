@@ -2326,13 +2326,13 @@ body {
   stroke: none;
 }
 .gis-hazard-severity-low {
-  fill-opacity: 0.18;
+  fill-opacity: 0.32;
 }
 .gis-hazard-severity-medium {
-  fill-opacity: 0.3;
+  fill-opacity: 0.48;
 }
 .gis-hazard-severity-high {
-  fill-opacity: 0.45;
+  fill-opacity: 0.62;
 }
 .gis-draw-preview-shape {
   fill: rgba(37, 99, 235, 0.15);
@@ -2546,23 +2546,39 @@ body {
   background: rgba(201, 162, 39, 0.08);
 }
 
-/* ── Community report pins & cards ── */
+/* ── Incident report pins & cards ──
+   One unified pin for community concerns AND accidents: the pin body is
+   colored by who filed it (resident green / official navy) and the report
+   type's icon sits in the head. Direct-child selectors keep the body
+   styling off the glyph's own paths. */
 .gis-report-pin {
   cursor: pointer;
 }
-.gis-report-pin path {
+.gis-report-pin > path {
   fill: #15803d;
   stroke: #ffffff;
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.gis-report-pin circle {
-  fill: #ffffff;
-  stroke: none;
-}
-.gis-report-pin:hover path {
+.gis-report-pin:hover > path {
   fill: #166534;
+}
+.gis-report-pin-official > path {
+  fill: #1d4ed8;
+}
+.gis-report-pin-official:hover > path {
+  fill: #1e40af;
+}
+.gis-report-pin-glyph path,
+.gis-report-pin-glyph circle,
+.gis-report-pin-glyph line,
+.gis-report-pin-glyph polyline {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* The incident modal's "you picked here" marker — brand gold so it stands
    apart from the green community-report pins already on the map. */
@@ -2597,6 +2613,21 @@ body {
 }
 .gis-dot-reports {
   background: #15803d;
+}
+/* Official (Admin/Officer/Staff) report pins are navy on the map. */
+.gis-dot-reports-official {
+  background: #1d4ed8;
+}
+/* "Report Incident" — sits right of the household search bar on staff maps;
+   replaces the retired Accident Ping edit tool. */
+.gis-report-incident-btn {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.45);
+  font-weight: 700;
+}
+.gis-report-incident-btn:hover {
+  background: rgba(185, 28, 28, 0.08);
+  border-color: #b91c1c;
 }
 /* Interactive report cards must accept the cursor — unlike the read-only
    hover popup, which is pointer-events:none so it can follow the mouse. */

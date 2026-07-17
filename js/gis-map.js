@@ -162,14 +162,20 @@ const GIS_ACCIDENT_ICON_SIZE = 42;
 //
 // `interpersonal: true` types involve another party, so the incident modal
 // reveals the Respondent/Subject and Witness Names fields only for those.
+// Includes the former staff-only "accident marker" types (vehicular / fire /
+// medical) — accident pings and community reports are ONE pin type now, and
+// each pin carries its type's icon.
 const GIS_REPORT_TYPE_META = {
   noise: { label: "Noise Complaint", icon: "siren", interpersonal: false },
   dispute: { label: "Property Dispute", icon: "alertCircle", interpersonal: true },
-  altercation: { label: "Physical Altercation", icon: "siren", interpersonal: true },
+  altercation: { label: "Physical Altercation", icon: "fist", interpersonal: true },
   theft: { label: "Theft / Robbery", icon: "siren", interpersonal: true },
   vandalism: { label: "Vandalism", icon: "alertCircle", interpersonal: false },
   domestic: { label: "Domestic Disturbance", icon: "siren", interpersonal: true },
   flooding: { label: "Flooding / Natural Hazard", icon: "waves", interpersonal: false },
+  vehicular: { label: "Vehicular Accident", icon: "car", interpersonal: false },
+  fire: { label: "Fire Incident", icon: "flame", interpersonal: false },
+  medical: { label: "Medical Emergency", icon: "medical", interpersonal: false },
   other: { label: "Other", icon: "alertCircle", interpersonal: false },
 };
 const GIS_REPORT_ICON_SIZE = 44;
@@ -942,6 +948,8 @@ let gisReportsFetchedAt = 0;
 
 function gisReportFromIncident(row) {
   const name = row.complainant_name || "Resident";
+  const role = row.reporter_role || "";
+  const official = ["Admin", "Officer", "Staff"].includes(role);
   return {
     id: row.id,
     caseNo: row.case_no,
@@ -949,7 +957,13 @@ function gisReportFromIncident(row) {
     reportType: row.report_type,
     title: row.title || GIS_REPORT_TYPE_META[row.report_type]?.label || "Incident",
     comment: row.narration || "",
-    reporter: { name, initials: name.charAt(0).toUpperCase(), role: "Resident", purok: null },
+    reporterRole: role,
+    reporter: {
+      name,
+      initials: name.charAt(0).toUpperCase(),
+      role: official ? "Barangay Official" : "Resident",
+      purok: null,
+    },
     complainant: name,
     contact: row.contact || "",
     respondent: row.respondent || "",
@@ -1029,6 +1043,7 @@ function gisAllReportFeatures() {
       title: r.title,
       comment: r.comment,
       reporter: r.reporter,
+      reporterRole: r.reporterRole || "",
       createdAt: r.createdAt,
       resolved: !!r.resolved,
       resolvedAt: r.resolvedAt || null,
@@ -1050,8 +1065,17 @@ function gisNextCaseNo(existing) {
 // always "now" (createdAt), so the modal shows it read-only instead of asking.
 function gisAddCommunityReport(point, data) {
   const list = gisAllCommunityReports();
+  // The signed-in role colors the pin (official vs resident) until the next
+  // server sync replaces this optimistic record with the DB row.
+  let sessionRole = "";
+  try {
+    sessionRole = (JSON.parse(localStorage.getItem("ibmdss.session")) || {}).role || "";
+  } catch (e) {
+    /* signed out */
+  }
   const record = {
     id: data.serverId || gisNewId("rpt"),
+    reporterRole: sessionRole,
     // When the report was already filed to the API (the incident modal does
     // this itself), reuse the server's id + case number so the pin, the DB
     // row, and the app all agree.
@@ -1074,6 +1098,13 @@ function gisAddCommunityReport(point, data) {
   // Not filed yet (the map's own report tool) → file it to the DB now, then
   // swap in the server id + case number.
   if (!data.caseNo && typeof apiPost === "function") {
+    let sessionAccountId = null;
+    try {
+      sessionAccountId =
+        (JSON.parse(localStorage.getItem("ibmdss.session")) || {}).account_id || null;
+    } catch (e) {
+      /* signed out */
+    }
     apiPost("/api/incidents", {
       report_type: record.reportType || "other",
       title: record.title || "Incident",
@@ -1084,6 +1115,7 @@ function gisAddCommunityReport(point, data) {
       witnesses: record.witnesses || null,
       lng: point[0],
       lat: point[1],
+      account_id: sessionAccountId,
     })
       .then((res) => {
         record.id = res.id;
@@ -1541,8 +1573,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-buildings-toggle title="Toggle building outlines">${gisIcon("building")} Buildings</button>
         <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-hazard-toggle title="Toggle hazard zones">${gisIcon("warningTriangle")} Hazard</button>
         <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-construction-toggle title="Toggle construction areas">${gisIcon("cone")} Construction</button>
-        <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-accidents-toggle title="Toggle accident/incident markers">${gisIcon("siren")} Accidents</button>
-        <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-reports-toggle title="Toggle community report pins">${gisIcon("pin")} Reports</button>
+        <button type="button" class="gis-filter-btn gis-layer-toggle active" data-gis-reports-toggle title="Toggle incident report pins">${gisIcon("pin")} Reports</button>
       </div>
     </div>
   `;
@@ -1556,6 +1587,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <input type="text" class="gis-search-input" data-gis-search-input placeholder="Search tagged household…" autocomplete="off" />
       <div class="gis-search-results" data-gis-search-results hidden></div>
     </div>
+    ${
+      // Staff file accidents/incidents through the same unified report flow
+      // (replaces the retired Accident Ping edit tool). Hidden on anonymous
+      // public embeds — visitors use the services modal instead.
+      !anonymous
+        ? `<button type="button" class="gis-filter-btn gis-report-incident-btn" data-gis-report-incident title="File an incident report pinned on this map">${gisIcon("siren")} Report Incident</button>`
+        : ""
+    }
   `;
 
   // Edit controls sit inline with the zoom buttons; the drawing tools live
@@ -1582,8 +1621,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     { tool: "road", label: "Road", icon: "road", types: GIS_ROAD_TYPE_META },
     { tool: "vegetation", label: "Vegetation", icon: "wheat", types: GIS_VEGETATION_KIND_META },
     { tool: "construction", label: "Construction", icon: "cone", types: GIS_CONSTRUCTION_STATUS_META },
+    // Accident pings retired: accidents are filed as incident reports via
+    // the map's "Report Incident" button and show as regular report pins.
     { tool: "hazard-ping", label: "Hazard Ping", icon: "warningTriangle", types: GIS_HAZARD_TYPE_META },
-    { tool: "accident-ping", label: "Accident Ping", icon: "siren", types: GIS_ACCIDENT_TYPE_META },
     { tool: "measure", label: "Measure Distance", icon: "ruler", types: null },
   ];
   const drawPanelHtml = editable
@@ -1712,8 +1752,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         legendItemHtml("roads", "Roads", "roads"),
         legendItemHtml("hazard", "Hazard Zone", "hazard"),
         legendItemHtml("construction", "Construction Area", "construction"),
-        legendItemHtml("accidents", "Accidents", "accidents"),
-        legendItemHtml("reports", "Community Reports", "reports"),
+        legendItemHtml("reports", "Incident Reports", "reports"),
+        legendItemHtml("reports-official", "Official Report", "reports"),
       ].join(""),
     )}
     ${legendColumnHtml(
@@ -1778,6 +1818,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const searchWrapEl = toggleButtonsHost.querySelector("[data-gis-search-wrap]");
   const searchInputEl = toggleButtonsHost.querySelector("[data-gis-search-input]");
   const searchResultsEl = toggleButtonsHost.querySelector("[data-gis-search-results]");
+  // "Report Incident" (right of the search bar) opens the same unified
+  // incident modal residents use; the report lands as a pin on this map.
+  toggleButtonsHost
+    .querySelector("[data-gis-report-incident]")
+    ?.addEventListener("click", () => {
+      if (typeof openIncidentModal === "function") openIncidentModal();
+      else if (typeof showToast === "function") showToast("Incident reporting is unavailable here");
+    });
   // Dropdown open/close, shared by all three filter dropdowns (Building
   // Type, Classification, Map Layers). One panel open at a time; clicks on
   // the Map Layers toggle rows keep that panel open so several layers can be
@@ -3170,10 +3218,16 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         // Constant on-screen size (same trick as accidents), but translated so
         // the pin's TIP — not its center — sits on the reported location.
         const size = GIS_REPORT_ICON_SIZE / state.zoom;
+        const meta = GIS_REPORT_TYPE_META[props.reportType] || GIS_REPORT_TYPE_META.other;
+        // Officials' pins are navy, residents' green — the report type's icon
+        // sits in the pin head (unified community + accident ping).
+        const official = ["Admin", "Officer", "Staff"].includes(props.reporterRole || "");
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.setAttribute("class", "gis-report-pin");
+        g.setAttribute("class", "gis-report-pin" + (official ? " gis-report-pin-official" : ""));
         g.setAttribute("transform", `translate(${x - size / 2} ${y - size}) scale(${size / 24})`);
-        g.innerHTML = GIS_ICON_PATHS.pin;
+        g.innerHTML =
+          '<path d="M12 21s7-6.5 7-11.6A7 7 0 0 0 5 9.4C5 14.5 12 21 12 21Z"/>' +
+          `<g class="gis-report-pin-glyph" transform="translate(6.9 4.3) scale(0.425)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
         attachReportInteraction(g, props);
         reportsLayer.appendChild(g);
       });
@@ -4077,7 +4131,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     renderConstruction();
     updateLegendDimStates();
   });
-  accidentsToggleBtn.addEventListener("click", () => {
+  // (Accident toggle retired — accidents are incident report pins now.)
+  accidentsToggleBtn?.addEventListener("click", () => {
     state.showAccidents = !state.showAccidents;
     accidentsToggleBtn.classList.toggle("active", state.showAccidents);
     renderAccidents();
@@ -4478,7 +4533,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         constructionToggleBtn,
         accidentsToggleBtn,
         reportsToggleBtn,
-      ].forEach((btn) => btn.classList.add("active"));
+      ].forEach((btn) => btn?.classList.add("active"));
       renderAll();
       updateLegendDimStates();
     },
