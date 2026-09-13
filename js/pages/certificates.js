@@ -8,14 +8,8 @@ window.CURRENT_PAGE = "certificates";
 // In-memory copy of what the API returned (same pattern as residency.js).
 let CERT_REQUESTS = [];
 
-const CERT_TYPE_LABELS = {
-  "barangay-clearance": "Barangay Clearance",
-  indigency: "Certificate of Indigency",
-  residency: "Certificate of Residency",
-  "business-clearance": "Business Clearance",
-  "good-moral": "Certificate of Good Moral",
-  "solo-parent": "Certificate of Solo Parent",
-};
+// CERT_TYPE_LABELS (slug → display name) comes from js/certificate-types.js,
+// the list this page, the request picker and the printable forms all share.
 
 const CERT_STATUS_BADGES = {
   pending: "badge-warning",
@@ -44,6 +38,18 @@ function renderPage() {
   renderCertificatesPage();
 }
 
+// Options for the certificate-type filter, built from the shared list in
+// js/certificate-types.js so a new certificate shows up here on its own. The
+// short names keep the closed pill readable — .gis-filter-select caps at 240px.
+function certTypeFilterOptions() {
+  return (window.CERT_TYPE_OPTIONS || [])
+    .map(
+      (t) =>
+        `<option value="${escapeHtml(t.slug)}">${escapeHtml(t.short || t.label)}</option>`
+    )
+    .join("");
+}
+
 function renderCertificatesPage() {
   setContent(`
     <div class="page-header">
@@ -64,14 +70,24 @@ function renderCertificatesPage() {
           <button class="btn btn-sm btn-outline" onclick="loadCertRequests()"><i data-icon=refresh></i> Refresh</button>
         </div>
       </div>
-      <div class="filter-row">
-        <input class="form-control filter-input" id="cert-search" placeholder="Search by applicant or req. no..." oninput="filterCertRequests()"/>
-        <select class="form-control filter-select" id="cert-status" onchange="filterCertRequests()">
+      <!-- Filters use the GIS map's pill row (.gis-filter-row / -search-wrap /
+           -select in css/gis.css) so the two pages read as one system. -->
+      <div class="gis-filter-row">
+        <div class="gis-search-wrap">
+          ${typeof gisIcon === "function" ? gisIcon("search", "gis-search-icon") : ""}
+          <input type="text" class="gis-search-input" id="cert-search" autocomplete="off"
+                 placeholder="Search by applicant or req. no…" oninput="certFilterChanged()"/>
+        </div>
+        <select class="gis-filter-select" id="cert-status" onchange="certFilterChanged()">
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="issued">Issued</option>
           <option value="rejected">Rejected</option>
+        </select>
+        <select class="gis-filter-select" id="cert-type" onchange="certFilterChanged()">
+          <option value="">All Certificate Types</option>
+          ${certTypeFilterOptions()}
         </select>
       </div>
       <div class="table-wrap">
@@ -82,18 +98,32 @@ function renderCertificatesPage() {
           </tbody>
         </table>
       </div>
+      <div id="cert-pagination"></div>
     </div>
 
-    <!-- View Request modal -->
-    <div class="modal-backdrop" id="modal-view-cert" onclick="closeViewCert(event)">
+    <!-- "View" opens the Certificate Request modal from certificate-export.js:
+         the request's details, the fill-in blanks and a live preview of the
+         sheet, all in one place. Nothing to declare here. -->
+
+    <!-- Reject modal — the reason goes on the record and into the requester's
+         notification, so it is asked for rather than optional. -->
+    <div class="modal-backdrop" id="modal-cert-reject" onclick="closeCertReject(event)">
       <div class="modal-box">
         <div class="modal-header">
-          <div class="modal-title"><div class="modal-title-icon"><i data-icon=file-text></i></div> Certificate Request</div>
-          <button class="modal-close" onclick="closeViewCert()"><i data-icon=x></i></button>
+          <div class="modal-title"><div class="modal-title-icon"><i data-icon=x></i></div> <span id="cert-reject-title">Reject Request</span></div>
+          <button class="modal-close" onclick="closeCertReject()"><i data-icon=x></i></button>
         </div>
-        <div class="modal-body" id="view-cert-body"></div>
+        <div class="modal-body">
+          <p class="modal-help-text">The applicant is told their request was turned down, and the remarks below are sent with it so they know what to fix. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
+          <div class="form-group">
+            <label class="form-label">Reason for rejection</label>
+            <textarea class="form-control" id="cert-reject-remarks" rows="4" placeholder="e.g. The barangay ID presented has expired — please bring a valid ID and re-file."></textarea>
+          </div>
+          <div id="cert-reject-error" style="color:#b91c1c;font-size:13px;min-height:16px"></div>
+        </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" onclick="closeViewCert()">Close</button>
+          <button class="btn btn-outline" onclick="closeCertReject()">Cancel</button>
+          <button class="btn btn-primary" id="cert-reject-confirm" style="background:#b91c1c;border-color:#b91c1c" onclick="confirmCertReject()"><i data-icon=x></i> Reject request</button>
         </div>
       </div>
     </div>
@@ -152,15 +182,22 @@ function updateCertKpis() {
   set("kpi-cert-rejected", count("rejected"));
 }
 
+// Narrowing the list restarts it at page one.
+function certFilterChanged() {
+  resetPage("certificates");
+  filterCertRequests();
+}
+
 function filterCertRequests() {
   const q = (document.getElementById("cert-search")?.value || "").toLowerCase();
   const status = document.getElementById("cert-status")?.value || "";
+  const type = document.getElementById("cert-type")?.value || "";
   const list = CERT_REQUESTS.filter((r) => {
     const matchQ =
       !q ||
       (r.applicant_name || "").toLowerCase().includes(q) ||
       (r.request_no || "").toLowerCase().includes(q);
-    return matchQ && (!status || r.status === status);
+    return matchQ && (!status || r.status === status) && (!type || r.type === type);
   });
   renderCertRows(list);
 }
@@ -168,20 +205,39 @@ function filterCertRequests() {
 function renderCertRows(list) {
   const tbody = document.getElementById("cert-tbody");
   if (!tbody) return;
+  const pager = document.getElementById("cert-pagination");
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:24px">No requests match. Requests filed from the app or web portal appear here.</td></tr>`;
+    if (pager) pager.innerHTML = "";
     return;
   }
-  tbody.innerHTML = list
+  const page = paginate("certificates", list, filterCertRequests);
+  if (pager) {
+    pager.innerHTML = page.html;
+    if (typeof hydrateIcons === "function") hydrateIcons(pager);
+  }
+  tbody.innerHTML = page.items
     .map((r) => {
       const badge = CERT_STATUS_BADGES[r.status] || "badge-gray";
       const actions = [
-        `<button class="btn btn-sm btn-outline" onclick="openViewCert(${r.id})">View</button>`,
+        `<button class="btn btn-sm btn-outline" onclick="openViewCert(${r.id})">View/Edit</button>`,
       ];
+      // Export goes straight to the print dialog with whatever is on file — no
+      // modal in the way. Use View to check or change it first. Only offered
+      // once a request is past review; a pending one has nothing to hand out.
+      if (
+        (r.status === "approved" || r.status === "issued") &&
+        typeof certHasTemplate === "function" &&
+        certHasTemplate(r.type)
+      ) {
+        actions.push(
+          `<button class="btn btn-sm btn-outline" onclick="exportCertificate(${r.id})"><i data-icon=download></i> Export</button>`
+        );
+      }
       if (r.status === "pending") {
         actions.push(
           `<button class="btn btn-sm btn-gold" onclick="setCertStatus(${r.id}, 'approved')">Approve</button>`,
-          `<button class="btn btn-sm btn-outline" style="color:#b91c1c;border-color:#b91c1c" onclick="setCertStatus(${r.id}, 'rejected')">Reject</button>`
+          `<button class="btn btn-sm btn-outline" style="color:#b91c1c;border-color:#b91c1c" onclick="openCertReject(${r.id})">Reject</button>`
         );
       } else if (r.status === "approved") {
         actions.push(
@@ -198,6 +254,7 @@ function renderCertRows(list) {
           `<button class="btn btn-sm btn-outline" onclick="openCertMessage(${r.id})">Message</button>`
         );
       }
+      actions.push(deleteButtonHtml(`deleteCertRequest(${r.id})`, ""));
       return `<tr>
         <td class="table-mono">${escapeHtml(r.request_no)}</td>
         <td class="table-name">${escapeHtml(r.applicant_name)}</td>
@@ -212,29 +269,58 @@ function renderCertRows(list) {
 }
 
 // ── status changes (approve / reject / issue / undo) ──────────────────────
-async function setCertStatus(id, status) {
+// `remarks` is only passed by the reject flow — the API leaves the column alone
+// when it is null, so an Undo doesn't wipe the reason a rejection was recorded.
+async function setCertStatus(id, status, remarks) {
   const r = CERT_REQUESTS.find((x) => x.id === id);
   if (!r) return;
   const verb =
     status === "pending" ? "move back to pending" : status;
-  if (
-    (status === "rejected" || status === "pending") &&
-    !confirm(`${status === "rejected" ? "Reject" : "Undo"} ${r.request_no} (${r.applicant_name})?`)
-  )
-    return;
+  // Rejecting asks for a reason in its own modal (openCertReject), so by the
+  // time it reaches here it is already confirmed. Approve and Issue move a
+  // request forward and are undoable from the row; Undo needs a second look.
+  if (status === "pending") {
+    const ok = await uiConfirm({
+      tone: "accent",
+      icon: "refresh",
+      title: "Move this back to pending?",
+      message: `It returns to the review queue from "${r.status}".`,
+      target: {
+        icon: "file-text",
+        label: `${r.request_no} — ${r.applicant_name}`,
+      },
+      notes: [
+        {
+          icon: "info",
+          text: "Any approval or issuance already recorded on it is set aside.",
+        },
+        {
+          icon: "clipboard",
+          text: "The change is recorded in the Audit Log under your name.",
+        },
+      ],
+      confirmLabel: "Undo",
+      confirmIcon: "refresh",
+    });
+    if (!ok) return;
+  }
   const session = typeof getSession === "function" ? getSession() : null;
   try {
     await apiPatch(`/api/certificates/${id}`, {
       status: status,
+      remarks: remarks || null,
       account_id: session?.account_id || null,
     });
   } catch (err) {
-    alert(`Could not ${verb} the request: ` + err.message);
+    showToast(`Could not ${verb} the request: ${err.message}`, "<i data-icon=triangle-alert></i>");
     return;
   }
+  if (remarks) r.remarks = remarks;
   r.status = status;
   updateCertKpis();
   filterCertRequests();
+  // The sidebar pill counts pending requests — this just changed one.
+  if (typeof refreshNavBadges === "function") refreshNavBadges();
   const actions = {
     approved: "CERT_APPROVE",
     rejected: "CERT_REJECT",
@@ -255,36 +341,85 @@ async function setCertStatus(id, status) {
   );
 }
 
-// ── View modal ─────────────────────────────────────────────────────────────
-function openViewCert(id) {
+// ── Delete (archive) ───────────────────────────────────────────────────────
+// DELETE /api/certificates/:id snapshots the request into the shared Archive
+// and lifts the row out of the queue; the Archive page can put it back.
+// deleteRecord() in shell.js handles permission, confirmation and the audit
+// entry — the server writes its own ARCHIVE entry on top.
+async function deleteCertRequest(id) {
   const r = CERT_REQUESTS.find((x) => x.id === id);
-  const modal = document.getElementById("modal-view-cert");
-  const body = document.getElementById("view-cert-body");
-  if (!r || !modal || !body) return;
-  const row = (label, value) => `
-    <div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)">
-      <span class="table-muted" style="flex-shrink:0">${label}</span>
-      <span style="text-align:right;font-weight:500">${value}</span>
-    </div>`;
-  const dash = '<span class="table-muted">—</span>';
-  const badge = CERT_STATUS_BADGES[r.status] || "badge-gray";
-  body.innerHTML =
-    row("Request No.", escapeHtml(r.request_no)) +
-    row("Applicant", escapeHtml(r.applicant_name)) +
-    row("Type", escapeHtml(CERT_TYPE_LABELS[r.type] || r.type)) +
-    row("Status", `<span class="badge ${badge}">${escapeHtml(r.status)}</span>`) +
-    row("Filed", certFmtDate(r.created_at)) +
-    row("Purpose / Details", r.purpose ? escapeHtml(r.purpose) : dash) +
-    row("Remarks", r.remarks ? escapeHtml(r.remarks) : dash) +
-    row("Processed By", r.processed_by_name ? escapeHtml(r.processed_by_name) : dash) +
-    row("Processed At", r.processed_at ? certFmtDate(r.processed_at) : dash) +
-    row("Linked Resident", r.resident_id ? "#" + r.resident_id : dash);
-  modal.classList.add("open");
+  if (!r) return;
+  await deleteRecord({
+    label: `${r.request_no} — ${r.applicant_name}`,
+    what: "certificate request",
+    icon: "file-text",
+    action: "CERT_DELETE",
+    category: "certificate",
+    details: `Certificate request ${r.request_no} (${CERT_TYPE_LABELS[r.type] || r.type}) for ${r.applicant_name} deleted and moved to the Archive`,
+    request: () => apiDelete(`/api/certificates/${id}?account_id=${actingAccountId()}`),
+    onDone: () => {
+      CERT_REQUESTS = CERT_REQUESTS.filter((x) => x.id !== id);
+      updateCertKpis();
+      filterCertRequests();
+      if (typeof refreshNavBadges === "function") refreshNavBadges();
+    },
+  });
 }
 
-function closeViewCert(e) {
-  if (e && e.target !== document.getElementById("modal-view-cert")) return;
-  document.getElementById("modal-view-cert")?.classList.remove("open");
+// ── View: the Certificate Request modal ────────────────────────────────────
+// One modal for both jobs — the request's details and the printable form with
+// its blanks. certOpenSheet() lives in js/certificate-export.js.
+function openViewCert(id) {
+  const r = CERT_REQUESTS.find((x) => x.id === id);
+  if (!r) return;
+  certOpenSheet(r, { mode: "staff" });
+}
+
+// Export: no modal, straight to the print dialog with what is on file.
+function exportCertificate(id) {
+  const r = CERT_REQUESTS.find((x) => x.id === id);
+  if (r) certPrintRequest(r);
+}
+
+// ── Reject with a reason ───────────────────────────────────────────────────
+// The reason is required: it is written to certificate.remarks and sent to the
+// requester with the rejection notice, so "rejected" alone is never all they
+// get.
+let CERT_REJECT_TARGET = null;
+
+function openCertReject(id) {
+  const r = CERT_REQUESTS.find((x) => x.id === id);
+  if (!r) return;
+  CERT_REJECT_TARGET = r;
+  const title = document.getElementById("cert-reject-title");
+  if (title) title.textContent = `Reject ${r.request_no} — ${r.applicant_name}`;
+  const text = document.getElementById("cert-reject-remarks");
+  if (text) text.value = "";
+  const err = document.getElementById("cert-reject-error");
+  if (err) err.textContent = "";
+  document.getElementById("modal-cert-reject")?.classList.add("open");
+  document.getElementById("cert-reject-remarks")?.focus();
+}
+
+function closeCertReject(e) {
+  if (e && e.target !== document.getElementById("modal-cert-reject")) return;
+  document.getElementById("modal-cert-reject")?.classList.remove("open");
+}
+
+async function confirmCertReject() {
+  const r = CERT_REJECT_TARGET;
+  const remarks = (document.getElementById("cert-reject-remarks")?.value || "").trim();
+  const errEl = document.getElementById("cert-reject-error");
+  const btn = document.getElementById("cert-reject-confirm");
+  if (!r) return;
+  if (!remarks) {
+    if (errEl) errEl.textContent = "Please give a reason — the applicant is shown it.";
+    return;
+  }
+  if (btn) btn.disabled = true;
+  await setCertStatus(r.id, "rejected", remarks);
+  if (btn) btn.disabled = false;
+  closeCertReject();
 }
 
 // ── Message the requester ──────────────────────────────────────────────────

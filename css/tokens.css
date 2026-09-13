@@ -1,0 +1,490 @@
+/* ═══════════════════════════════════════════════════
+   tokens.css — C.A.R.E.S. design foundation
+   Barangay Conde Labac, Batangas City
+
+   The single source of truth for colour, type, spacing,
+   radius, elevation, motion and stacking. Load this
+   FIRST, before every other stylesheet.
+
+   Two layers, on purpose:
+
+     1. PRIMITIVES  --navy-800, --gold-400, --n-200 …
+        Raw ramp steps. Never used directly in component
+        CSS — they exist so a semantic role can be
+        re-pointed without hunting hex codes.
+
+     2. SEMANTIC    --surface, --text-primary, --border …
+        What component CSS actually consumes. Dark mode
+        re-points these and nothing else, which is why
+        the theme flip below is short.
+
+   Legacy aliases (--navy, --yellow, --cream …) are kept
+   at the bottom of each block so landing.css and the GIS
+   engine keep working untouched.
+═══════════════════════════════════════════════════ */
+
+/* Webfonts are requested by a <link> in each page's <head>, not @import here.
+   An @import inside a stylesheet cannot start downloading until this file
+   itself has arrived, serialising two round trips; the <link> fetches in
+   parallel with the CSS. Every page loads the same three families — Plus
+   Jakarta Sans, Space Mono, Playfair Display. DM Sans and DM Serif Display
+   were requested on every page for years without a single reference in any
+   stylesheet, and are no longer fetched. */
+
+:root {
+  /* ─────────────────────────────────────────────────
+     1 · PRIMITIVES
+  ───────────────────────────────────────────────── */
+
+  /* Navy — the institutional brand hue. Steps 800/700/600
+     are the historical --navy / --navy-mid / --navy-light,
+     kept exact so existing surfaces don't shift. */
+  --navy-950: #060e1b;
+  --navy-900: #091228;
+  --navy-800: #0d1b3e;
+  --navy-700: #162550;
+  --navy-600: #1e3260;
+  --navy-500: #294380;
+  --navy-400: #3a5da8;
+  --navy-300: #6a89cc;
+  --navy-200: #a7bce4;
+  --navy-100: #d6e0f4;
+  --navy-50: #eef2fb;
+
+  /* Gold — the accent. 600 is the seal gold, 400 the
+     brighter signal yellow used on navy fills. */
+  --gold-900: #5c4a10;
+  --gold-800: #8c711a;
+  --gold-700: #a8861f;
+  --gold-600: #c9a227;
+  --gold-500: #d4a017;
+  --gold-400: #f5c518;
+  --gold-300: #e8c55a;
+  --gold-200: #f5e3a8;
+  --gold-100: #fbf2d4;
+  --gold-50: #faf5e6;
+
+  /* Neutral — cool-leaning so it sits with navy rather
+     than fighting it. */
+  --n-950: #0b1220;
+  --n-900: #101828;
+  --n-800: #1d2939;
+  --n-700: #344054;
+  --n-600: #475467;
+  --n-500: #667085;
+  --n-400: #98a2b3;
+  --n-300: #cdd5e0;
+  --n-200: #e4e7ec;
+  --n-100: #eef0f5;
+  --n-50: #f6f7fb;
+  --n-0: #ffffff;
+
+  /* Status hues — one ramp each, so a badge, an alert and
+     a chart series can share a family without drifting. */
+  --green-700: #166534;
+  --green-600: #16a34a;
+  --green-500: #22c55e;
+  --green-300: #86efac;
+  --green-100: #dcfce7;
+
+  --amber-700: #92400e;
+  --amber-600: #d97706;
+  --amber-500: #f59e0b;
+  --amber-300: #fcd34d;
+  --amber-100: #fef3c7;
+
+  --red-700: #7f1d1d;
+  --red-600: #b91c1c;
+  --red-500: #dc2626;
+  --red-400: #ef4444;
+  --red-300: #fca5a5;
+  --red-100: #fee2e2;
+
+  --blue-700: #1e3a8a;
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --blue-300: #93c5fd;
+  --blue-100: #dbeafe;
+
+  --violet-500: #8b5cf6;
+  --teal-600: #0d9488;
+  --cyan-600: #0891b2;
+  --pink-600: #db2777;
+
+  /* ─────────────────────────────────────────────────
+     2 · SEMANTIC ROLES — light
+  ───────────────────────────────────────────────── */
+
+  /* Surfaces, back to front: the page, a card on it, a
+     recessed well inside the card, then hover/active. */
+  --surface: var(--n-50);
+  --surface-raised: var(--n-0);
+  --surface-sunken: var(--n-100);
+  --surface-hover: var(--n-100);
+  --surface-active: var(--n-200);
+
+  /* Ink */
+  --text-primary: var(--n-900);
+  --text-secondary: var(--n-600);
+  --text-muted: var(--n-400);
+  --text-brand: var(--navy-800);
+  --text-accent: var(--gold-800);
+
+  /* Lines */
+  --border: var(--n-200);
+  --border-strong: var(--n-300);
+  --border-brand: rgba(201, 162, 39, 0.35);
+
+  /* Text/icons on a saturated brand fill. Never flips —
+     the fill underneath never flips either. */
+  --on-brand: #ffffff;
+  --on-accent: var(--navy-900);
+
+  /* Interactive — one focus colour system-wide */
+  --focus-ring: var(--blue-600);
+  --focus-ring-offset: var(--surface-raised);
+
+  /* Status pairs: fg reads on bg, border ties them together */
+  --success: var(--green-700);
+  --success-bg: var(--green-100);
+  --success-border: var(--green-300);
+  --success-solid: var(--green-600);
+
+  --warning: var(--amber-700);
+  --warning-bg: var(--amber-100);
+  --warning-border: var(--amber-300);
+  --warning-solid: var(--amber-500);
+
+  --danger: var(--red-700);
+  --danger-bg: var(--red-100);
+  --danger-border: var(--red-300);
+  --danger-solid: var(--red-500);
+
+  --info: var(--blue-700);
+  --info-bg: var(--blue-100);
+  --info-border: var(--blue-300);
+  --info-solid: var(--blue-600);
+
+  --accent: var(--gold-600);
+  --accent-bg: var(--gold-50);
+  --accent-border: rgba(201, 162, 39, 0.3);
+  --accent-fg: var(--gold-800);
+
+  /* Sidebar has its own scale because it stays dark in
+     both themes — a light-mode sidebar would break the
+     government identity the app and landing share. */
+  --sidebar-bg: var(--navy-800);
+  --sidebar-bg-deep: var(--navy-900);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: rgba(255, 255, 255, 0.62);
+  --sidebar-text-strong: rgba(255, 255, 255, 0.94);
+  --sidebar-item-hover: rgba(255, 255, 255, 0.07);
+  --sidebar-item-active: rgba(201, 162, 39, 0.16);
+  --sidebar-item-active-text: var(--gold-300);
+
+  /* ─────────────────────────────────────────────────
+     3 · TYPE
+  ───────────────────────────────────────────────── */
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: "Playfair Display", Georgia, serif;
+
+  /* Minor-third-ish scale, clamped where it matters */
+  --text-2xs: 0.6875rem; /* 11px — badges, table heads   */
+  --text-xs: 0.75rem; /* 12px — meta, captions       */
+  --text-sm: 0.8125rem; /* 13px — dense UI, buttons    */
+  --text-base: 0.875rem; /* 14px — body                 */
+  --text-md: 0.9375rem; /* 15px — comfortable body     */
+  --text-lg: 1.0625rem; /* 17px — card titles          */
+  --text-xl: 1.25rem; /* 20px — section titles       */
+  --text-2xl: 1.5rem; /* 24px — page titles          */
+  --text-3xl: 1.875rem; /* 30px — KPI values           */
+  --text-4xl: 2.25rem; /* 36px — hero numbers         */
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  /* Display sizes tighten, small sizes open up — the
+     usual optical correction. */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.09em;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* ─────────────────────────────────────────────────
+     4 · SPACE — 4px base
+  ───────────────────────────────────────────────── */
+  --space-0: 0;
+  --space-1: 0.25rem; /*  4 */
+  --space-2: 0.5rem; /*  8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.25rem; /* 20 */
+  --space-6: 1.5rem; /* 24 */
+  --space-7: 1.75rem; /* 28 */
+  --space-8: 2rem; /* 32 */
+  --space-10: 2.5rem; /* 40 */
+  --space-12: 3rem; /* 48 */
+  --space-16: 4rem; /* 64 */
+
+  /* Page gutter shrinks on small screens — see the media
+     query at the bottom of this file. */
+  --page-pad: var(--space-7);
+  --card-pad: var(--space-6);
+  --stack: var(--space-5); /* vertical rhythm between blocks */
+
+  /* ─────────────────────────────────────────────────
+     5 · RADIUS
+  ───────────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* ─────────────────────────────────────────────────
+     6 · ELEVATION
+     Two-part shadows (tight contact + wide ambient) so
+     cards read as lifted rather than smudged.
+  ───────────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm:
+    0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.07);
+  --shadow-md:
+    0 2px 4px -2px rgba(16, 24, 40, 0.06), 0 4px 12px -2px rgba(16, 24, 40, 0.1);
+  --shadow-lg:
+    0 4px 12px -4px rgba(16, 24, 40, 0.08),
+    0 12px 32px -8px rgba(16, 24, 40, 0.16);
+  --shadow-xl:
+    0 8px 20px -6px rgba(16, 24, 40, 0.1), 0 24px 56px -12px rgba(16, 24, 40, 0.2);
+
+  /* ─────────────────────────────────────────────────
+     7 · MOTION
+     Durations are short by default; the reduced-motion
+     block at the end of this file zeroes them all.
+  ───────────────────────────────────────────────── */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* ─────────────────────────────────────────────────
+     8 · LAYOUT
+  ───────────────────────────────────────────────── */
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 76px;
+  --topbar-h: 60px;
+  --content-max: 1600px;
+
+  /* ─────────────────────────────────────────────────
+     9 · STACKING
+     Every z-index in the system comes from here, so the
+     order is auditable in one place.
+  ───────────────────────────────────────────────── */
+  --z-base: 1;
+  --z-sticky: 100;
+  --z-sidebar: 200;
+  --z-topbar: 400;
+  --z-dropdown: 500;
+  /* Scrim and drawer sit ABOVE the topbar: an open mobile nav has to cover
+     the bar it was opened from, or the topbar floats over its own overlay. */
+  --z-scrim: 600;
+  --z-drawer: 700;
+  --z-modal: 1000;
+  --z-toast: 1100;
+
+  color-scheme: light;
+
+  /* ═════════════════════════════════════════════════
+     LEGACY ALIASES
+     Consumed by landing.css and the GIS engine. Every
+     one now resolves through a ramp step above, so the
+     two halves of the system can no longer drift apart.
+  ═════════════════════════════════════════════════ */
+  --yellow: var(--gold-400);
+  --yellow-dark: var(--gold-500);
+  --yellow-light: #fff0a0;
+  --blue: #1a3a7c;
+  --blue-mid: var(--blue-600);
+  --blue-light: var(--blue-100);
+  --red: #c41e2a;
+  --red-mid: var(--red-500);
+  --red-light: var(--red-100);
+  --navy: var(--navy-800);
+  --navy-deep: var(--navy-900);
+  --navy-mid: var(--navy-700);
+  --navy-light: var(--navy-600);
+  --gold: var(--gold-600);
+  --gold-light: var(--gold-300);
+  --gold-pale: var(--gold-50);
+  --gold-dim: var(--gold-800);
+  --white: var(--n-0);
+  --cream: var(--n-50);
+  --gray: var(--n-500);
+  --gray-light: var(--n-100);
+  --text: var(--n-900);
+  --surface-2: var(--surface-sunken);
+  --border-dark: var(--border-strong);
+  /* The public portal's fixed navbar. Deliberately NOT an alias of
+     --topbar-h: the MIS bar is 60px, the portal's is 64px, and landing.css
+     offsets its hero and masthead against this exact value. */
+  --navbar-h: 64px;
+  --radius: var(--radius-md);
+  --shadow: var(--shadow-sm);
+  --transition: var(--duration-base) var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════
+   DARK THEME
+   Applied by js/theme.js as data-theme="dark" on <html>,
+   mirroring the mobile app's Settings → Appearance.
+
+   Dark mode reuses the navy family rather than a neutral
+   grey scale, so the system still reads as the same
+   government brand with the lights off — the same call
+   the Flutter app makes in AppColors.
+
+   Only semantic roles are re-pointed. Primitives, the
+   sidebar scale and --on-brand stay exactly as they are.
+═══════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Surfaces — page is deepest, cards lift toward navy */
+  --surface: #060e1b;
+  --surface-raised: #0e2039;
+  --surface-sunken: #13294b;
+  --surface-hover: #17305a;
+  --surface-active: #1e3a6b;
+
+  /* Ink — body copy clears WCAG AA on --surface-raised */
+  --text-primary: #edf1f9;
+  --text-secondary: #9fadc7;
+  --text-muted: #7d8dab;
+  --text-brand: #edf1f9;
+  --text-accent: var(--gold-300);
+
+  --border: #233d68;
+  --border-strong: #2f4d80;
+  --border-brand: rgba(232, 197, 90, 0.32);
+
+  --focus-ring: #7fb0ff;
+  --focus-ring-offset: var(--surface-raised);
+
+  /* Status pairs invert: foreground lightens so it clears
+     the deep tint that replaces the pale one. */
+  --success: var(--green-300);
+  --success-bg: #0d2d1a;
+  --success-border: #1d5434;
+  --success-solid: var(--green-600);
+
+  --warning: var(--amber-300);
+  --warning-bg: #33260a;
+  --warning-border: #6b4d10;
+  --warning-solid: var(--amber-500);
+
+  --danger: var(--red-300);
+  --danger-bg: #3a1414;
+  --danger-border: #7a2b2b;
+  --danger-solid: var(--red-500);
+
+  --info: var(--blue-300);
+  --info-bg: #0f2044;
+  --info-border: #24407e;
+  --info-solid: var(--blue-600);
+
+  --accent: var(--gold-300);
+  --accent-bg: #2e2408;
+  --accent-border: rgba(232, 197, 90, 0.3);
+  --accent-fg: var(--gold-300);
+
+  /* The sidebar lifts a touch so it still separates from
+     a near-black page instead of merging into it. */
+  --sidebar-bg: #0b1930;
+  --sidebar-bg-deep: #071223;
+
+  /* Shadows need more weight to register on a dark page */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 4px -2px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg:
+    0 4px 12px -4px rgba(0, 0, 0, 0.5), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+  --shadow-xl:
+    0 8px 20px -6px rgba(0, 0, 0, 0.55), 0 24px 56px -12px rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
+
+  /* Legacy aliases that must move with the theme.
+     The rest inherit from :root and are hue tokens that
+     deliberately stay put. */
+  --white: var(--surface-raised);
+  --cream: var(--surface);
+  --gray-light: var(--surface-sunken);
+  --gray: var(--text-secondary);
+  --text: var(--text-primary);
+  --navy: #16274a;
+  --navy-mid: #1c3159;
+  --navy-light: #24406f;
+  --navy-deep: var(--navy-800);
+  --yellow-light: #3a2f08;
+  --blue-light: #10224a;
+  --red-light: #3a1414;
+  --gold-pale: #2e2408;
+  --surface-2: var(--surface-sunken);
+  --border-dark: var(--border-strong);
+  --shadow: var(--shadow-sm);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE SCALE
+   Gutters and card padding tighten on small screens so
+   content — not chrome — gets the width.
+═══════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  :root {
+    --page-pad: var(--space-5);
+    --card-pad: var(--space-5);
+    --stack: var(--space-4);
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --page-pad: var(--space-4);
+    --card-pad: var(--space-4);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   REDUCED MOTION
+   Zeroing the duration tokens disables every transition
+   and animation built on them in one stroke; the
+   catch-all below covers hand-written durations too.
+═══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

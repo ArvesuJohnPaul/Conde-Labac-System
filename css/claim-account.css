@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════
+   CLAIM ACCOUNT  (claim-account.html)
+
+   Page-only rules for the standalone claim page: the
+   centred card on the navy gradient and its step dots.
+   Kept out of system.css because the body rule would
+   restyle every MIS page. Linked after motion.css so it
+   wins the same cascade ties the inline block did.
+═══════════════════════════════════════════════════ */
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: linear-gradient(
+    135deg,
+    var(--navy-deep) 0%,
+    var(--navy) 50%,
+    var(--navy-mid) 100%
+  );
+}
+.claim-card {
+  background: var(--white);
+  border-radius: 20px;
+  width: 560px;
+  max-width: 100%;
+  padding: 40px 40px 32px;
+  box-shadow: var(--shadow-lg);
+}
+.claim-head {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.claim-seal {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  overflow: hidden;
+  border: 3px solid var(--gold);
+}
+.claim-seal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.claim-title {
+  font-family: "DM Serif Display", serif;
+  font-size: 24px;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.claim-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.claim-back-link {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.claim-back-link:hover {
+  color: var(--gold-dim);
+}
+.claim-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+.acc-step {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.acc-step.active {
+  background: var(--navy);
+  color: #fff;
+}
+@media (max-width: 560px) {
+  .claim-card {
+    padding: 28px 22px 24px;
+  }
+}

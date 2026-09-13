@@ -47,19 +47,19 @@ function incidentCurrentReporter() {
       .slice(0, 2)
       .join("")
       .toUpperCase();
-  let purok = null;
-  let contact = "";
-  const surname = String(name).trim().split(" ").pop();
-  if (surname && typeof RESIDENTS_DATA !== "undefined") {
-    const match = RESIDENTS_DATA.find(
-      (r) => r.name.split(",")[0].trim().toLowerCase() === surname.toLowerCase(),
-    );
-    if (match) {
-      purok = match.purok || null;
-      contact = match.contact || "";
-    }
-  }
-  return { name, initials, role: session.role || "Resident", purok, contact };
+  // Purok and contact used to be guessed by matching the signed-in user's
+  // surname against the landing page's demo RESIDENTS_DATA list. That list is
+  // gone (it backed the public resident search, removed on data-privacy
+  // grounds), and the guess was wrong for every barangay with two families
+  // sharing a surname anyway. Left blank — the modal asks for the contact
+  // number, and the pin the reporter drops is the location that matters.
+  return {
+    name,
+    initials,
+    role: session.role || "Resident",
+    purok: null,
+    contact: "",
+  };
 }
 
 // Options for the Incident Type select, straight from the unified metadata so
@@ -175,6 +175,64 @@ function renderIncidentFields(reporter) {
     </div>`;
 }
 
+// ── Validation feedback ─────────────────────────────────────────────────────
+// These replace three raw window.alert() calls. A browser alert is modal, ugly,
+// unstyleable, and — worst here — it does not tell the user WHICH field is
+// wrong once it is dismissed. The design system already carries the states for
+// this (.form-error and .form-control[aria-invalid="true"] in css/shared.css),
+// so the message lives under the offending field and stays there until fixed.
+// This also matches the call the project already made when window.confirm()
+// and window.prompt() were replaced with designed dialogs.
+function incidentClearErrors() {
+  const body = document.querySelector("#modal-incidents .modal-body") || document;
+  body.querySelectorAll("[data-inc-error]").forEach((el) => el.remove());
+  body.querySelectorAll('[aria-invalid="true"]').forEach((el) => {
+    el.removeAttribute("aria-invalid");
+  });
+  const pin = document.getElementById("inc-pick-status");
+  if (pin) pin.classList.remove("inc-pick-status-error");
+}
+
+function incidentFieldError(fieldId, message) {
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  field.setAttribute("aria-invalid", "true");
+
+  const msg = document.createElement("div");
+  msg.className = "form-error";
+  msg.setAttribute("data-inc-error", "");
+  msg.setAttribute("role", "alert");
+  msg.textContent = message;
+  (field.closest(".form-group") || field.parentNode).appendChild(msg);
+
+  // Clear as soon as they start fixing it — an error that lingers while the
+  // user is plainly addressing it reads as broken.
+  const clear = () => {
+    field.removeAttribute("aria-invalid");
+    msg.remove();
+    field.removeEventListener("input", clear);
+  };
+  field.addEventListener("input", clear);
+
+  field.scrollIntoView({ behavior: "smooth", block: "center" });
+  field.focus({ preventScroll: true });
+}
+
+// The pin is not a form field, so its error goes on the map's own status line
+// rather than inventing a field that does not exist.
+function incidentPinError(message) {
+  const status = document.getElementById("inc-pick-status");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.add("inc-pick-status-error");
+  status.setAttribute("role", "alert");
+  status.scrollIntoView({ behavior: "smooth", block: "center" });
+  // The status line is not a form control, so it does not pick up the shake
+  // that css/motion.css gives an [aria-invalid] field — but it is refusing the
+  // submit for exactly the same reason, and should say so the same way.
+  if (window.Motion) Motion.shake(status);
+}
+
 // Shows/hides Respondent + Witness based on whether the selected incident type
 // involves another party (GIS_REPORT_TYPE_META[type].interpersonal).
 function updateIncidentConditionalFields() {
@@ -246,19 +304,23 @@ async function submitIncidentReport() {
     ? (document.getElementById("inc-witnesses")?.value || "").trim()
     : "";
 
+  incidentClearErrors();
   if (!complainant) {
-    alert("Please enter the complainant's full name.");
-    document.getElementById("inc-complainant")?.focus();
-    return;
+    return incidentFieldError(
+      "inc-complainant",
+      "Enter the complainant's full name so the report can be followed up."
+    );
   }
   if (!incidentPickPoint) {
-    alert("Please drop a pin on the map to mark where the incident happened.");
-    return;
+    return incidentPinError(
+      "Drop a pin on the map to mark where the incident happened."
+    );
   }
   if (!narration) {
-    alert("Please describe what happened.");
-    document.getElementById("inc-narration")?.focus();
-    return;
+    return incidentFieldError(
+      "inc-narration",
+      "Describe what happened — the sequence of events, who was involved, and any details. Without this an officer has nothing to act on."
+    );
   }
 
   const reporter = incidentCurrentReporter() || {

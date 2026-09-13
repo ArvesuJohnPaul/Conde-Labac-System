@@ -1,0 +1,1115 @@
+/* ═══════════════════════════════════════════════════
+   motion.css — the system's motion layer
+   Barangay Conde Labac, Batangas City
+
+   Every animation that is not intrinsic to a single
+   component lives here, in one file, so the system has
+   one vocabulary of movement instead of a keyframe
+   invented per module. Components keep the transitions
+   that ARE intrinsic to them (a button's hover lift, a
+   caret's rotation); what this file adds is the motion
+   that has to be coordinated — things entering, things
+   leaving, and things going wrong.
+
+   Load order: tokens.css → shared.css → system.css →
+   gis.css → motion.css. It loads LAST on purpose: a few
+   rules here replace an existing one-shot animation with
+   a two-way one (.sc-item-body, .modal-backdrop), and
+   they can only do that by winning the cascade.
+
+   Durations and easings come from tokens.css. Nothing
+   here hard-codes a duration except the deliberately
+   long, deliberately un-tokenised ones (shake, shimmer),
+   which are gestures rather than transitions.
+
+   REDUCED MOTION: tokens.css already zeroes the duration
+   tokens and clamps every animation under
+   prefers-reduced-motion. Rules here that move something
+   a long way (the shake, the drawer, the stagger) are
+   additionally neutralised at the bottom of this file so
+   they land at their final state instead of flickering
+   through a 0.01ms version of the gesture.
+
+   Contents
+     1  Shared keyframes
+     2  Collapsibles
+     3  Form validation & error states
+     4  Overlays: modal, drawer, dropdown, toast
+     5  Lists: staggered entrance
+     6  Feedback: flash, pulse, pop, busy
+     7  Component polish
+     8  Reduced motion
+═══════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════
+   1 · SHARED KEYFRAMES
+
+   Named for what they do, not where they are used. Any
+   component may reach for these; only add a new one when
+   none of them expresses the gesture.
+═══════════════════════════════════════════════════ */
+
+@keyframes m-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes m-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* The house entrance: a short rise into place. Six pixels, not twenty — the
+   content is arriving, not flying in. */
+@keyframes m-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-rise-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* For panels that hang off a trigger (dropdowns, the notification bell). The
+   scale is anchored by transform-origin at the call site. */
+@keyframes m-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-pop-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97) translateY(-3px);
+  }
+}
+
+/* A chip or badge appearing mid-list. Overshoots very slightly so a status
+   that has just changed is noticed without a colour flash. */
+@keyframes m-pop-scale {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The refusal. Four decaying swings, ~4px at the widest — enough to read as
+   "no" without throwing the field off its grid line. Deliberately not
+   tokenised: this is a fixed gesture, and speeding it up with the rest of the
+   UI would turn it into a twitch. */
+@keyframes m-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-4px);
+  }
+  30% {
+    transform: translateX(4px);
+  }
+  45% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+}
+
+/* Ring that expands and fades out of an element that just changed. Used for a
+   saved row, a resolved report, a copied reference number. */
+@keyframes m-flash-ring {
+  from {
+    box-shadow: 0 0 0 0 var(--m-flash, var(--accent-border));
+  }
+  to {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@keyframes m-flash-bg {
+  0% {
+    background-color: var(--m-flash-bg, var(--accent-bg));
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Attention pulse for a live figure or an urgent count. Two seconds, so it
+   reads as a heartbeat rather than a blink. */
+@keyframes m-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes m-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   2 · COLLAPSIBLES
+
+   CSS cannot transition to `height: auto`, and every
+   collapsible in this system was written as a hard
+   display:none / element-removed swap because of it.
+   There are two answers here and both are used:
+
+   (a) The grid trick — a 0fr → 1fr row transition on a
+       wrapper. Pure CSS, no measuring, survives the
+       content changing height while open. This is the
+       one to reach for in NEW markup.
+
+   (b) js/motion.js's Motion.collapse(), which measures
+       and animates an explicit height, then clears it.
+       This is for the panels already built around a
+       class toggle that cannot be re-wrapped.
+═══════════════════════════════════════════════════ */
+
+/* ── (a) The grid primitive ────────────────────────────
+   <div class="collapsible" data-open="true">
+     <div class="collapsible-inner"> … </div>
+   </div>
+   The inner wrapper is required: `overflow: hidden` has
+   to live on something that is NOT the grid item being
+   squeezed, or the content reflows as it shrinks. */
+.collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--duration-base) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  opacity: 0;
+}
+
+.collapsible[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.collapsible > .collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── (b) The measured primitive ────────────────────────
+   Motion.collapse() sets .is-collapsing and an inline
+   height for the duration of the animation, then removes
+   both. While it is on, nothing inside may add its own
+   scrollbar or the measured height is wrong.
+
+   The verticals transition with the height because
+   `box-sizing: border-box` clamps a box's used height to
+   its padding plus border — animate height alone and a
+   "closed" panel stops at a visible band. Motion.collapse
+   drives all seven values; this rule only says how long
+   they take. */
+.is-collapsing {
+  overflow: hidden !important;
+  transition:
+    height var(--duration-base) var(--ease-out),
+    padding-top var(--duration-base) var(--ease-out),
+    padding-bottom var(--duration-base) var(--ease-out),
+    margin-top var(--duration-base) var(--ease-out),
+    margin-bottom var(--duration-base) var(--ease-out),
+    border-top-width var(--duration-base) var(--ease-out),
+    border-bottom-width var(--duration-base) var(--ease-out);
+}
+
+/* Faded slightly on the way in and out so a tall panel does not appear to
+   wipe. Only applied while the height is animating. */
+.is-collapsing > * {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.is-collapsing[data-collapsing="out"] > * {
+  opacity: 0;
+}
+
+/* ── Carets ────────────────────────────────────────────
+   Every disclosure triangle in the system turns the same
+   way and at the same speed, whichever module drew it. */
+.sc-item-caret,
+.gis-panel-chevron,
+[data-collapse-caret] {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+[data-collapse-caret] {
+  transform: rotate(-90deg);
+}
+
+[aria-expanded="true"] [data-collapse-caret] {
+  transform: rotate(0deg);
+}
+
+/* ── Site Content rows (js/pages/content.js) ───────────
+   The open row's body previously animated in with the
+   page-in keyframe and vanished instantly on close,
+   because content.js drops it from the DOM. motion.js
+   now measures it on both edges; the entrance keyframe
+   below only covers the fields sliding down INSIDE the
+   body once it has room, which is what makes the open
+   read as an unfold rather than a resize.
+
+   Standing system.css's page-in animation down is gated
+   on the runtime being present: without it, that
+   keyframe is still the only entrance the body has. */
+.has-motion .sc-item-body {
+  animation: none;
+}
+
+.sc-item.is-open > .sc-item-body > .sc-fields > * {
+  animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 22ms + 40ms);
+}
+
+.sc-item.is-open > .sc-item-body > .sc-item-foot {
+  animation: m-fade-in var(--duration-slow) var(--ease-out) backwards;
+  animation-delay: 120ms;
+}
+
+/* The row itself settles onto the open background rather than snapping. */
+.sc-item {
+  transition: background var(--duration-base) var(--ease-out);
+}
+
+/* ── GIS side panels (js/pages/gis.js) ─────────────────
+   The panel body is folded by Motion.collapse() from
+   gisApplyPanelState(). gis.css's `display: none`
+   fallback stands down whenever this runtime is present
+   — see the .has-motion note there — so nothing has to
+   be overridden from here.
+
+   Hands the freed space over at the same speed the body
+   folds, instead of the neighbouring panel snapping to
+   full height on the click. */
+.gis-side-panel {
+  transition: flex-grow var(--duration-base) var(--ease-out);
+}
+
+.gis-side-panel .card-header {
+  transition:
+    margin-bottom var(--duration-base) var(--ease-out),
+    padding-bottom var(--duration-base) var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════
+   3 · FORM VALIDATION & ERROR STATES
+
+   The system already standardised on two hooks:
+   `.form-error` for the message and
+   `[aria-invalid="true"]` / `.error` on the control
+   (see the note in js/incident-report.js). Everything
+   below hangs off those two, so every existing call site
+   — incident-report.js's incidentFieldError, and
+   anything written later — animates without being
+   touched.
+
+   A CSS animation only fires when the selector STARTS
+   matching, so a field that is already invalid will not
+   re-shake on a second failed submit. js/motion.js
+   re-triggers it by cycling .m-shake; the rules here are
+   what it re-triggers.
+═══════════════════════════════════════════════════ */
+
+/* ── The message ───────────────────────────────────────
+   Slides down out of the field rather than appearing, so
+   the eye is carried from the control to the reason. */
+.form-error,
+.field-error,
+.confirm-error:not([hidden]),
+.acct-edit-error:not(:empty),
+[role="alert"].form-error {
+  animation: m-error-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes m-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+    /* Opening the max-height as well stops the fields below the message from
+       being shoved down in one jump when it appears. `overflow` is not
+       interpolated — it is held at `hidden` for the run and reverts after —
+       which is what keeps the text from spilling out of the closed box on the
+       first frame. */
+    max-height: 0;
+    overflow: hidden;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    max-height: 4em;
+    overflow: hidden;
+  }
+}
+
+/* ── The field ─────────────────────────────────────────
+   The red border is already in shared.css. What it was
+   missing is the moment of refusal: without it, a failed
+   submit on a long form changes a border the user is not
+   looking at.
+
+   The .m-shake class is the re-trigger hook: Motion.shake()
+   cancels whatever animation is running, forces a style
+   recalculation, and re-applies — see replay() in
+   js/motion.js for why cycling the class on its own is
+   not enough when a higher-specificity rule declares the
+   same animation. */
+.form-control[aria-invalid="true"],
+.form-control.error,
+.m-shake {
+  animation: m-shake 420ms var(--ease-in-out);
+}
+
+/* An invalid control keeps a soft red halo even when it is not focused, so
+   scrolling a long form shows where the problems are. */
+.form-control[aria-invalid="true"],
+.form-control.error {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-solid) 12%, transparent);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+/* ── Empty-but-required ────────────────────────────────
+   A distinct, quieter treatment from "wrong". An empty
+   required field is not an error the user made, it is
+   one they have not got to yet — so it gets the halo and
+   the shake but no permanent red until they have left
+   it. .m-empty is set by motion.js on submit. */
+.form-control.m-empty {
+  animation: m-shake 420ms var(--ease-in-out);
+  border-color: var(--warning-solid);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning-solid) 16%, transparent);
+}
+
+/* Clearing on input is what the modules already do by hand; this makes the
+   fade-out match the fade-in instead of snapping back to grey. */
+.form-control {
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+/* ── The form-level banner ─────────────────────────────
+   uiConfirm()'s inline error and the account-edit modal's
+   error line both sit above the action buttons. They
+   shake as one with the dialog so the failure reads as
+   the dialog's, not one field's. */
+.m-shake-box {
+  animation: m-shake 420ms var(--ease-in-out);
+}
+
+/* ── The label ─────────────────────────────────────────
+   Turns with the field. Cheap, and it makes the pairing
+   unambiguous on a two-column form row. */
+.form-group:has(.form-control[aria-invalid="true"]) > .form-label,
+.form-group:has(.form-control.error) > .form-label {
+  color: var(--danger);
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+/* ── Success ───────────────────────────────────────────
+   The opposite gesture, for a field or row that has just
+   been accepted. Applied by Motion.flash(). */
+.m-ok {
+  animation: m-flash-ring var(--duration-slow) var(--ease-out);
+  --m-flash: color-mix(in srgb, var(--success-solid) 40%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════
+   4 · OVERLAYS
+
+   Modals, drawers, dropdowns and the toast all appeared
+   instantly and, more noticeably, all LEFT instantly —
+   an exit is where the absence of motion is felt most,
+   because the surface the user was reading vanishes with
+   no indication of where it went.
+═══════════════════════════════════════════════════ */
+
+/* ── The exit lease ────────────────────────────────────
+   Motion.closeOverlay() does not put `open` back while
+   the exit plays — modules read that class to decide
+   what their trigger does next, and it must not lie. So
+   .is-closing has to carry the display the `open` class
+   was carrying, for exactly as long as the animation
+   runs. One rule per overlay, each matching the display
+   its own .open rule sets.
+
+   Nothing may be clicked through an overlay that is
+   already leaving, so all of them drop pointer events
+   for the duration. */
+.modal-backdrop.is-closing {
+  display: flex;
+}
+
+.notif-panel.is-closing,
+.nav-user-menu-dropdown.is-closing,
+.topbar-modules-dropdown.is-closing {
+  display: flex;
+}
+
+.modal-backdrop.is-closing,
+.notif-panel.is-closing,
+.nav-user-menu-dropdown.is-closing,
+.topbar-modules-dropdown.is-closing,
+.nav-links.open.is-closing {
+  pointer-events: none;
+}
+
+/* ── Modal ─────────────────────────────────────────────
+   .modal-box already animates in (shared.css). What is
+   added is the backdrop's fade — without it the blur
+   snaps on while the box is still easing — and both
+   halves of the exit, driven by .is-closing from
+   motion.js. */
+.modal-backdrop.open {
+  animation: m-fade-in var(--duration-base) var(--ease-out);
+}
+
+.modal-backdrop.is-closing {
+  animation: m-fade-out var(--duration-base) var(--ease-out) forwards;
+}
+
+.modal-backdrop.is-closing .modal-box {
+  animation: m-modal-out var(--duration-base) var(--ease-in-out) forwards;
+}
+
+@keyframes m-modal-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+}
+
+/* A modal's own contents step in behind the box so the dialog does not arrive
+   fully formed — the header first, then the body, then the buttons. */
+.modal-backdrop.open .modal-box > .modal-body {
+  animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: 70ms;
+}
+
+.modal-backdrop.open .modal-box > .modal-footer {
+  animation: m-fade-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: 120ms;
+}
+
+/* ── Sidebar drawer (mobile) ───────────────────────────
+   #sidebar already transitions its transform; the scrim
+   behind it needs to leave as well as arrive, or the
+   page stays dimmed for a frame after the drawer has
+   gone. */
+.sidebar-scrim.is-closing {
+  animation: m-fade-out var(--duration-base) var(--ease-out) forwards;
+}
+
+/* ── Public navbar drawer (index.html) ─────────────────
+   .nav-links.open is a display:none → flex swap. It
+   cannot transition out of display:none, but it can
+   animate in, and the links can arrive one after
+   another — which is what makes a drawer feel like it
+   opened rather than appeared. */
+@media (max-width: 768px) {
+  .nav-links.open {
+    animation: m-drawer-in var(--duration-base) var(--ease-out);
+    transform-origin: top center;
+  }
+
+  .nav-links.open.is-closing {
+    animation: m-drawer-out var(--duration-fast) var(--ease-in-out) forwards;
+  }
+
+  .nav-links.open > li,
+  .nav-links.open > a {
+    animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+    animation-delay: calc(var(--m-i, 0) * 35ms + 60ms);
+  }
+}
+
+@keyframes m-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-drawer-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* The hamburger's three bars already cross into an X (shared.css animates
+   `all`); pinning the origin stops the top and bottom bars from sliding
+   sideways as they rotate. */
+.nav-toggle span {
+  transform-origin: center;
+}
+
+/* ── Dropdowns & panels ────────────────────────────────
+   The user menu and module launcher already use
+   `menu-in`. The notification panel uses it too but had
+   no exit, and neither had a transform-origin, so both
+   scaled from their centre while hanging off a trigger
+   in their top corner. */
+.notif-panel,
+.nav-user-menu-dropdown,
+.topbar-modules-dropdown {
+  transform-origin: top right;
+}
+
+.notif-panel.is-closing,
+.nav-user-menu-dropdown.is-closing,
+.topbar-modules-dropdown.is-closing {
+  animation: m-pop-out var(--duration-fast) var(--ease-in-out) forwards;
+}
+
+/* ── Toast ─────────────────────────────────────────────
+   It already slides up from the corner. The spring
+   easing on the way in gives it a small settle; the exit
+   stays on ease-out so it leaves quietly. shell.js sets
+   the transform inline, so only the easing is changed
+   here. */
+.toast {
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-slow) var(--ease-spring);
+}
+
+.toast > span:first-child {
+  animation: m-pop-scale var(--duration-slow) var(--ease-spring);
+}
+
+/* ═══════════════════════════════════════════════════
+   5 · LISTS — STAGGERED ENTRANCE
+
+   A table or feed that repaints after a filter change
+   used to swap its rows in one frame, which gives the
+   user no signal that the list they are looking at is a
+   different one. A 16ms-per-row cascade does, and is
+   over in a quarter of a second.
+
+   js/motion.js sets --m-i on each child and caps it, so
+   a 500-row audit trail does not take eight seconds to
+   arrive.
+═══════════════════════════════════════════════════ */
+
+.m-stagger > * {
+  animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 16ms);
+}
+
+/* Table rows may not be transformed on some engines without breaking the
+   column widths, so rows fade and shift by a hair instead. */
+.data-table tbody.m-stagger > tr {
+  animation: m-row-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 16ms);
+}
+
+@keyframes m-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* KPI tiles get a slightly longer step — there are only ever four or five of
+   them and they are the first thing on the page. */
+.kpi-grid.m-stagger > .kpi-card {
+  animation: m-rise-in var(--duration-slow) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 55ms);
+}
+
+/* ── Skeleton → content ────────────────────────────────
+   The shimmer stops and the real content rises into the
+   space it was holding. */
+.m-skeleton-out {
+  animation: m-fade-out var(--duration-fast) var(--ease-out) forwards;
+}
+
+/* ── Empty state ───────────────────────────────────────
+   Arrives a beat after the container it fills, so it
+   does not race the surrounding card. */
+.empty-state {
+  animation: m-rise-in var(--duration-slow) var(--ease-out) backwards;
+  animation-delay: 60ms;
+}
+
+.empty-state-icon {
+  animation: m-pop-scale var(--duration-slow) var(--ease-spring) backwards;
+  animation-delay: 120ms;
+}
+
+/* ── Reordering ────────────────────────────────────────
+   Motion.flip() slides the rows of a reordered list from
+   where they were to where they now are. Both rows in a
+   swap move, so the one the user actually pressed is
+   lifted off the list while it travels — otherwise the
+   two are indistinguishable and it is not obvious which
+   one obeyed the button.
+
+   The elevation is a shadow and a background, not a
+   transform: FLIP owns the transform for the length of
+   the move, and a second one here would fight it. */
+.m-moving {
+  position: relative;
+  z-index: 2;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+  animation: m-moving-lift 380ms var(--ease-out);
+}
+
+@keyframes m-moving-lift {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  40% {
+    box-shadow: var(--shadow-lg);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* The rank number is the value the move actually changed. */
+.sc-rank {
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+/* ── Leaving ───────────────────────────────────────────
+   Motion.leave() puts this on a row being deleted and
+   removes the node when it ends, so a deleted record
+   collapses out of the list instead of the rows below it
+   jumping up. */
+.m-leaving {
+  animation: m-collapse-out var(--duration-base) var(--ease-in-out) forwards;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+@keyframes m-collapse-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   6 · FEEDBACK
+═══════════════════════════════════════════════════ */
+
+/* A row that has just been saved, resolved or approved. The ring is drawn
+   outside the element so it does not disturb the layout. */
+.m-flash {
+  animation:
+    m-flash-ring var(--duration-slow) var(--ease-out),
+    m-flash-bg 900ms var(--ease-out);
+}
+
+.m-flash-ok {
+  --m-flash: color-mix(in srgb, var(--success-solid) 45%, transparent);
+  --m-flash-bg: var(--success-bg);
+}
+
+.m-flash-danger {
+  --m-flash: color-mix(in srgb, var(--danger-solid) 45%, transparent);
+  --m-flash-bg: var(--danger-bg);
+}
+
+/* Anything genuinely live — an unresolved-incident count, a pending badge that
+   just went up. Used sparingly; two of these on one screen is one too many. */
+.m-pulse {
+  animation: m-pulse 2s var(--ease-in-out) infinite;
+}
+
+/* A badge or chip that has just been added to a row. */
+.badge.m-new,
+.sc-chip.m-new,
+.m-pop {
+  animation: m-pop-scale var(--duration-slow) var(--ease-spring);
+}
+
+/* In-place busy state for a button that has fired a request. The label is kept
+   (so the button does not change width) and dimmed under a spinner. */
+.btn.is-busy {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.is-busy::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--on-brand);
+  opacity: 0.9;
+  animation: m-spin 620ms linear infinite;
+}
+
+.btn-outline.is-busy::after,
+.btn-ghost.is-busy::after {
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════
+   7 · COMPONENT POLISH
+
+   Small, cheap transitions on things that already
+   changed state visually but did so in one frame.
+═══════════════════════════════════════════════════ */
+
+/* ── Tabs ──────────────────────────────────────────────
+   The gold underline appeared fully drawn. Growing it
+   from the left ties it to the tab that was clicked. */
+.tab.active::after {
+  animation: m-tab-underline var(--duration-base) var(--ease-out);
+  transform-origin: left center;
+}
+
+@keyframes m-tab-underline {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* ── Cards ─────────────────────────────────────────────
+   Matches the lift .kpi-card already has, for the cards
+   that are actually clickable. A plain reporting card is
+   left alone — a surface that lifts under the cursor but
+   does nothing when clicked is a false affordance.
+
+   The background-color is in the list for the theme
+   switch further down: one `transition` declaration per
+   element, or the last one silently drops the others. */
+.card {
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    background-color var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+a.card:hover,
+.card.is-clickable:hover,
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Table rows ────────────────────────────────────────
+   The hover tint was instant; the row-level transition
+   in system.css never applied because the background is
+   set on the cells. The same declaration carries the
+   cells through a theme switch. */
+.data-table th,
+.data-table td {
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+/* A row the user has just acted on (approved a certificate, resolved an
+   incident) keeps its highlight for a moment after the list repaints. */
+.data-table tbody tr.m-flash td {
+  animation: m-flash-bg 900ms var(--ease-out);
+}
+
+/* ── Sidebar navigation ────────────────────────────────
+   A 3px nudge towards the label under the cursor. Small
+   enough that it reads as the row responding rather than
+   the list reflowing, and it stops at the item that is
+   already current — the active row has a rail, and
+   moving it as well would say the same thing twice.
+
+   Matches .nav-item's own padding (--space-3); shifting
+   from a different base would make the row jump on the
+   first hover. Excluded on the collapsed rail, where the
+   item is centred with padding-inline: 0 and a leftward
+   shift has nothing to point at. */
+.nav-item {
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    padding-left var(--duration-base) var(--ease-out);
+}
+
+@media (min-width: 1025px) {
+  .sidebar-collapsed #sidebar .nav-item:hover {
+    padding-left: 0;
+  }
+}
+
+.nav-item:hover:not(.active) {
+  padding-left: calc(var(--space-3) + 3px);
+}
+
+.nav-badge {
+  transition: transform var(--duration-base) var(--ease-spring);
+}
+
+.nav-item:hover .nav-badge {
+  transform: scale(1.08);
+}
+
+/* ── Status chips & badges ─────────────────────────────
+   These change from a repaint, so they cannot transition
+   their own colour — but they can transition on hover in
+   a table, which is where a truncated one gets read. */
+.badge,
+.sc-chip {
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+/* ── Progress ──────────────────────────────────────────
+   1s was long enough that a bar reaching 100% finished
+   after the user had looked away. */
+.progress-fill {
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+/* ── Filters & toolbars ────────────────────────────────
+   The chip that clears a filter arrives when a filter is
+   applied and leaves when it is cleared. Deliberately
+   not extended to .filter-row .btn — that selector beats
+   .btn's own `transition` and would quietly drop the
+   hover lift from every button in a toolbar. */
+.filter-chip {
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+/* ── Pagination ────────────────────────────────────────
+   The active page button jumped between numbers. */
+.fb-page-btn {
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.fb-page-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* ── Timeline ──────────────────────────────────────────
+   An audit or status history reads top-down; the entries
+   arriving in that order says so. */
+.timeline.m-stagger > .timeline-item {
+  animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 45ms);
+}
+
+/* ── Notification feed ─────────────────────────────────*/
+.notif-panel.open .notif-item {
+  animation: m-rise-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 30ms + 40ms);
+}
+
+/* The bell rings once when the unread count goes up. Motion.ring() adds it. */
+.m-ring {
+  animation: m-ring 620ms var(--ease-in-out);
+  transform-origin: top center;
+}
+
+@keyframes m-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(11deg);
+  }
+  30% {
+    transform: rotate(-9deg);
+  }
+  45% {
+    transform: rotate(6deg);
+  }
+  60% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+/* ── Theme switch ──────────────────────────────────────
+   Flipping between light and dark repainted every
+   surface in one frame, which is a jolt on a full
+   dashboard. A short colour cross-fade on the surfaces
+   only — text is left alone so nothing appears to smear.
+   js/theme.js is not involved; the attribute change on
+   <html> is enough to drive it.
+
+   .card and the table cells are deliberately NOT in this
+   list: they carry background-color in their own
+   `transition` above, and a second declaration would
+   replace it rather than add to it. */
+body,
+.modal-box,
+#sidebar,
+.topbar {
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════
+   8 · REDUCED MOTION
+
+   tokens.css already clamps every animation to 0.01ms
+   under this query, which is right for transitions but
+   wrong for the gestures — a shake compressed to a
+   hundredth of a millisecond is a single-frame jump, and
+   a staggered list flashes.
+
+   Everything with a displacement is removed outright
+   here; everything that only changes opacity is kept,
+   because a cross-fade is not what
+   prefers-reduced-motion is protecting against.
+═══════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .m-shake,
+  .m-shake-box,
+  .m-ring,
+  .form-control[aria-invalid="true"],
+  .form-control.error,
+  .form-control.m-empty,
+  .empty-state,
+  .empty-state-icon,
+  .m-stagger > *,
+  .data-table tbody.m-stagger > tr,
+  .kpi-grid.m-stagger > .kpi-card,
+  .timeline.m-stagger > .timeline-item,
+  .notif-panel.open .notif-item,
+  .sc-item.is-open > .sc-item-body > .sc-fields > *,
+  .sc-item.is-open > .sc-item-body > .sc-item-foot,
+  .nav-links.open > li,
+  .nav-links.open > a,
+  .toast > span:first-child,
+  .modal-backdrop.open .modal-box > .modal-body,
+  .modal-backdrop.open .modal-box > .modal-footer,
+  .tab.active::after,
+  .m-pop,
+  .badge.m-new,
+  .sc-chip.m-new {
+    animation: none !important;
+  }
+
+  /* The invalid field still has to be findable without the shake — the halo
+     stays, and is what the eye is left with. */
+  .form-control.m-empty {
+    border-color: var(--warning-solid);
+  }
+
+  /* Back to .nav-item's own padding — see the note on the hover rule. */
+  .nav-item:hover:not(.active) {
+    padding-left: var(--space-3);
+  }
+
+  a.card:hover,
+  .card.is-clickable:hover,
+  .service-card:hover,
+  .kpi-card:hover {
+    transform: none;
+  }
+
+  /* Collapsibles snap. Motion.collapse() checks the same query and skips
+     straight to the end state, so nothing is left mid-height. */
+  .collapsible,
+  .is-collapsing {
+    transition: none !important;
+  }
+}

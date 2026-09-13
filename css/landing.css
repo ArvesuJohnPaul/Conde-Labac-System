@@ -1,30 +1,145 @@
 /* ═══════════════════════════════════════════════════
    landing.css — C.A.R.E.S. Public Portal
    Barangay Conde Labac, Batangas City
-   Redesign 2026-07 — formal government identity:
-   navy/gold palette, serif display type, official
-   masthead, framed hall photo, multi-column footer.
+
+   Redesign 2026-07-25. The formal government identity
+   from the previous pass stays — navy and gold, serif
+   display type, official masthead, framed hall photo —
+   and these changed:
+
+     · Dark mode. Headings were hard-wired to var(--navy)
+       and section fills to var(--white). Both aliases
+       re-point in [data-theme="dark"], so every title on
+       the page rendered dark navy on near-black and the
+       "white" cards came out navy. theme.js follows the
+       visitor's OS, so this was the default experience
+       for anyone with a dark desktop, not an edge case.
+       Component CSS here now consumes semantic roles
+       (--text-brand, --surface-raised, --border) which
+       are what tokens.css re-points, plus two local
+       pairs for the navy tiles that need to lighten.
+
+     · Rhythm. 96px of padding around every section, a
+       1140px measure and one card row per screen made a
+       four-section page scroll like ten. Padding is now
+       fluid, the measure is wider, and the surfaces
+       alternate so section boundaries read without
+       relying on empty space.
+
+     · New blocks: masthead preference toggles, advisory
+       ribbon, "how it works" steps, contact/emergency
+       band, back-to-top.
+
+   Load order: tokens.css → shared.css → landing.css
 ═══════════════════════════════════════════════════ */
 
 :root {
-  --masthead-h: 34px;
-  --font-serif: "Playfair Display", Georgia, serif;
+  --masthead-h: 40px;
+
+  /* Fluid section rhythm — 64px on a phone, 96px on a desktop. */
+  --section-pad: clamp(3.5rem, 6vw, 6rem);
+  --container-max: 1200px;
+  --container-pad: clamp(1.25rem, 4vw, 2rem);
+
+  /* Navy tile + gold glyph: the service icons, official avatars and step
+     numerals. On a dark page a navy-800 tile on a navy-900 card is a smudge,
+     so dark mode swaps the fill for a gold wash and keeps the glyph. */
+  --tile-bg: var(--navy-800);
+  --tile-fg: var(--gold-300);
+  --tile-border: transparent;
+
+  /* Hairline used to separate stacked sections of the same surface. */
+  --section-line: var(--border);
+
+  /* GIS map chrome. The engine's styles below used to hard-wire two values
+     that do not survive a theme flip: `color: var(--navy)` for every label,
+     and `rgba(255,255,255,…)` for the floating panels. --navy re-points to a
+     DARK navy in dark mode, so labels came out near-black on a near-black
+     control; the panels never re-pointed at all, so their (now light) text sat
+     on a white sheet — which is what made the map legend unreadable. Both are
+     tokens now. Kept identical to the block in gis.css, which styles the same
+     engine on the MIS pages. */
+  --gis-ink: var(--navy-800);
+  --gis-panel-bg: rgba(255, 255, 255, 0.55);
+  --gis-panel-solid: rgba(255, 255, 255, 0.96);
+  --gis-panel-border: rgba(27, 42, 74, 0.08);
+  --gis-panel-hover: rgba(27, 42, 74, 0.06);
+}
+
+[data-theme="dark"] {
+  --tile-bg: rgba(245, 197, 24, 0.12);
+  --tile-fg: var(--gold-300);
+  --tile-border: rgba(245, 197, 24, 0.22);
+
+  --gis-ink: var(--text-primary);
+  --gis-panel-bg: rgba(6, 14, 27, 0.74);
+  --gis-panel-solid: rgba(9, 18, 40, 0.96);
+  --gis-panel-border: rgba(232, 197, 90, 0.2);
+  --gis-panel-hover: rgba(255, 255, 255, 0.09);
 }
 
 body {
   font-family: var(--font-sans);
-  background: var(--white);
-  color: var(--text);
+  background: var(--surface);
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
 /* ─── UTILITIES ────────────────────────────────── */
+/* !important because this utility is applied by JS to elements whose own rule
+   also sets display — .office-status is inline-flex, .nav-user is relative
+   flex — and it sits near the top of the file, so on equal specificity the
+   component's later declaration used to win and the "hidden" element rendered
+   anyway. (.nav-notif-btn.is-hidden below was the earlier one-off patch for
+   the same collision.) */
 .is-hidden {
-  display: none;
+  display: none !important;
+}
+
+/* Visible only to assistive tech. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Keyboard users land on this first and can jump the two fixed bars and the
+   whole navigation list. It only leaves the corner while focused. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1300;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-400);
+  color: var(--navy-900);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* One focus treatment for every interactive element on the page. */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* ─── OFFICIAL MASTHEAD ────────────────────────── */
-/* Thin institutional strip pinned above the shared navbar (gov.ph-style). */
+/* Thin institutional strip pinned above the shared navbar (gov.ph-style),
+   carrying the appearance and language controls on its right. */
 .gov-masthead {
   position: fixed;
   top: 0;
@@ -32,37 +147,39 @@ body {
   right: 0;
   z-index: 901;
   height: var(--masthead-h);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 2rem;
-  background: var(--navy-deep);
+  background: var(--navy-950);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.68rem;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
 }
 
-/* Miniature PH tricolor */
+.gov-masthead-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+/* Miniature national flag. 28×14 keeps the official 1:2 field exactly — the
+   old three-bar chip was 27×12 and not a flag at all. The hairline stops the
+   blue band from merging into the near-black masthead behind it. */
 .gov-flag {
   display: inline-flex;
-  width: 27px;
-  height: 12px;
+  width: 28px;
+  height: 14px;
+  flex-shrink: 0;
   border-radius: 2px;
   overflow: hidden;
-  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
-.gov-flag span {
-  flex: 1;
-}
-.gov-flag span:nth-child(1) {
-  background: #1a3a7c;
-}
-.gov-flag span:nth-child(2) {
-  background: #c41e2a;
-}
-.gov-flag span:nth-child(3) {
-  background: #f5c518;
+.gov-flag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .gov-masthead-text {
@@ -71,32 +188,161 @@ body {
   text-overflow: ellipsis;
 }
 
-.gov-masthead-gov {
+.gov-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-left: auto;
-  font-family: "Space Mono", monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
 
-/* Shared navbar sits just below the masthead on this page */
+.gov-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
+}
+.gov-tool i[data-icon] {
+  font-size: 13px;
+  color: var(--gold-400);
+}
+.gov-tool:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(245, 197, 24, 0.45);
+  color: #fff;
+}
+
+.gov-masthead-gov {
+  padding-left: var(--space-3);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+}
+
+/* ─── NAVBAR (page-local overrides of shared.css) ─ */
 .navbar {
   top: var(--masthead-h);
+  transition:
+    background var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+/* Past the hero the bar sits over light content — deepen it so the gold
+   wordmark and links keep their contrast. */
+.navbar.is-scrolled {
+  background: rgba(6, 14, 27, 0.94);
+  box-shadow: 0 6px 24px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* Section currently under the bar. The shared stylesheet only styles :hover,
+   which tells a visitor nothing about where they are. */
+.nav-links a.is-active {
+  color: var(--gold-400);
+}
+.nav-links a.is-active::after {
+  width: 100%;
 }
 
 .nav-logo-fallback {
   display: none;
   width: 40px;
   height: 40px;
-  background: var(--yellow);
-  border-radius: 50%;
+  background: var(--gold-400);
+  border-radius: var(--radius-full);
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  font-weight: 900;
-  color: var(--navy);
+  color: var(--navy-800);
+}
+
+/* Hamburger → X while the drawer is open. */
+.nav-toggle.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ─── NAV NOTIFICATIONS (landing) ──────────────── */
+/* Sits immediately left of the user pill. Promoted out of the user dropdown so
+   an unread count is visible without opening a menu — the badge is the whole
+   point of the control, and a badge nobody sees does no work.
+   Shown only while signed in (applySessionToNav toggles .is-hidden). */
+.nav-notif-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition:
+    background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
+}
+
+.nav-notif-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(201, 162, 39, 0.5);
+  color: var(--gold-400);
+}
+
+.nav-notif-btn.is-hidden {
+  display: none;
+}
+
+/* portal-account.js's paintUnread() toggles this between "none" and
+   "inline-flex" inline, so display is deliberately left out here. */
+.nav-notif-badge {
+  /* Hidden until portal-account.js has an unread count to show. */
+  display: none;
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  /* Ringed in the navbar's own colour so the badge reads as a chip on top of
+     the button rather than a smudge against its edge. */
+  border: 2px solid var(--navy-900);
+  background: var(--gold-400);
+  color: var(--navy-900);
+  font-size: 10px;
+  font-weight: var(--weight-extrabold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 
 /* ─── NAV USER MENU (landing) ──────────────────── */
@@ -113,10 +359,10 @@ body {
   padding: 6px 12px 6px 6px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(201, 162, 39, 0.25);
-  border-radius: 100px;
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: background 0.2s;
-  font-family: "Plus Jakarta Sans", sans-serif;
+  transition: background var(--duration-base) var(--ease-out);
+  font-family: var(--font-sans);
 }
 .nav-user-btn:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -124,25 +370,25 @@ body {
 
 .nav-user-caret {
   color: rgba(255, 255, 255, 0.5);
-  transition: transform 0.2s;
+  transition: transform var(--duration-base) var(--ease-out);
 }
 .nav-user-btn[aria-expanded="true"] .nav-user-caret {
   transform: rotate(180deg);
-  color: var(--yellow);
+  color: var(--gold-400);
 }
 
 .nav-user-menu-drop {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 200px;
+  min-width: 214px;
   background: rgba(13, 27, 62, 0.98);
   border: 1px solid rgba(201, 162, 39, 0.25);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 6px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 12px 30px rgba(13, 27, 62, 0.4);
-  z-index: 1200;
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-dropdown);
   display: none;
   flex-direction: column;
   gap: 2px;
@@ -159,19 +405,21 @@ body {
   padding: 10px 12px;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: rgba(255, 255, 255, 0.85);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 .nav-user-menu-item i[data-icon] {
   font-size: 1rem;
-  color: var(--yellow);
+  color: var(--gold-400);
 }
 .nav-user-menu-item:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -179,10 +427,10 @@ body {
 }
 .nav-user-menu-item-danger:hover {
   background: rgba(220, 38, 38, 0.14);
-  color: #fca5a5;
+  color: var(--red-300);
 }
 .nav-user-menu-item-danger:hover i[data-icon] {
-  color: #fca5a5;
+  color: var(--red-300);
 }
 
 /* ─── HERO ─────────────────────────────────────── */
@@ -190,11 +438,25 @@ body {
   position: relative;
   overflow: hidden;
   color: #fff;
-  padding: calc(var(--navbar-h) + var(--masthead-h) + 76px) 0 100px;
+  padding: calc(var(--navbar-h) + var(--masthead-h) + clamp(2.5rem, 5vw, 4.5rem))
+    0 clamp(3rem, 5vw, 5rem);
   background:
-    radial-gradient(1100px 520px at 88% -12%, rgba(37, 99, 235, 0.2), transparent 62%),
-    radial-gradient(880px 420px at -12% 112%, rgba(201, 162, 39, 0.13), transparent 55%),
-    linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 58%, var(--navy-mid) 100%);
+    radial-gradient(
+      1100px 520px at 88% -12%,
+      rgba(37, 99, 235, 0.2),
+      transparent 62%
+    ),
+    radial-gradient(
+      880px 420px at -12% 112%,
+      rgba(201, 162, 39, 0.13),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      var(--navy-950) 0%,
+      var(--navy-800) 58%,
+      var(--navy-700) 100%
+    );
 }
 
 /* Subtle dot grid over the gradient */
@@ -202,7 +464,10 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px
+  );
   background-size: 26px 26px;
   pointer-events: none;
 }
@@ -226,8 +491,8 @@ body {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 60px;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 5vw, 4rem);
   align-items: center;
 }
 
@@ -238,13 +503,13 @@ body {
   padding: 7px 15px;
   border: 1px solid rgba(201, 162, 39, 0.35);
   background: rgba(201, 162, 39, 0.1);
-  border-radius: 100px;
-  color: var(--gold-light);
-  font-family: "Space Mono", monospace;
+  border-radius: var(--radius-full);
+  color: var(--gold-300);
+  font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  margin-bottom: 1.7rem;
+  margin-bottom: 1.4rem;
 }
 .hero-eyebrow i[data-icon] {
   font-size: 13px;
@@ -253,38 +518,45 @@ body {
 .hero-title {
   font-family: var(--font-serif);
   font-weight: 900;
-  font-size: clamp(2.9rem, 5.4vw, 4.4rem);
+  font-size: clamp(2.7rem, 5vw, 4.1rem);
   line-height: 1.02;
   letter-spacing: 0.01em;
   color: #fff;
-  margin-bottom: 1rem;
+  margin-bottom: 0.9rem;
 }
 
 .hero-title-expansion {
   display: block;
-  margin-top: 0.9rem;
+  margin-top: 0.8rem;
   font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: clamp(0.9rem, 1.6vw, 1.1rem);
-  letter-spacing: 0.26em;
+  font-weight: var(--weight-semibold);
+  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--gold-light);
+  /* Dimmed, so the acronym letters below can lift out of it. The line is
+     already uppercased, so case cannot carry the distinction — weight and
+     colour have to. */
+  color: color-mix(in srgb, var(--gold-300) 55%, transparent);
+}
+
+/* The letters C.A.R.E.S. is built from: C-onde l-A-bak R-E-sident S-ystem. */
+.hero-title-expansion b {
+  color: var(--gold-300);
+  font-weight: var(--weight-extrabold);
 }
 
 .hero-subtitle {
-  font-size: 1.02rem;
-  font-weight: 400;
-  line-height: 1.75;
-  color: rgba(255, 255, 255, 0.72);
-  max-width: 540px;
-  margin-bottom: 2.1rem;
+  font-size: 1rem;
+  line-height: var(--leading-relaxed);
+  color: rgba(255, 255, 255, 0.74);
+  max-width: 46ch;
+  margin-bottom: 1.8rem;
 }
 
 .hero-cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 2.5rem;
 }
 
 .btn-hero {
@@ -292,23 +564,27 @@ body {
   align-items: center;
   gap: 9px;
   padding: 13px 26px;
-  border-radius: 8px;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-bold);
   font-size: 0.9rem;
   text-decoration: none;
-  transition: all 0.25s ease;
+  transition:
+    background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 .btn-hero i[data-icon] {
   font-size: 15px;
 }
 
 .btn-hero-gold {
-  background: var(--yellow);
-  color: var(--navy);
+  background: var(--gold-400);
+  color: var(--navy-800);
   box-shadow: 0 10px 26px -8px rgba(245, 197, 24, 0.45);
 }
 .btn-hero-gold:hover {
-  background: var(--yellow-dark);
+  background: var(--gold-500);
   transform: translateY(-2px);
 }
 
@@ -318,45 +594,118 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 .btn-hero-ghost:hover {
-  border-color: var(--gold-light);
-  color: var(--gold-light);
+  border-color: var(--gold-300);
+  color: var(--gold-300);
   background: rgba(201, 162, 39, 0.08);
 }
 
-/* Hotline / office-hours strip under the CTAs */
+/* "New resident? Claim your account" — the only door into the claim flow that
+   does not go through the staff sign-in page. */
+.hero-claim {
+  margin-top: 1.1rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.hero-claim a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  color: var(--gold-300);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 197, 90, 0.35);
+}
+.hero-claim a:hover {
+  color: var(--gold-400);
+  border-bottom-color: var(--gold-400);
+}
+.hero-claim i[data-icon] {
+  font-size: 12px;
+}
+
+/* Hotline / hours / address strip under the CTAs. Two fixed columns rather
+   than auto-fit: the address is half again as long as the other two and an
+   auto-fit track broke it across lines mid-phrase. */
 .hero-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-  padding-top: 1.7rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-6);
+  margin-top: 2rem;
+  padding-top: 1.6rem;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.hero-meta-item:last-child {
+  grid-column: 1 / -1;
 }
 
 .hero-meta-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 11px;
 }
 .hero-meta-item > i[data-icon] {
-  font-size: 19px;
-  color: var(--gold-light);
+  font-size: 18px;
+  color: var(--gold-300);
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .hero-meta-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .hero-meta-value {
-  display: block;
-  font-size: 0.86rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
   color: rgba(255, 255, 255, 0.9);
+}
+.hero-meta-value a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+.hero-meta-value a:hover {
+  color: var(--gold-300);
+  border-bottom-color: var(--gold-300);
+}
+
+/* Answers "is the hall open right now?" from the visitor's own clock. */
+.office-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--red-300);
+  background: rgba(220, 38, 38, 0.16);
+  color: var(--red-300);
+  font-size: 0.62rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.office-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.office-status.is-open {
+  border-color: var(--green-300);
+  background: rgba(22, 163, 74, 0.18);
+  color: var(--green-300);
 }
 
 /* Right column — framed hall photo with the official seal overlapping */
@@ -367,7 +716,7 @@ body {
 .hero-photo-card {
   position: relative;
   margin: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 32px 64px -20px rgba(0, 0, 0, 0.55);
@@ -377,12 +726,16 @@ body {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(13, 27, 62, 0) 55%, rgba(9, 18, 40, 0.85) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(13, 27, 62, 0) 55%,
+    rgba(9, 18, 40, 0.85) 100%
+  );
 }
 .hero-photo-card img {
   display: block;
   width: 100%;
-  height: 380px;
+  height: clamp(240px, 30vw, 350px);
   object-fit: cover;
 }
 .hero-photo-card figcaption {
@@ -390,8 +743,8 @@ body {
   left: 18px;
   bottom: 14px;
   z-index: 2;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: var(--weight-semibold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
@@ -406,8 +759,8 @@ body {
   height: 96px;
   padding: 8px;
   border-radius: 50%;
-  background: var(--navy-deep);
-  border: 3px solid var(--gold);
+  background: var(--navy-950);
+  border: 3px solid var(--gold-600);
   box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.5);
 }
 .hero-seal-badge img {
@@ -423,89 +776,179 @@ body {
 }
 .hero-visual-noimg .hero-seal-badge {
   position: static;
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
   margin: 0 auto;
   padding: 18px;
 }
 
+/* ─── ADVISORY RIBBON ──────────────────────────── */
+/* Only rendered when the newest bulletin item is tagged Advisory or
+   Emergency, directly under the hero. */
+.advisory-ribbon {
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--accent-border);
+}
+.advisory-ribbon.advisory-emergency {
+  background: var(--danger-bg);
+  border-bottom-color: var(--danger-border);
+}
+
+.advisory-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.advisory-badge {
+  flex-shrink: 0;
+  padding: 4px 11px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--navy-900);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.advisory-emergency .advisory-badge {
+  background: var(--danger-solid);
+  color: #fff;
+}
+
+.advisory-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.advisory-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-accent);
+}
+.advisory-emergency .advisory-link {
+  color: var(--danger);
+}
+.advisory-link i[data-icon] {
+  font-size: 12px;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.advisory-link:hover i[data-icon] {
+  transform: translateX(3px);
+}
+
 /* ─── SECTION SHELL ────────────────────────────── */
-section {
-  padding: 96px 0;
+main section {
+  padding: var(--section-pad) 0;
 }
 
 .container {
-  max-width: 1140px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 var(--container-pad);
 }
 
 .section-head {
-  max-width: 680px;
-  margin-bottom: 2.75rem;
+  max-width: 62ch;
+  margin-bottom: clamp(2rem, 3.5vw, 3rem);
+}
+
+.section-head-center {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+.section-head-center .section-kicker {
+  justify-content: center;
+}
+
+/* Inside a two-column head row the grid gap provides the spacing. */
+.section-head-flush {
+  margin-bottom: 0;
 }
 
 .section-kicker {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 10px;
-  font-family: "Space Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gold-dim);
-  margin-bottom: 0.9rem;
+  color: var(--text-accent);
+  margin-bottom: 0.85rem;
 }
 .section-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
-  background: var(--gold);
+  background: var(--accent);
+  flex-shrink: 0;
 }
 
 .section-title {
   font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: var(--weight-bold);
+  font-size: clamp(1.65rem, 2.8vw, 2.3rem);
   line-height: 1.15;
-  letter-spacing: 0.005em;
-  color: var(--navy);
-  margin-bottom: 0.9rem;
+  color: var(--text-brand);
+  margin-bottom: 0.85rem;
 }
 
 .section-desc {
-  font-size: 0.98rem;
-  line-height: 1.75;
+  font-size: 0.97rem;
+  line-height: var(--leading-relaxed);
   color: var(--text-secondary);
 }
 
 /* ─── CITIZEN SERVICES ─────────────────────────── */
 .section-services {
-  background: var(--cream);
-  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  border-bottom: 1px solid var(--section-line);
 }
 
+/* Three cards, not four — Barangay Residency was pulled from the public grid
+   on data-privacy grounds (see the comment on the list in index.html). The
+   remaining three widen to fill the row rather than leaving a gap where it
+   used to sit.
+   auto-fit rather than a fixed repeat(3): with only three cards the count no
+   longer divides evenly at every breakpoint, and this reflows 3 → 2 → 1 on
+   its own instead of needing a rule per width that has to be kept in step
+   with the number of cards. */
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+  list-style: none;
 }
 
 .service-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 26px 22px 22px;
-  text-align: left;
-  font-family: inherit;
-  background: var(--white);
+  gap: 10px;
+  padding: 26px 22px 20px;
+  background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  cursor: pointer;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.25s ease;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
 }
 /* Gold accent bar that slides in on hover */
 .service-card::before {
@@ -515,62 +958,184 @@ section {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  background: linear-gradient(90deg, var(--gold-600), var(--gold-300));
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.3s ease;
+  transition: transform var(--duration-slow) var(--ease-out);
 }
-.service-card:hover {
+.service-card:hover,
+.service-card:focus-within {
   transform: translateY(-4px);
-  border-color: var(--border-dark);
+  border-color: var(--border-strong);
   box-shadow: var(--shadow-lg);
 }
-.service-card:hover::before {
+.service-card:hover::before,
+.service-card:focus-within::before {
   transform: scaleX(1);
 }
 
 .service-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: var(--navy);
-  color: var(--gold-light);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  background: var(--tile-bg);
+  border: 1px solid var(--tile-border);
+  color: var(--tile-fg);
   font-size: 22px;
 }
 
 .service-title {
   font-size: 1.02rem;
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: var(--weight-bold);
+  color: var(--text-brand);
 }
 
 .service-desc {
-  font-size: 0.82rem;
-  line-height: 1.6;
+  font-size: 0.83rem;
+  line-height: var(--leading-normal);
   color: var(--text-secondary);
   flex: 1;
 }
 
-.service-link {
+/* The one fact a resident wants before starting: how long, or what it costs
+   them in privacy. Previously buried in the modal, or nowhere. */
+.service-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.74rem;
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+.service-note i[data-icon] {
+  font-size: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* One real button per card, stretched over the whole card by ::after so the
+   card stays clickable without wrapping headings in a <button>. */
+.service-cta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--gold-dim);
+  color: var(--text-accent);
+  cursor: pointer;
 }
-.service-link i[data-icon] {
+.service-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.service-cta i[data-icon] {
   font-size: 12px;
-  transition: transform 0.25s ease;
+  transition: transform var(--duration-base) var(--ease-out);
 }
-.service-card:hover .service-link i[data-icon] {
+.service-card:hover .service-cta i[data-icon] {
   transform: translateX(3px);
 }
+.service-cta:focus-visible {
+  outline: none;
+}
+.service-card:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.services-footnote {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: var(--space-6);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+.services-footnote i[data-icon] {
+  font-size: 15px;
+  color: var(--accent);
+}
+.services-footnote a {
+  color: var(--text-accent);
+  font-weight: var(--weight-semibold);
+}
+
+/* ─── HOW IT WORKS ─────────────────────────────── */
+.section-how {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--section-line);
+}
+
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  list-style: none;
+  counter-reset: step;
+}
+
+.how-step {
+  position: relative;
+  padding-top: var(--space-6);
+  border-top: 2px solid var(--border);
+}
+/* Progress hairline: the completed segment is gold, so the three steps read
+   as a sequence rather than three unrelated cards. */
+.how-step::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 44px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.how-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--tile-bg);
+  border: 1px solid var(--tile-border);
+  color: var(--tile-fg);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: var(--weight-bold);
+}
+
+.how-step-title {
+  font-size: 1.05rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-brand);
+  margin-bottom: 8px;
+}
+
+.how-step-desc {
+  font-size: 0.87rem;
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
 
 /* ─── MODALS ───────────────────────────────────── */
 .modal-muted-text {
@@ -654,8 +1219,8 @@ section {
   white-space: nowrap;
 }
 .gis-filter-btn:hover {
-  border-color: var(--navy);
-  color: var(--navy);
+  border-color: var(--gis-ink);
+  color: var(--gis-ink);
 }
 .gis-filter-btn.active {
   background: var(--navy);
@@ -670,7 +1235,7 @@ section {
 }
 .gis-layer-toggle.active {
   background: rgba(201, 162, 39, 0.14);
-  color: var(--navy);
+  color: var(--gis-ink);
   border-color: var(--gold, #c9a227);
   border-style: solid;
 }
@@ -680,7 +1245,7 @@ section {
 .gis-choice-dropdown.gis-choice-active .gis-elements-btn {
   background: rgba(201, 162, 39, 0.14);
   border-color: var(--gold, #c9a227);
-  color: var(--navy);
+  color: var(--gis-ink);
 }
 .gis-elements-dropdown {
   position: relative;
@@ -707,8 +1272,8 @@ section {
 }
 .gis-elements-btn:hover,
 .gis-elements-dropdown.open .gis-elements-btn {
-  border-color: var(--navy);
-  color: var(--navy);
+  border-color: var(--gis-ink);
+  color: var(--gis-ink);
 }
 .gis-elements-caret {
   font-size: 9px;
@@ -752,12 +1317,12 @@ section {
   color: var(--text-secondary);
 }
 .gis-elements-panel .gis-filter-btn:hover {
-  background: rgba(27, 42, 74, 0.06);
-  color: var(--navy);
+  background: var(--gis-panel-hover);
+  color: var(--gis-ink);
 }
 .gis-elements-panel .gis-filter-btn.active {
   background: rgba(201, 162, 39, 0.14);
-  color: var(--navy);
+  color: var(--gis-ink);
 }
 .gis-elements-panel .gis-filter-btn.active::after {
   content: "✓";
@@ -870,10 +1435,10 @@ section {
   align-items: flex-start;
   gap: 18px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--gis-panel-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(27, 42, 74, 0.08);
+  border: 1px solid var(--gis-panel-border);
   border-radius: var(--radius);
   font-size: 11px;
   pointer-events: none;
@@ -1028,7 +1593,7 @@ section {
 .acc-success-title {
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.3rem;
-  color: var(--navy);
+  color: var(--gis-ink);
   margin-bottom: 8px;
 }
 
@@ -1060,7 +1625,7 @@ section {
 .acc-ref-number {
   font-family: "Space Mono", monospace;
   font-size: 1.1rem;
-  color: var(--navy);
+  color: var(--gis-ink);
   font-weight: 700;
 }
 
@@ -1194,7 +1759,7 @@ section {
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--on-brand);
   margin-bottom: 0.4rem;
 }
 
@@ -1321,7 +1886,7 @@ section {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--white);
-  color: var(--navy);
+  color: var(--gis-ink);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -1341,7 +1906,7 @@ section {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--white);
-  color: var(--navy);
+  color: var(--gis-ink);
   font-size: 12px;
   padding: 6px 10px;
   cursor: pointer;
@@ -1425,7 +1990,7 @@ section {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--white);
-  color: var(--navy);
+  color: var(--gis-ink);
   font-size: 12.5px;
   padding: 7px 10px;
   cursor: pointer;
@@ -1677,21 +2242,27 @@ section {
 }
 /* Rendered as a raw <g> of icon paths (not wrapped by gisIcon()'s <svg>), so
    the stroke/fill presentation attributes those paths rely on are supplied
-   here instead via inheritance from this ancestor. */
+   here instead via inheritance from this ancestor.
+   One solid disc, one colour, white glyph — the same marker language as the
+   incident report pins further down. */
 .gis-accident-icon {
   cursor: pointer;
   user-select: none;
   fill: none;
-  stroke: currentColor;
-  color: #b91c1c;
-  stroke-width: 2.2;
+  stroke: #fff;
+  /* Some glyphs end in a filled dot marked fill="currentColor" — point that
+     at white so it reads as a solid on the disc. */
+  color: #fff;
+  stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .gis-accident-icon-bg {
-  fill: #fff;
-  fill-opacity: 0.85;
+  fill: #b91c1c;
   stroke: none;
+}
+.gis-accident-icon:hover .gis-accident-icon-bg {
+  fill: #991b1b;
 }
 .gis-hazard-severity-low {
   fill-opacity: 0.18;
@@ -1775,6 +2346,11 @@ section {
   padding: 12px 14px;
   min-width: 180px;
   max-width: 240px;
+  /* Never taller than the map it sits in: positionFloatingEl() keeps it
+     inside the map, and a form taller than that scrolls instead of being cut
+     off at the bottom. */
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
   font-size: 12.5px;
 }
 /* Read-only hover popup (shown outside edit mode) — info only, no action
@@ -1785,7 +2361,7 @@ section {
 }
 .gis-popup-title {
   font-weight: 700;
-  color: var(--navy);
+  color: var(--gis-ink);
   margin-bottom: 2px;
 }
 .gis-popup-cat {
@@ -1837,28 +2413,60 @@ section {
   font-size: 12px;
   color: var(--text-muted);
 }
+/* One unified marker for community concerns AND accidents: a solid disc in a
+   single flat colour with the report type's glyph knocked out of it in white.
+   The colour says who filed it (resident green / official navy); the glyph
+   says what it was. Nothing else — no outline, no second hue, no gradient —
+   because at map scale a 20px thin-outline icon on a transparent background
+   disappeared into the buildings underneath it. Kept in step with gis.css,
+   which styles the same pins on the MIS map. */
 .gis-report-pin {
   cursor: pointer;
 }
-.gis-report-pin path {
+.gis-report-pin-disc {
   fill: #15803d;
+  stroke: none;
+  transition: fill 0.15s ease;
+}
+.gis-report-pin:hover .gis-report-pin-disc {
+  fill: #166534;
+}
+.gis-report-pin-official .gis-report-pin-disc {
+  fill: #1d4ed8;
+}
+.gis-report-pin-official:hover .gis-report-pin-disc {
+  fill: #1e40af;
+}
+/* The glyph rides at 60% scale (see renderReports), so the stroke is set
+   proportionally heavier to land at ~2px on screen.
+   Set on the GROUP, not on a list of element selectors: fill and stroke are
+   inherited SVG properties, so this reaches every shape a glyph might use —
+   including the <rect> in `medical` and `landDispute`, which an element list
+   missed and which therefore rendered as a solid black box. It also lets the
+   few deliberately filled dots (alertCircle, exclamation) keep their own
+   fill="currentColor" stroke="none" attributes, which beat an inherited
+   value; `color` below is what those resolve against. */
+.gis-report-pin-glyph {
+  fill: none;
+  stroke: #fff;
+  color: #fff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The incident modal's "you picked here" marker — brand gold so it stands
+   apart from the report discs already on the map. (Still the classic pin
+   shape: it marks a choice, not a filed report.) */
+.gis-pick-pin path {
+  fill: #c79a3b;
   stroke: #ffffff;
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.gis-report-pin circle {
+.gis-pick-pin circle {
   fill: #ffffff;
   stroke: none;
-}
-.gis-report-pin:hover path {
-  fill: #166534;
-}
-/* The incident modal's "you picked here" marker — brand gold so it stands
-   apart from the green community-report pins already on the map. */
-.gis-pick-pin path {
-  fill: #c79a3b;
-  stroke: #ffffff;
 }
 .gis-pick-pin {
   pointer-events: none;
@@ -1888,6 +2496,11 @@ section {
 .gis-dot-reports {
   background: #15803d;
 }
+/* Official (Admin/Officer/Staff) report pins are navy on the map. The legend
+   lists both, so this swatch has to exist here as well as in gis.css. */
+.gis-dot-reports-official {
+  background: #1d4ed8;
+}
 /* Interactive report cards must accept the cursor — unlike the read-only
    hover popup, which is pointer-events:none so it can follow the mouse. */
 .gis-popup-hoverable {
@@ -1914,7 +2527,7 @@ section {
 }
 .gis-popup-close:hover {
   background: rgba(0, 0, 0, 0.06);
-  color: var(--navy);
+  color: var(--gis-ink);
 }
 .gis-popup-close .gis-icon {
   width: 14px;
@@ -1943,7 +2556,7 @@ section {
 }
 .gis-report-reporter-name {
   font-weight: 700;
-  color: var(--navy);
+  color: var(--gis-ink);
   font-size: 12.5px;
 }
 .gis-report-reporter-sub {
@@ -1976,10 +2589,10 @@ section {
   flex-direction: column;
   gap: 2px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--gis-panel-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(27, 42, 74, 0.08);
+  border: 1px solid var(--gis-panel-border);
   border-radius: var(--radius);
   transform-origin: bottom center;
   animation: gisFoldUp 0.18s ease;
@@ -2064,8 +2677,8 @@ section {
   text-align: left;
 }
 .gis-draw-panel .gis-draw-btn:hover {
-  background: rgba(27, 42, 74, 0.06);
-  color: var(--navy);
+  background: var(--gis-panel-hover);
+  color: var(--gis-ink);
 }
 .gis-draw-panel .gis-draw-btn .gis-elements-caret {
   margin-left: auto;
@@ -2073,8 +2686,8 @@ section {
 /* Element row whose types panel is open, or whose tool is armed */
 .gis-draw-btn.open,
 .gis-draw-btn.armed {
-  background: rgba(27, 42, 74, 0.06);
-  color: var(--navy);
+  background: var(--gis-panel-hover);
+  color: var(--gis-ink);
 }
 .gis-draw-types {
   display: flex;
@@ -2102,13 +2715,13 @@ section {
   height: 13px;
 }
 .gis-draw-type-btn:hover {
-  background: rgba(27, 42, 74, 0.06);
-  color: var(--navy);
+  background: var(--gis-panel-hover);
+  color: var(--gis-ink);
 }
 .gis-draw-btn.active,
 .gis-draw-type-btn.active {
   background: rgba(201, 162, 39, 0.16);
-  color: var(--navy);
+  color: var(--gis-ink);
 }
 .gis-draw-panel-actions {
   display: flex;
@@ -2120,7 +2733,7 @@ section {
   width: 210px;
   align-self: stretch;
   font-size: 11.5px;
-  color: var(--navy);
+  color: var(--gis-ink);
   white-space: normal;
 }
 /* ── In-map delete confirmation (replaces the browser's confirm dialog) ── */
@@ -2175,7 +2788,7 @@ section {
   margin-bottom: 8px;
   border-radius: 7px;
   background: rgba(201, 162, 39, 0.12);
-  color: var(--navy);
+  color: var(--gis-ink);
   font-size: 12px;
   font-weight: 600;
 }
@@ -2215,7 +2828,7 @@ section {
 
 .gis-pin-form-title {
   font-weight: 700;
-  color: var(--navy);
+  color: var(--gis-ink);
   margin-bottom: 8px;
 }
 .gis-pin-form-label {
@@ -2268,9 +2881,9 @@ section {
   cursor: pointer;
 }
 .gis-swatch-option.active {
-  border-color: var(--navy);
+  border-color: var(--gis-ink);
   background: var(--surface);
-  color: var(--navy);
+  color: var(--gis-ink);
   font-weight: 700;
 }
 .gis-swatch-dot {
@@ -2312,7 +2925,7 @@ section {
 .cert-type-card .cert-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--navy);
+  color: var(--gis-ink);
 }
 
 .star-rating {
@@ -2331,6 +2944,22 @@ section {
 .star.active,
 .star:hover {
   color: var(--yellow);
+}
+
+/* Submitted with no rating — see the note on the same rule in css/system.css.
+   The star row is a div, so it takes the shake from .m-shake but none of
+   .form-control.m-empty's amber halo; the stars carry it instead. */
+.star-rating.m-empty .star {
+  color: var(--warning-solid);
+}
+
+.star-rating:focus {
+  outline: none;
+}
+
+.star-rating.m-empty + .rating-label {
+  color: var(--warning);
+  font-weight: 600;
 }
 
 /* Tags */
@@ -2374,39 +3003,228 @@ section {
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-/* ─── GIS SECTION — redesign adjustments ───────── */
-/* The section header now provides the spacing above the panel. */
+/* ─── GIS SECTION — landing adjustments ────────── */
+/* Base panel/#gis styles are in the GIS block above; these override them for
+   the landing page and must stay after it in the file. */
+.section-gis {
+  background: var(--surface);
+  border-bottom: 1px solid var(--section-line);
+}
+#gis {
+  background: var(--surface);
+}
+
+/* Header beside a plain-language list of what the layers actually contain —
+   including the privacy line, which is the question a resident asks first
+   when a barangay puts households on a public map. */
+.gis-head-row {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.gis-facts {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  padding: var(--space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+.gis-facts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.84rem;
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+.gis-facts i[data-icon] {
+  font-size: 15px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .gis-section-panel {
   margin-top: 0;
+  background: var(--surface-raised);
   border-radius: var(--radius-lg);
 }
 .gis-modal-map,
 .gis-section-map {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
+}
+
+/* Shown when js/gis-map.js itself cannot be fetched. */
+.gis-load-error {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* ─── LATEST ANNOUNCEMENTS ─────────────────────── */
+.section-announcements {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--section-line);
+}
+
+/* Six equal cards gave a calamity advisory and a fun-run notice identical
+   weight. The newest item now takes a double-width slot; the renderer in
+   js/site-config.js is untouched — this is the grid's first child. */
+.announcements-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+
+.announcement-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+.announcement-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+.announcements-grid .announcement-card:first-child {
+  grid-column: span 2;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+}
+.announcements-grid .announcement-card:first-child .announcement-title {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-bold);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.announcements-grid .announcement-card:first-child .announcement-body {
+  -webkit-line-clamp: 6;
+  font-size: 0.9rem;
+}
+
+.announcement-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.announcement-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.64rem;
+  font-weight: var(--weight-extrabold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* Tag chips run through the status token pairs, so they follow the theme
+   instead of carrying six hard-coded light-mode hexes. */
+.ann-tag-advisory {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-fg);
+}
+.ann-tag-health {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success);
+}
+.ann-tag-community {
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  color: var(--info);
+}
+.ann-tag-event {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+}
+.ann-tag-emergency {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.announcement-date {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.announcement-title {
+  font-weight: var(--weight-bold);
+  font-size: 1rem;
+  line-height: var(--leading-snug);
+  color: var(--text-brand);
+}
+
+.announcement-body {
+  font-size: 0.85rem;
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.announcements-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 34px 20px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
 }
 
 /* ─── BARANGAY OFFICIALS ───────────────────────── */
 .section-officials {
-  background: var(--cream);
-  border-top: 1px solid var(--border);
+  background: var(--surface);
+  border-bottom: 1px solid var(--section-line);
 }
 
 .officials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .official-card {
   position: relative;
   overflow: hidden;
-  background: var(--white);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 34px 24px 28px;
   text-align: center;
-  transition: all 0.25s ease;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
 }
 .official-card::before {
   content: "";
@@ -2415,32 +3233,29 @@ section {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--navy), var(--navy-light));
+  background: linear-gradient(90deg, var(--navy-700), var(--gold-600));
 }
 .official-card:hover {
   transform: translateY(-4px);
+  border-color: var(--border-strong);
   box-shadow: var(--shadow-lg);
 }
 
 .official-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 104px;
   height: 104px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background: var(--navy);
-  color: var(--gold-light);
-  border: 3px solid var(--gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
+  background: var(--tile-bg);
+  color: var(--tile-fg);
+  border: 3px solid var(--gold-600);
+  font-weight: var(--weight-extrabold);
   font-size: 1.7rem;
   letter-spacing: 0.02em;
   overflow: hidden;
-}
-
-.official-avatar.has-photo {
-  background: var(--navy);
 }
 
 .official-avatar img {
@@ -2452,21 +3267,21 @@ section {
 }
 
 .official-name {
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   font-size: 1.05rem;
-  color: var(--navy);
+  color: var(--text-brand);
   margin-bottom: 6px;
 }
 
 .official-role {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 100px;
-  background: var(--gold-pale);
-  border: 1px solid rgba(201, 162, 39, 0.25);
-  color: var(--gold-dim);
+  border-radius: var(--radius-full);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-fg);
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 12px;
@@ -2474,22 +3289,158 @@ section {
 
 .official-desc {
   font-size: 0.84rem;
-  line-height: 1.65;
+  line-height: var(--leading-normal);
   color: var(--text-secondary);
+}
+
+/* ─── VISIT / CONTACT ──────────────────────────── */
+/* Closing dark band. It runs straight into the footer on purpose, separated
+   by the footer's gold rule — one institutional block instead of two. */
+.section-visit {
+  position: relative;
+  background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+  color: rgba(255, 255, 255, 0.72);
+}
+.section-visit::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1a3a7c 0%, #c41e2a 48%, #f5c518 100%);
+  opacity: 0.85;
+}
+.section-visit .section-kicker {
+  color: var(--gold-300);
+}
+.section-visit .section-kicker::before {
+  background: var(--gold-400);
+}
+.section-visit .section-title {
+  color: #fff;
+}
+.section-visit .section-desc {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.visit-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+
+.visit-list {
+  display: grid;
+  gap: 14px;
+  margin-top: var(--space-6);
+  list-style: none;
+}
+.visit-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+.visit-list i[data-icon] {
+  font-size: 17px;
+  color: var(--gold-300);
+  flex-shrink: 0;
+}
+.visit-list a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+}
+.visit-list a:hover {
+  color: var(--gold-300);
+  border-bottom-color: var(--gold-300);
+}
+
+/* Emergency card — deliberately the loudest thing in the band. An online
+   blotter form is the wrong channel for an emergency and the page never said
+   so anywhere. */
+.visit-emergency {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: rgba(196, 30, 42, 0.14);
+  border: 1px solid rgba(252, 165, 165, 0.32);
+}
+
+.visit-emergency-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(220, 38, 38, 0.24);
+  color: var(--red-300);
+  font-size: 21px;
+}
+
+.visit-emergency-title {
+  font-size: 1.05rem;
+  font-weight: var(--weight-bold);
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.visit-emergency-desc {
+  font-size: 0.84rem;
+  line-height: var(--leading-normal);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: var(--space-5);
+}
+
+.visit-emergency-num {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+  transition:
+    background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+.visit-emergency-num + .visit-emergency-num {
+  margin-top: 8px;
+}
+.visit-emergency-num:hover {
+  background: rgba(0, 0, 0, 0.34);
+  border-color: rgba(252, 165, 165, 0.45);
+}
+.visit-emergency-num strong {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.visit-emergency-num span {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* ─── FOOTER ───────────────────────────────────── */
 .site-footer {
-  background: var(--navy-deep);
+  background: var(--navy-950);
   color: rgba(255, 255, 255, 0.7);
-  border-top: 3px solid var(--gold);
+  border-top: 3px solid var(--gold-600);
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr 1.1fr;
-  gap: 48px;
-  padding: 60px 0 48px;
+  grid-template-columns: 1.5fr 0.85fr 0.85fr 1.1fr;
+  gap: clamp(1.75rem, 4vw, 3rem);
+  padding: clamp(2.5rem, 5vw, 3.75rem) 0 clamp(2rem, 4vw, 3rem);
 }
 
 .footer-seal-row {
@@ -2503,13 +3454,13 @@ section {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 2px solid var(--gold);
+  border: 2px solid var(--gold-600);
   object-fit: cover;
 }
 
 .footer-title {
   font-family: var(--font-serif);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: 1.25rem;
   color: #fff;
 }
@@ -2518,20 +3469,39 @@ section {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold-light);
+  color: var(--gold-300);
   margin-top: 3px;
 }
 
 .footer-text {
-  font-size: 0.84rem;
-  line-height: 1.7;
+  font-size: 0.83rem;
+  line-height: var(--leading-relaxed);
   color: rgba(255, 255, 255, 0.55);
-  max-width: 340px;
+  max-width: 38ch;
+}
+
+.footer-privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 42ch;
+  font-size: 0.76rem;
+  line-height: var(--leading-normal);
+  color: rgba(255, 255, 255, 0.45);
+}
+.footer-privacy i[data-icon] {
+  font-size: 14px;
+  color: var(--gold-300);
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .footer-heading {
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #fff;
@@ -2546,14 +3516,24 @@ section {
   gap: 10px;
 }
 
-.footer-links a {
+/* The service links are buttons (they open a modal, they don't navigate), so
+   they need the anchor styling applied by hand. */
+.footer-links a,
+.footer-links button {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
   color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   font-size: 0.86rem;
-  transition: color 0.2s;
+  cursor: pointer;
+  transition: color var(--duration-base) var(--ease-out);
 }
-.footer-links a:hover {
-  color: var(--gold-light);
+.footer-links a:hover,
+.footer-links button:hover {
+  color: var(--gold-300);
 }
 
 .footer-contact li {
@@ -2561,14 +3541,24 @@ section {
   align-items: flex-start;
   gap: 10px;
   font-size: 0.85rem;
-  line-height: 1.5;
+  line-height: var(--leading-snug);
   color: rgba(255, 255, 255, 0.6);
 }
 .footer-contact i[data-icon] {
   font-size: 15px;
-  color: var(--gold-light);
+  color: var(--gold-300);
   flex-shrink: 0;
   margin-top: 2px;
+}
+.footer-contact a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  word-break: break-word;
+}
+.footer-contact a:hover {
+  color: var(--gold-300);
+  border-bottom-color: var(--gold-300);
 }
 
 .footer-bottom {
@@ -2586,6 +3576,42 @@ section {
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* ─── BACK TO TOP ──────────────────────────────── */
+.to-top {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: var(--z-sticky);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-brand);
+  border-radius: var(--radius-full);
+  background: var(--navy-800);
+  color: var(--gold-300);
+  font-size: 19px;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  box-shadow: var(--shadow-lg);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    visibility var(--duration-base) var(--ease-out),
+    background var(--duration-base) var(--ease-out);
+}
+.to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.to-top:hover {
+  background: var(--navy-700);
+  color: var(--gold-400);
+}
+
 /* ─── ANIMATIONS ───────────────────────────────── */
 @keyframes fadeInUp {
   from {
@@ -2599,18 +3625,6 @@ section {
   }
 }
 
-@keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(24px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -2621,16 +3635,21 @@ section {
   }
 }
 
-/* Scroll reveal */
-.reveal {
+/* Scroll reveal.
+   Gated behind html.js — set by an inline script in <head> — so the start
+   state only exists if there is JavaScript around to finish it. The old rule
+   applied opacity:0 unconditionally, which meant a script error, a blocked
+   file or a browser without IntersectionObserver left a visitor staring at an
+   empty page below the hero. */
+.js .reveal {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(26px);
   transition:
-    opacity 0.7s ease,
-    transform 0.7s ease;
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
 }
 
-.reveal.visible {
+.js .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -2638,7 +3657,7 @@ section {
 /* ─── COMPAT ───────────────────────────────────── */
 /* Modal titles keep the heavier weight from the previous refresh */
 .modal-title {
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 /* Anchor jumps land below the fixed masthead + navbar */
@@ -2648,28 +3667,23 @@ section[id] {
 
 /* ─── RESPONSIVE ───────────────────────────────── */
 @media (max-width: 1024px) {
-  .hero-grid {
+  .hero-grid,
+  .gis-head-row,
+  .visit-grid {
     grid-template-columns: 1fr;
-    gap: 56px;
+  }
+
+  .hero-grid {
+    gap: 3rem;
   }
 
   .hero-visual {
     max-width: 560px;
   }
 
-  .services-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .officials-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
+  /* .services-grid is auto-fit now and reflows on its own — no override. */
   .footer-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 36px;
   }
 
   .footer-brand {
@@ -2677,30 +3691,38 @@ section[id] {
   }
 }
 
-@media (max-width: 768px) {
-  section {
-    padding: 72px 0;
+@media (max-width: 900px) {
+  .officials-grid,
+  .announcements-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .gov-masthead {
-    padding: 0 1.25rem;
+  .announcements-grid .announcement-card:first-child .announcement-title {
+    font-size: 1.3rem;
+  }
+
+  .how-steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .gov-masthead-text {
+    display: none;
   }
 
   .gov-masthead-gov {
     display: none;
   }
 
+  .gov-tools {
+    margin-left: 0;
+  }
+
   /* Mobile nav dropdown opens below masthead + navbar */
   .nav-links.open {
     top: calc(var(--navbar-h) + var(--masthead-h));
-  }
-
-  .hero {
-    padding: calc(var(--navbar-h) + var(--masthead-h) + 48px) 0 64px;
-  }
-
-  .hero-photo-card img {
-    height: 260px;
   }
 
   .hero-seal-badge {
@@ -2710,23 +3732,38 @@ section[id] {
     height: 74px;
     padding: 6px;
   }
+
+  /* Badge and "read the bulletin" share the top row; the headline gets the
+     full width below them instead of four words per line. */
+  .advisory-inner {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+  }
+  .advisory-text {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .advisory-link {
+    margin-left: auto;
+  }
+
+  /* A 640px map on a 640px-tall phone screen is a scroll trap. */
+  .gis-section-panel .gis-section-map {
+    height: 420px;
+  }
 }
 
 @media (max-width: 600px) {
-  .container {
-    padding: 0 1.25rem;
-  }
-
-  .services-grid,
+  /* .services-grid is left out — auto-fit already collapses it to one column
+     well before this width, and a fixed 1fr here would fight the minmax. */
   .officials-grid,
+  .announcements-grid,
   .footer-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+  .announcements-grid .announcement-card:first-child {
+    grid-column: span 1;
   }
 
   .hero-cta-row .btn-hero {
@@ -2734,10 +3771,19 @@ section[id] {
     justify-content: center;
   }
 
+  .hero-meta {
+    grid-template-columns: 1fr;
+  }
+
   .footer-bottom-inner {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+
+  .to-top {
+    width: 40px;
+    height: 40px;
   }
 }
 

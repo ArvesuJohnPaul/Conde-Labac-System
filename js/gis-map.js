@@ -91,10 +91,25 @@ const GIS_ICON_PATHS = {
   zoomIn: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M10.5 7.5v6M7.5 10.5h6"/><path d="m20 20-4.4-4.4"/>',
   zoomOut: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M7.5 10.5h6"/><path d="m20 20-4.4-4.4"/>',
   toggleEye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6"/>',
+  eyeOff: '<path d="M3.5 3.5 20.5 20.5"/><path d="M10.4 5.7c.5-.1 1-.2 1.6-.2 6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.8 3.6"/><path d="M6.6 6.7C4 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.3-1.1"/><path d="M10 10a2.6 2.6 0 0 0 3.9 3.5"/>',
+  fileText: '<path d="M14 3.5H7.5A1.5 1.5 0 0 0 6 5v14a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7.5Z"/><path d="M14 3.5v4h4"/><path d="M9 12h6M9 15.5h6"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.4-4.4"/>',
   ruler: '<path d="M4 15.5 15.5 4l4.5 4.5L8.5 20Z"/><path d="m9.5 10.5 1.5 1.5"/><path d="m12 8 1.5 1.5"/><path d="m14.5 5.5 1.5 1.5"/>',
   square: '<rect x="4.5" y="4.5" width="15" height="15" rx="1.2"/>',
   rotate: '<path d="M4 12a8 8 0 1 1 2.3 5.6"/><path d="M4 20v-4.5h4.5"/>',
+  // Report-type glyphs matched to the mobile app's Material icons.
+  volume: '<path d="M11 5 6.5 9H3.5v6h3L11 19Z"/><path d="M14.5 8.5a5 5 0 0 1 0 7"/><path d="M17.5 6a9 9 0 0 1 0 12"/>',
+  // Property Dispute — a land parcel split down the middle by a contested
+  // boundary. It replaces a gavel, which said "court" rather than "land" and
+  // whose crossed mallet, block and handle collapsed into an unreadable knot
+  // of diagonals at map-pin size. Two shapes, both large: the plot, and the
+  // break through it.
+  landDispute:
+    '<rect x="3.5" y="6.5" width="17" height="11" rx="1.4"/><polyline points="12 6.5 13.5 8.7 10.5 10.9 13.5 13.1 10.5 15.3 12 17.5"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  shield: '<path d="M12 21c-4.4-1.5-7.5-4.6-7.5-9.5V6L12 3.5 19.5 6v5.5c0 4.9-3.1 8-7.5 9.5Z"/>',
+  paintRoller: '<rect x="3.5" y="3.5" width="14" height="5" rx="1.2"/><path d="M17.5 6h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-8a1 1 0 0 0-1 1v2"/><rect x="9" y="14" width="3" height="6.5" rx="1"/>',
+  exclamation: '<path d="M12 4.5v10"/><circle cx="12" cy="18.5" r="1" fill="currentColor" stroke="none"/>',
 };
 
 function gisIcon(name, cls) {
@@ -115,8 +130,16 @@ const GIS_BUILDING_TYPE_META = {
   households: { label: "Household", icon: "home", color: "#1d4ed8" },
 };
 
-// Household classification — which priority group a tagged household belongs
-// to. Optional on the tag form; also drives the classification map filter.
+// Household classification — which priority groups live in a tagged household.
+// Never picked by hand: it is read off the residents attached to the household
+// (see gisLoadHouseholdMembers). It colours the whole building, and drives the
+// Classification filter and its legend column.
+//
+// ORDER MATTERS. It is the priority order the server sorts a household's
+// classifications by (routes/households.js), and a household that is several of
+// these at once is painted in the colour of the FIRST one it holds — a senior
+// and a solo parent under one roof reads as senior. Nothing is lost by that:
+// the building's popup names every classification the household holds.
 const GIS_HOUSEHOLD_SUBCAT_META = {
   seniors: { label: "Senior Citizen", icon: "senior", color: "#f59e0b" },
   pwd: { label: "PWD", icon: "wheelchair", color: "#8b5cf6" },
@@ -165,20 +188,83 @@ const GIS_ACCIDENT_ICON_SIZE = 42;
 // Includes the former staff-only "accident marker" types (vehicular / fire /
 // medical) — accident pings and community reports are ONE pin type now, and
 // each pin carries its type's icon.
+// Icons mirror the mobile app's per-type Material glyphs, so a report shows
+// the same symbol on both maps.
 const GIS_REPORT_TYPE_META = {
-  noise: { label: "Noise Complaint", icon: "siren", interpersonal: false },
-  dispute: { label: "Property Dispute", icon: "alertCircle", interpersonal: true },
-  altercation: { label: "Physical Altercation", icon: "fist", interpersonal: true },
-  theft: { label: "Theft / Robbery", icon: "siren", interpersonal: true },
-  vandalism: { label: "Vandalism", icon: "alertCircle", interpersonal: false },
-  domestic: { label: "Domestic Disturbance", icon: "siren", interpersonal: true },
+  noise: { label: "Noise Complaint", icon: "volume", interpersonal: false },
+  dispute: { label: "Property Dispute", icon: "landDispute", interpersonal: true },
+  altercation: { label: "Physical Altercation", icon: "hand", interpersonal: true },
+  theft: { label: "Theft / Robbery", icon: "shield", interpersonal: true },
+  vandalism: { label: "Vandalism", icon: "paintRoller", interpersonal: false },
+  domestic: { label: "Domestic Disturbance", icon: "home", interpersonal: true },
   flooding: { label: "Flooding / Natural Hazard", icon: "waves", interpersonal: false },
   vehicular: { label: "Vehicular Accident", icon: "car", interpersonal: false },
   fire: { label: "Fire Incident", icon: "flame", interpersonal: false },
   medical: { label: "Medical Emergency", icon: "medical", interpersonal: false },
-  other: { label: "Other", icon: "alertCircle", interpersonal: false },
+  other: { label: "Other", icon: "exclamation", interpersonal: false },
 };
 const GIS_REPORT_ICON_SIZE = 44;
+
+// ───────── Report-density heat map ─────────
+// Answers "where do incidents keep happening?", which a list of pins cannot:
+// twenty pins on one corner look like twenty pins anywhere else once they
+// overlap. Reports are binned onto a fixed grid in LOCAL map units (the
+// 0..1000 viewBox), each cell is filled on a warm ramp scaled to the busiest
+// cell, and the whole layer is blurred as one group so neighbouring cells melt
+// into a single cloud. Because the layer lives inside the zoom transform, the
+// cloud is anchored to the ground — it pans and scales with the barangay
+// rather than floating over it.
+//
+// Grid resolution is a judgement call: too fine and every report is its own
+// island, too coarse and the whole barangay is one blob. 22 units ≈ a 45×45
+// grid, which lands about one cell per street block at this barangay's size.
+const GIS_HEAT_CELL = 22;
+// Blur radius, also in local units. Roughly one cell — enough to erase the
+// grid, not so much that a hotspot drifts off the street it happened on.
+const GIS_HEAT_BLUR = 17;
+
+// Amber → red. Sequential (not a rainbow) so "more" always reads as "hotter",
+// and it stays legible for the red-green colour blind.
+// Single-hue red ramp, matching the mobile app's heatmap
+// (cares_app/lib/screens/mis/analytics_page.dart, which paints every blob in
+// one red and lets overlap carry the density).
+//
+// The old ramp started at yellow and ran through orange to red. Two problems:
+// a pale yellow cell read as "safe//nothing here" rather than "one report",
+// and hue-shifting implies a change of KIND when the only thing changing is
+// COUNT. One hue getting deeper says "more of the same thing", which is what
+// the number actually means — and it keeps the web and the app speaking the
+// same visual language.
+const GIS_HEAT_STOPS = [
+  [0.0, [254, 202, 202]],
+  [0.35, [248, 113, 113]],
+  [0.65, [239, 68, 68]],
+  [1.0, [127, 29, 29]],
+];
+
+// t is 0..1 — the cell's count as a fraction of the busiest cell.
+function gisHeatColor(t) {
+  const x = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < GIS_HEAT_STOPS.length; i++) {
+    const [t1, c1] = GIS_HEAT_STOPS[i];
+    if (x > t1 && i < GIS_HEAT_STOPS.length - 1) continue;
+    const [t0, c0] = GIS_HEAT_STOPS[i - 1];
+    const k = t1 === t0 ? 0 : (x - t0) / (t1 - t0);
+    const mix = c0.map((v, j) => Math.round(v + (c1[j] - v) * k));
+    return `rgb(${mix[0]}, ${mix[1]}, ${mix[2]})`;
+  }
+  return `rgb(${GIS_HEAT_STOPS[0][1].join(", ")})`;
+}
+
+// The CSS gradient for a legend bar, built from the same stops so the key can
+// never drift from the map.
+function gisHeatGradientCss() {
+  return (
+    "linear-gradient(90deg, " +
+    GIS_HEAT_STOPS.map(([t, c]) => `rgb(${c.join(", ")}) ${Math.round(t * 100)}%`).join(", ") +
+    ")"
+  );
+}
 
 // The map opens fitted so the barangay boundary nearly touches the container
 // edges (GIS_FIT_MARGIN of the available space). That fitted view is also the
@@ -217,9 +303,35 @@ const GIS_CUSTOM_CONSTRUCTION_KEY = "gis_custom_construction";
 const GIS_HAZARD_ZONES_KEY = "gis_hazard_zones";
 const GIS_ACCIDENTS_KEY = "gis_accidents";
 const GIS_DELETED_BUILDINGS_KEY = "gis_deleted_buildings";
+// Base-layer buildings staff have moved / reshaped / rotated: { id: ring }.
+// The base layer's own geometry is left alone (import-base-layers.js refreshes
+// it from the geojson), so a correction is kept as a delta and drawn instead of
+// the original — the same arrangement as the tombstone list above.
+const GIS_BUILDING_GEOMS_KEY = "gis_building_geoms";
 const GIS_ARCHIVED_BUILDINGS_KEY = "gis_archived_buildings";
 const GIS_VEGETATION_CUTS_KEY = "gis_vegetation_cuts";
 const GIS_COMMUNITY_REPORTS_KEY = "gis_community_reports";
+
+// Whether the map draws what lies past the barangay border — a viewer's
+// preference, remembered per browser the way the GIS page's panel state is.
+// Only embeds that carry the toggle read it (see `viewTools` in gisCreateMap):
+// a map with no button to bring the surroundings back must never start with
+// them hidden.
+const GIS_SHOW_OUTSIDE_KEY = "ibmdss.gisShowOutside";
+function gisReadShowOutside() {
+  try {
+    return localStorage.getItem(GIS_SHOW_OUTSIDE_KEY) !== "0";
+  } catch (e) {
+    return true;
+  }
+}
+function gisWriteShowOutside(show) {
+  try {
+    localStorage.setItem(GIS_SHOW_OUTSIDE_KEY, show ? "1" : "0");
+  } catch (e) {
+    /* a failed write only costs the preference next visit */
+  }
+}
 
 const gisInstances = {};
 let gisDefsCounter = 0;
@@ -293,11 +405,52 @@ function gisLoadBuildingTags() {
   });
   return tags;
 }
-function gisSaveBuildingTag(buildingId, tag) {
+// Household names are unique across the barangay.
+//
+// The name IS the household's identity everywhere outside the map — it is the
+// only thing the resident form's Household dropdown, the certificate templates
+// and the household reports show — so two houses both called "Bahay ni Shane"
+// are two options a clerk cannot tell apart, and attaching a resident to the
+// wrong one is invisible until someone audits it. Uniqueness is enforced here
+// (so the tag form can say so before saving) and again in the API (so it holds
+// for every client and every device).
+//
+// Case- and whitespace-insensitive: "bahay ni shane" is the same household as
+// "Bahay Ni Shane". Only households are compared — two schools may share a
+// name, and a household never collides with a school.
+//
+// `excludeIds` are the buildings being saved right now (a group tag writes
+// several at once) and `groupId` the group they belong to: a household never
+// conflicts with itself, however many footprints it covers.
+function gisHouseholdNameKey(name) {
+  return String(name || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+function gisFindHouseholdNameConflict(name, excludeIds, groupId) {
+  const key = gisHouseholdNameKey(name);
+  if (!key) return null;
+  const skip = new Set((excludeIds || []).map(String));
+  const tags = gisLoadBuildingTags();
+  const hit = Object.keys(tags).find((id) => {
+    const t = tags[id];
+    if (!t || t.type !== "households") return false;
+    if (skip.has(String(id))) return false;
+    if (groupId && t.groupId === groupId) return false;
+    return gisHouseholdNameKey(t.name) === key;
+  });
+  return hit ? { id: hit, tag: tags[hit] } : null;
+}
+
+// groupKeys (optional) is every building the current save is writing to. It is
+// passed straight to the API so the server's household-name check knows which
+// rows are about to be rewritten: a group tag is N separate PUTs that land in
+// any order, and without it the second one to arrive sees the first building
+// still holding the name under its OLD tag and rejects a name the household
+// already owns.
+function gisSaveBuildingTag(buildingId, tag, groupKeys) {
   const tags = gisLoadBuildingTags();
   tags[buildingId] = tag;
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
-  gisPushBuildingTag(buildingId, tag);
+  gisPushBuildingTag(buildingId, tag, groupKeys);
 }
 function gisClearBuildingTag(buildingId) {
   const tags = gisLoadBuildingTags();
@@ -305,8 +458,21 @@ function gisClearBuildingTag(buildingId) {
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
   // Mirror the removal into the shared DB so the mobile app drops it too
   // (temp-id buildings never reached the DB, so there's nothing to remove).
-  if (typeof apiDelete === "function" && gisIsServerId(buildingId))
+  if (typeof apiDelete === "function" && gisIsServerBuildingKey(buildingId))
     apiDelete("/api/gis/building-tags/" + encodeURIComponent(buildingId)).catch(() => {});
+}
+
+// Takes the tag off a building that is STAYING on the map. Not the same as
+// gisClearBuildingTag(), which is the tag half of deleting the building: its
+// DELETE drops the whole row, and for a base-layer building the row is where
+// the footprint's geometry lives, so the outline would vanish for everyone.
+// Writing an empty tag instead nulls the tag columns and leaves the row —
+// after which /api/gis/state stops listing it and it is no longer a household.
+function gisUntagBuilding(buildingId) {
+  const tags = gisLoadBuildingTags();
+  delete tags[buildingId];
+  gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
+  gisPushBuildingTag(buildingId, { name: "", type: "", subcat: "", notes: "", groupId: "" });
 }
 
 // ───────── Shared-DB sync layer ─────────
@@ -323,22 +489,63 @@ function gisIsServerId(id) {
   return /^\d+$/.test(String(id)) || /^c\d+$/.test(String(id));
 }
 
+// Building tag keys have a THIRD form the rule above misses. The base layer
+// comes from two sources: 2178 OSM ways, keyed by their numeric way id, and
+// 846 footprints traced by hand into the geojson, keyed 'msb-000001'. Both are
+// real rows in `building` (osm_id is TEXT for exactly this reason), so a tag on
+// either belongs in the shared DB — but gisIsServerId() read 'msb-…' as a
+// browser temp id and dropped the push on the floor. The tag then lived only in
+// this browser's localStorage: it drew on the map, so it looked saved, while
+// /api/households never saw it and the resident form's Household dropdown never
+// listed it. Tagging the OSM half of the same map worked, which is what made
+// the two sources look like they behaved differently.
+function gisIsServerBuildingKey(id) {
+  return gisIsServerId(id) || /^msb-/.test(String(id));
+}
+
+// Tells the page that something a hazard zone's coverage is computed from has
+// just been written to the server: a zone added, edited or removed, or a
+// building tagged or untagged as a household. The GIS page's hazard watch
+// (js/pages/gis.js) re-reads GET /api/ai/map/hazards on it. Fired only once the
+// write has LANDED — asking any earlier would read the old rows back.
+function gisNotifyExposureChanged() {
+  document.dispatchEvent(new CustomEvent("gis:exposure-changed"));
+}
+
 // Features deleted while their create-POST was still in flight: remember the
 // temp id so the create can be undone when the server id arrives.
 const gisPendingDeletes = new Set();
 
 // Mirrors one tag into the shared DB (PUT /api/gis/building-tags/:key).
 // Temp-id buildings are skipped — gisMigrateLocalId re-pushes the tag once
-// the building's real id arrives. groupId is browser-side and not sent.
-function gisPushBuildingTag(buildingId, tag) {
+// the building's real id arrives.
+//
+// groupId rides along: it is what makes several footprints ONE household, so
+// it has to reach the server or /api/households would list a group-tagged
+// house once per building and the group would be invisible to every other
+// computer. Sent empty when the building stands alone, which clears it — that
+// is how a building dropped from a group's re-picked membership leaves it.
+function gisPushBuildingTag(buildingId, tag, groupKeys) {
   if (typeof apiPut !== "function" || !tag) return;
-  if (!gisIsServerId(buildingId)) return;
+  if (!gisIsServerBuildingKey(buildingId)) return;
   apiPut("/api/gis/building-tags/" + encodeURIComponent(buildingId), {
     name: tag.name || "",
     type: tag.type || "",
     subcat: tag.subcat || "",
     notes: tag.notes || "",
-  }).catch(() => {});
+    groupId: tag.groupId || "",
+    ...(groupKeys && groupKeys.length ? { groupKeys: groupKeys.map(String) } : {}),
+  })
+    // A building that becomes (or stops being) a household changes who is
+    // inside any hazard zone it sits in.
+    .then(gisNotifyExposureChanged)
+    .catch((err) => {
+    // The server refuses a household name that is already taken (it enforces
+    // the same rule the tag form checks up front). Saying so beats a tag that
+    // silently exists on this computer and nowhere else.
+    if (/already exists/i.test(err?.message || "") && typeof showToast === "function")
+      showToast(err.message, gisIcon("alertCircle"));
+  });
 }
 
 // Rewrites a temp local id to the server's id everywhere it can appear —
@@ -389,9 +596,14 @@ function gisMigrateLocalId(storeKey, oldId, newId, kind) {
 
 // Mirrors a new map feature (road / vegetation / construction / hazard /
 // accident) into the DB, then swaps the temp id for the server's.
+//
+// This and the two helpers below hand back the request's promise — settled,
+// never rejected — so a caller can act once the write has actually landed (the
+// hazard functions use it to refresh the GIS page's hazard watch). Nothing to
+// send resolves to undefined.
 function gisPushFeature(storeKey, localId, type, coordinates, properties) {
   if (typeof apiPost !== "function") return;
-  apiPost("/api/gis/features", { type, coordinates, properties })
+  return apiPost("/api/gis/features", { type, coordinates, properties })
     .then((res) => gisMigrateLocalId(storeKey, localId, res.id, "feature"))
     .catch(() => {});
 }
@@ -399,7 +611,7 @@ function gisPushFeature(storeKey, localId, type, coordinates, properties) {
 function gisPatchFeature(id, properties, coordinates) {
   if (typeof apiPatch !== "function" || !gisIsServerId(id)) return;
   const body = coordinates ? { properties, coordinates } : { properties };
-  apiPatch("/api/gis/features/" + id, body).catch(() => {});
+  return apiPatch("/api/gis/features/" + id, body).catch(() => {});
 }
 
 function gisDeleteFeatureRemote(id) {
@@ -408,7 +620,7 @@ function gisDeleteFeatureRemote(id) {
     return;
   }
   if (typeof apiDelete === "function")
-    apiDelete("/api/gis/features/" + id).catch(() => {});
+    return apiDelete("/api/gis/features/" + id).catch(() => {});
 }
 
 // Upserts a vegetation area's full cut list into osm_edit (edit_type 'cut',
@@ -438,6 +650,64 @@ function gisSyncFeatureList(storeKey, type, serverRows, fromServer, toPush) {
   });
 }
 
+// ── Household membership ─────────────────────────────────────────────────────
+// A building tagged `households` IS a household, and residents point at it
+// (resident.building_id). This is how many of them each one currently holds,
+// keyed by the same tag key the map uses — the OSM id, or 'c<id>' for a
+// custom-drawn building — so a popup can say "3 residents connected" without
+// a lookup per building.
+//
+// A group-tagged household is one household over several footprints, and
+// /api/households returns it once. Its count is written against every member
+// key (`member_keys`), so clicking any of the three buildings that make up
+// "Bahay ni Shane" reports the household's residents rather than only the
+// ones attached to the exact footprint that was clicked.
+//
+// The same trip also brings back each household's CLASSIFICATIONS, which the
+// server derives from the residents attached to it (see routes/households.js).
+// They are what colours a household on the map: connect a senior citizen to a
+// house and the house turns senior, with nothing else to fill in. Keyed the
+// same way as the counts, so every footprint of a group takes the colour.
+//
+// A LIST, not one value — a household with a senior and a solo parent in it is
+// both, and the map shows both as a gradient rather than letting one hide the
+// other. Already ordered by the server, so the same set always draws the same.
+//
+// Best-effort and read-only: an unreachable server just means the popup omits
+// the line, never that the map fails to draw.
+let gisHouseholdMembers = {};
+let gisHouseholdClasses = {};
+
+// The classifications for a building key, in priority order — the one place the
+// rest of the map asks what colour a household is.
+function gisHouseholdClassesOf(buildingId) {
+  return gisHouseholdClasses[String(buildingId)] || [];
+}
+
+async function gisLoadHouseholdMembers() {
+  if (typeof apiGet !== "function") return;
+  try {
+    const rows = await apiGet("/api/households");
+    const members = {};
+    const classes = {};
+    rows.forEach((h) => {
+      const keys =
+        Array.isArray(h.member_keys) && h.member_keys.length
+          ? h.member_keys
+          : [h.is_custom ? "c" + h.building_id : h.osm_id];
+      keys.forEach((k) => {
+        if (!k) return;
+        members[String(k)] = h.members || 0;
+        classes[String(k)] = h.classifications || [];
+      });
+    });
+    gisHouseholdMembers = members;
+    gisHouseholdClasses = classes;
+  } catch (e) {
+    /* popup simply omits the member line */
+  }
+}
+
 // One-time full reconciliation with the shared DB (GET /api/gis/state):
 // pulls every feature type, pushes anything that only exists in this
 // browser's localStorage, and leaves localStorage holding the server state
@@ -457,10 +727,24 @@ async function gisSyncMapState() {
       if (!localTags[id]) {
         localTags[id] = gisNormalizeBuildingTag(serverTags[id]);
         tagsChanged = true;
+        return;
+      }
+      // Group membership is a shared fact, not this browser's opinion: a tag
+      // this browser already knows still takes the server's groupId, which is
+      // how a group tagged on one computer becomes a group on every other.
+      // Only when the server has NO group does the local one win, so a group
+      // made while the API was unreachable survives (and is pushed below)
+      // instead of being wiped by the first successful sync.
+      const serverGroup = serverTags[id].groupId || "";
+      if (serverGroup && localTags[id].groupId !== serverGroup) {
+        localTags[id] = { ...localTags[id], groupId: serverGroup };
+        tagsChanged = true;
       }
     });
     Object.keys(localTags).forEach((id) => {
-      if (!serverTags[id]) gisPushBuildingTag(id, localTags[id]);
+      const local = localTags[id];
+      const server = serverTags[id];
+      if (!server || (local.groupId && !server.groupId)) gisPushBuildingTag(id, local);
     });
     if (tagsChanged) gisSaveJSON(GIS_BUILDING_TAGS_KEY, localTags);
 
@@ -541,17 +825,23 @@ async function gisSyncMapState() {
     });
     gisSaveJSON(GIS_VEGETATION_CUTS_KEY, Object.assign({}, serverCuts, localCuts));
 
+    // 5b — moved/rotated base-layer buildings (osm_edit 'geom', overrides {ring})
+    const serverGeoms = {};
+    edits
+      .filter((e) => e.edit_type === "geom" && e.feature_kind === "building")
+      .forEach((e) => {
+        const ring = e.overrides && e.overrides.ring;
+        if (Array.isArray(ring) && ring.length >= 3) serverGeoms[e.osm_id] = ring;
+      });
+    const localGeoms = gisLoadBuildingGeoms();
+    Object.keys(localGeoms).forEach((id) => {
+      if (!serverGeoms[id]) gisPushBuildingGeom(id, localGeoms[id]);
+    });
+    gisSaveJSON(GIS_BUILDING_GEOMS_KEY, Object.assign({}, serverGeoms, localGeoms));
+
     // 6 — archived buildings (shared archive table)
     try {
-      const serverArch = await apiGet("/api/gis/archive");
-      const serverIds = new Set(serverArch.map((a) => String(a.id)));
-      const localOnly = gisLoadJSON(GIS_ARCHIVED_BUILDINGS_KEY, []).filter(
-        (a) => !serverIds.has(String(a.id)),
-      );
-      localOnly.forEach((a) => {
-        apiPost("/api/gis/archive", a).catch(() => {});
-      });
-      gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, serverArch.concat(localOnly));
+      await gisMergeServerArchive(await apiGet("/api/gis/archive"));
     } catch (e) {
       /* archive list stays local */
     }
@@ -602,9 +892,62 @@ function gisDeleteCustomBuilding(id) {
 function gisLoadDeletedBuildings() {
   return gisLoadJSON(GIS_DELETED_BUILDINGS_KEY, []);
 }
+
+// Same arrangement for a base-layer building that has been MOVED: the source
+// geometry is left alone and the corrected outline is drawn in its place.
+function gisLoadBuildingGeoms() {
+  return gisLoadJSON(GIS_BUILDING_GEOMS_KEY, {});
+}
+function gisPushBuildingGeom(id, ring) {
+  if (typeof apiPost !== "function") return;
+  apiPost("/api/gis/osm-edits", {
+    osm_id: String(id),
+    feature_kind: "building",
+    edit_type: "geom",
+    overrides: { ring },
+  }).catch(() => {});
+}
+// Puts a building back where the base layer says it is.
+function gisResetBuildingGeom(id) {
+  const geoms = gisLoadBuildingGeoms();
+  if (!(id in geoms)) return false;
+  delete geoms[id];
+  gisSaveJSON(GIS_BUILDING_GEOMS_KEY, geoms);
+  if (typeof apiDelete === "function")
+    apiDelete(
+      `/api/gis/osm-edits?osm_id=${encodeURIComponent(id)}&feature_kind=building&edit_type=geom`,
+    ).catch(() => {});
+  return true;
+}
+
+// Records a building's new outline. A drawn building simply IS its geometry, so
+// that is rewritten in place; a base-layer one keeps its original and gets a
+// delta drawn over it.
+function gisSetBuildingGeom(id, ring, isCustom) {
+  if (isCustom) {
+    const list = gisLoadJSON(GIS_CUSTOM_BUILDINGS_KEY, []);
+    const entry = list.find((b) => String(b.id) === String(id));
+    if (entry) {
+      entry.coordinates = ring;
+      gisSaveJSON(GIS_CUSTOM_BUILDINGS_KEY, list);
+    }
+    if (typeof apiPatch === "function" && gisIsServerId(id))
+      apiPatch("/api/gis/custom-buildings/" + encodeURIComponent(id), {
+        coordinates: ring,
+      }).catch(() => {});
+    return;
+  }
+  const geoms = gisLoadBuildingGeoms();
+  geoms[String(id)] = ring;
+  gisSaveJSON(GIS_BUILDING_GEOMS_KEY, geoms);
+  gisPushBuildingGeom(id, ring);
+}
 function gisSoftDeleteBuilding(id) {
-  const list = gisLoadDeletedBuildings();
-  if (!list.includes(id)) list.push(id);
+  // Stored as a string, the one form the list holds everywhere else (the
+  // server's tombstones arrive as strings) — so the id a numeric OSM way is
+  // tombstoned under matches the id it is filtered by.
+  const list = gisLoadDeletedBuildings().map(String);
+  if (!list.includes(String(id))) list.push(String(id));
   gisSaveJSON(GIS_DELETED_BUILDINGS_KEY, list);
   gisClearBuildingTag(id);
   // Tombstone in the shared DB so every client hides this OSM building.
@@ -622,14 +965,82 @@ function gisSoftDeleteBuilding(id) {
 function gisLoadArchivedBuildings() {
   return gisLoadJSON(GIS_ARCHIVED_BUILDINGS_KEY, []);
 }
+// Reconciles this browser's copy of the recycle bin with the server's.
+//
+// The server is authoritative for everything it has ever been told about. The
+// one thing it cannot know is a deletion this browser made while offline, so
+// that — and only that — is uploaded from here.
+//
+// The distinction is the whole point. This used to upload every local entry
+// the server's list did not contain, on the assumption that "missing from the
+// server" meant "never sent". It does not: an entry is also missing once the
+// retention timer purged it, once someone restored it (restored snapshots are
+// filtered out of the list), and once someone permanently deleted it. All
+// three were re-uploaded as fresh deletions with a fresh 30-day timer. After a
+// month of downtime the boot sweep purged eight expired buildings at 08:40 and
+// this loop put all eight back at 08:47, and it would have done so again on
+// every map load, forever.
+//
+// `pendingUpload` is what tells the two cases apart — set when a delete is
+// recorded, cleared the moment the server acknowledges it. Entries stored
+// before this flag existed have no `pendingUpload` and are therefore treated
+// as already-known-to-the-server, which is what stops the loop for the
+// snapshots currently stuck in it.
+async function gisMergeServerArchive(serverRows) {
+  const server = Array.isArray(serverRows) ? serverRows : [];
+  const serverIds = new Set(server.map((a) => String(a.id)));
+  const pending = gisLoadArchivedBuildings().filter(
+    (a) => a.pendingUpload && !serverIds.has(String(a.id)),
+  );
+  // Keep the pending ones visible while they upload, so an offline deletion
+  // does not vanish from the list between the sync and the acknowledgement.
+  gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, server.concat(pending));
+  // One at a time: each acknowledgement rewrites the whole localStorage list,
+  // and two landing in the same tick would have the second overwrite the
+  // first's cleared flag. There are never more than a handful.
+  for (const a of pending) await gisUploadArchivedBuilding(a);
+  return server.length;
+}
+
+// Sends one archived building to the server and clears its pending flag on
+// acknowledgement. The server answers with the row it actually holds — its own
+// archiveId and purgeAfter — so the countdown shown here is the one the
+// sweeper will act on rather than a guess made in the browser.
+function gisUploadArchivedBuilding(entry) {
+  if (typeof apiPost !== "function") return Promise.resolve(false);
+  return apiPost("/api/gis/archive", {
+    id: entry.id,
+    isCustom: entry.isCustom,
+    coordinates: entry.coordinates,
+    tag: entry.tag,
+    archivedAt: entry.archivedAt,
+    account_id: (typeof getSession === "function" && (getSession() || {}).account_id) || null,
+  })
+    .then((res) => {
+      const list = gisLoadArchivedBuildings().map((b) =>
+        String(b.id) === String(entry.id)
+          ? {
+              ...b,
+              pendingUpload: false,
+              archiveId: (res && res.archiveId) || b.archiveId,
+              purgeAfter: (res && res.purgeAfter) || b.purgeAfter,
+            }
+          : b,
+      );
+      gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, list);
+      return true;
+    })
+    .catch(() => false); // stays pending; the next sync retries it
+}
+
 function gisArchiveBuilding(entry) {
   const list = gisLoadArchivedBuildings();
-  list.push({ ...entry, archivedAt: Date.now() });
+  const local = { ...entry, archivedAt: Date.now(), pendingUpload: true };
+  list.push(local);
   gisSaveJSON(GIS_ARCHIVED_BUILDINGS_KEY, list);
   // Snapshot into the shared archive table so the Archive page shows the
   // same recycle bin on every device.
-  if (typeof apiPost === "function")
-    apiPost("/api/gis/archive", entry).catch(() => {});
+  gisUploadArchivedBuilding(local);
   if (typeof logAudit === "function")
     logAudit(
       "MAP_BUILDING_DELETE",
@@ -664,7 +1075,26 @@ function gisRestoreArchivedBuilding(id) {
   // remove the tombstone, and put the tag back on the row.
   if (typeof apiPost === "function")
     apiPost("/api/gis/archive/restore", { id: String(entry.id) }).catch(() => {});
-  if (entry.tag) gisSaveBuildingTag(entry.id, gisNormalizeBuildingTag(entry.tag));
+  // The tag comes back with it — unless it names a household and that name was
+  // given to another house while this one sat in the Archive. The building then
+  // returns untagged (the server does the same), because restoring the name
+  // would be the one duplicate the rest of the map cannot produce.
+  if (entry.tag) {
+    const restored = gisNormalizeBuildingTag(entry.tag);
+    const clash =
+      restored.type === "households"
+        ? gisFindHouseholdNameConflict(restored.name, [entry.id], restored.groupId)
+        : null;
+    if (clash) {
+      if (typeof showToast === "function")
+        showToast(
+          `Building restored without its tag — "${clash.tag.name}" is now another household`,
+          gisIcon("alertCircle"),
+        );
+    } else {
+      gisSaveBuildingTag(entry.id, restored);
+    }
+  }
   gisRemoveArchivedBuilding(entry.id);
   if (typeof logAudit === "function")
     logAudit(
@@ -851,12 +1281,14 @@ function gisAddHazardPing(point, radius, hazardType, severity, notes) {
   const id = gisNewId("haz");
   list.push({ id, point, radius, hazardType, severity, notes });
   gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
-  gisPushFeature(GIS_HAZARD_ZONES_KEY, id, "hazard", point, {
-    hazardType: hazardType || "other",
-    severity: severity || "",
-    notes: notes || "",
-    radius: radius || GIS_HAZARD_PING_RADIUS,
-  });
+  Promise.resolve(
+    gisPushFeature(GIS_HAZARD_ZONES_KEY, id, "hazard", point, {
+      hazardType: hazardType || "other",
+      severity: severity || "",
+      notes: notes || "",
+      radius: radius || GIS_HAZARD_PING_RADIUS,
+    }),
+  ).then(gisNotifyExposureChanged);
   if (typeof logAudit === "function")
     logAudit(
       "MAP_HAZARD_ADD",
@@ -872,12 +1304,14 @@ function gisUpdateHazard(id, hazardType, severity, notes) {
   if (h) {
     Object.assign(h, { hazardType, severity, notes });
     gisSaveJSON(GIS_HAZARD_ZONES_KEY, list);
-    gisPatchFeature(id, {
-      hazardType: hazardType || "other",
-      severity: severity || "",
-      notes: notes || "",
-      radius: h.radius || GIS_HAZARD_PING_RADIUS,
-    });
+    Promise.resolve(
+      gisPatchFeature(id, {
+        hazardType: hazardType || "other",
+        severity: severity || "",
+        notes: notes || "",
+        radius: h.radius || GIS_HAZARD_PING_RADIUS,
+      }),
+    ).then(gisNotifyExposureChanged);
     if (typeof logAudit === "function")
       logAudit(
         "MAP_HAZARD_EDIT",
@@ -891,7 +1325,7 @@ function gisDeleteHazard(id) {
   const list = gisLoadJSON(GIS_HAZARD_ZONES_KEY, []);
   const h = list.find((x) => x.id === id);
   gisSaveJSON(GIS_HAZARD_ZONES_KEY, list.filter((x) => x.id !== id));
-  gisDeleteFeatureRemote(id);
+  Promise.resolve(gisDeleteFeatureRemote(id)).then(gisNotifyExposureChanged);
   if (typeof logAudit === "function")
     logAudit("MAP_HAZARD_DELETE", `Hazard zone (${h?.hazardType || id}) removed from map`, "warning", "map");
 }
@@ -1137,14 +1571,32 @@ function gisAddCommunityReport(point, data) {
     );
   return record;
 }
+// The signed-in account, sent with every delete so the server can attribute
+// the archive snapshot and the DB audit trigger to a real person.
+function gisSessionAccountId() {
+  try {
+    return (JSON.parse(localStorage.getItem("ibmdss.session")) || {}).account_id || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+// Deleting a report is a soft delete: DELETE /api/incidents/:id snapshots the
+// row into the shared Archive before removing it, so an Admin can restore it
+// from the Archive page. The pin and the feed entry go immediately.
 function gisDeleteCommunityReport(id) {
   const record = gisAllCommunityReports().find((r) => String(r.id) === String(id));
   gisReportsCache = gisAllCommunityReports().filter((r) => String(r.id) !== String(id));
   gisSaveReportsCache();
   if (gisIsServerId(id) && typeof apiDelete === "function")
-    apiDelete("/api/incidents/" + id).catch(() => {});
+    apiDelete("/api/incidents/" + id + "?account_id=" + gisSessionAccountId()).catch(() => {});
   if (typeof logAudit === "function")
-    logAudit("CONCERN_DELETE", `Resident concern "${record?.title || id}" deleted`, "warning", "concern");
+    logAudit(
+      "CONCERN_DELETE",
+      `Resident concern "${record?.title || id}"${record?.caseNo ? " (" + record.caseNo + ")" : ""} deleted and moved to the Archive`,
+      "warning",
+      "concern",
+    );
 }
 // Resolving a concern pin hides it from the map and the "Recent Community
 // Reports" feed (which only shows active/unresolved pins) — it stays in the
@@ -1180,7 +1632,9 @@ function gisClearResolvedCommunityReports() {
   if (typeof apiDelete === "function")
     list
       .filter((r) => r.resolved && gisIsServerId(r.id))
-      .forEach((r) => apiDelete("/api/incidents/" + r.id).catch(() => {}));
+      .forEach((r) =>
+        apiDelete("/api/incidents/" + r.id + "?account_id=" + gisSessionAccountId()).catch(() => {}),
+      );
   gisReportsCache = kept;
   gisSaveReportsCache();
   if (removed > 0 && typeof logAudit === "function")
@@ -1200,6 +1654,20 @@ function gisTimeAgo(ts) {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// "View in Blotter" on a report pin's card. The Blotter page has no map of its
+// own, so the handoff is the mirror image of its "View on Map": stash the
+// report id for the next page and go there. js/pages/incidents.js reads it on
+// arrival, opens the report's full record and pages its table to the row.
+const GIS_OPEN_INCIDENT_KEY = "ibmdss.openIncident";
+function gisOpenInBlotter(id) {
+  try {
+    sessionStorage.setItem(GIS_OPEN_INCIDENT_KEY, String(id));
+  } catch (e) {
+    /* storage disabled — the Blotter still opens, just not on this report */
+  }
+  if (typeof nav === "function") nav(null, "incidents");
 }
 
 // ───────── Projection helpers ─────────
@@ -1382,11 +1850,23 @@ async function initGisMap(targetId, opts = {}) {
   gisMigrateBuildingTags();
 
   // Reconcile the whole map state with the shared DB (pull server features /
-  // push local-only ones), then repaint so merged data shows without a reload.
-  gisSyncMapState().then(() => {
+  // push local-only ones) and pick up each household's resident count and
+  // derived classification, then repaint so the merged data — including the
+  // colour a household takes from its residents — shows without a reload.
+  Promise.all([gisSyncMapState(), gisLoadHouseholdMembers()]).then(() => {
     if (gisInstances[targetId] && typeof gisInstances[targetId].refreshAll === "function")
       gisInstances[targetId].refreshAll();
   });
+
+  // A cached instance is only reusable if it was built into THIS element.
+  // A page that repaints itself through setContent() hands us a brand new node
+  // under the same id, while the cached instance still holds the detached one
+  // — its layers, toolbar and listeners all orphaned, so the "reused" map
+  // would render into nothing. gisCreateMap stamps the class below, so its
+  // absence is proof the node was replaced.
+  if (gisInstances[targetId] && !container.classList.contains("gis-custom-map")) {
+    delete gisInstances[targetId];
+  }
 
   // Always recenter to the fitted view when a map is (re)opened, even if an
   // instance is already cached (e.g. reopening the "Open Full Map" modal).
@@ -1445,6 +1925,24 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // map itself gets the full width — the resident only needs to drop a pin.
   const minimal = !!opts.minimal;
 
+  // Heat-map embeds (the Analytics "Incident Hotspots" card) paint a report
+  // density cloud over the base map and fade the base layers behind it, so the
+  // eye goes to the clusters rather than to the buildings.
+  const heatmap = !!opts.heatmap;
+  if (heatmap) container.classList.add("gis-heat-mode");
+
+  // Staff and resident maps get the top-left viewing aids — Measure, and the
+  // outside-the-border toggle. Neither changes the map, so neither needs Edit
+  // Mode. The anonymous public map, the incident modal's pick-a-spot map and
+  // the Analytics heat map (already clipped to the border) go without.
+  const viewTools = !anonymous && !minimal && !heatmap;
+
+  // Report cards link through to the Blotter's full record wherever the MIS
+  // navigation (nav() in js/shell.js) is loaded. The anonymous public map and
+  // the incident modal's pick map get no link.
+  const blotterLinks = !anonymous && typeof nav === "function";
+  const blotterBtnHtml = `<button type="button" class="gis-popup-action gis-popup-blotter" data-gis-report-blotter>${gisIcon("fileText")} View in Blotter</button>`;
+
   // The extractor includes surroundings a few hundred meters past the border
   // for context. A feature counts as part of the barangay if ANY part of it
   // touches the boundary — only features entirely outside render faded and
@@ -1479,13 +1977,20 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     showConstruction: true,
     showAccidents: true,
     showReports: true,
+    showOutside: viewTools ? gisReadShowOutside() : true, // features past the barangay border (top-left toggle)
+    focusReportId: null, // report id arrived at via focusReport() — drawn and ringed even when resolved
+    focusHazardId: null, // hazard zone flyToHazard() just landed on — ringed for a moment
+    showHeat: heatmap, // report-density cloud (Analytics hotspot card)
+    heatType: "all", // report type the density cloud counts ("all" = every type)
     reportMode: false, // resident "place a community report" one-shot mode
     pendingReporter: null, // reporter details captured when report mode was armed
     pickMode: false, // lightweight "pick a location" mode for the incident modal's embedded map
     pickCallback: null, // called with [lng, lat] each time a spot is picked
     pickPoint: null, // the currently-picked [lng, lat], drawn as a marker
     editMode: false,
-    drawTool: null, // null | 'building' | 'road' | 'vegetation' | 'construction' | 'hazard-ping' | 'accident-ping' | 'vegetation-cut'
+    drawTool: null, // null | 'building' | 'building-move' | 'road' | 'vegetation' | 'construction' | 'hazard-ping' | 'accident-ping' | 'vegetation-cut'
+    moveBuildingId: null, // building picked up by the 'building-move' tool
+    moveBuildingIsCustom: false, // ...and whether it was drawn in-app (see gisSetBuildingGeom)
     drawSubtype: null, // the specific type picked in the draw panel (e.g. 'flood' for a hazard ping)
     drawShape: "freeform", // 'freeform' | 'square' — how area tools (building/vegetation/construction) trace their outline
     squareRotation: 0, // radians the square preview is rotated by before it's confirmed
@@ -1503,22 +2008,33 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     panY: 0,
   };
 
-  const MIN_POINTS = { building: 3, road: 2, vegetation: 3, construction: 3, "vegetation-cut": 3, measure: 1 };
+  const MIN_POINTS = { building: 3, road: 2, vegetation: 3, construction: 3, "vegetation-cut": 3, measure: 1, "building-move": 3 };
   // Area tools that can also be traced as a rotatable box instead of a freeform
   // polygon (the "Square" shape option). Lines (road) and points (pings) can't.
   const SQUARE_TOOLS = new Set(["building", "vegetation", "construction"]);
+  const AREA_HINT =
+    "Click to place points. Drag a point to move it, click a point to remove it, drag inside the shape to move it, or use the handle above it to rotate. Use Finish when done.";
   const DRAW_HINTS = {
-    building: "Click to place points. Drag a point to move it, click a point to remove it, or drag inside the shape to move it. Use Finish when done.",
+    building: AREA_HINT,
     road: "Click to place points. Drag a point to move it, or click a point to remove it. Use Finish when done.",
-    vegetation: "Click to place points. Drag a point to move it, click a point to remove it, or drag inside the shape to move it. Use Finish when done.",
-    construction: "Click to place points. Drag a point to move it, click a point to remove it, or drag inside the shape to move it. Use Finish when done.",
+    vegetation: AREA_HINT,
+    construction: AREA_HINT,
     "hazard-ping": "Click to set the center, move to size it, click again to confirm.",
     "accident-ping": "Click the map once to mark an accident.",
     "vegetation-cut": "Trace the area to remove from this vegetation zone, then Finish.",
-    measure: "Click to add a point. Drag a point to move it, click a point to remove it, or drag the map to pan.",
     square: "Click two opposite corners. Drag a corner to resize, the handle to rotate, or inside to move, then Finish.",
+    "building-move": "Click a building to pick it up.",
+    "building-move-picked":
+      "Drag inside it to move, drag a point to reshape, or use the handle above it to rotate. Finish to save, Cancel to put it back.",
   };
   const isSquareMode = () => state.drawShape === "square" && SQUARE_TOOLS.has(state.drawTool);
+  // The hint pill along the map's bottom edge (refreshMapHint) — for the modes
+  // that are not dock tools, and so have no hint box of their own.
+  const MAP_HINTS = {
+    report: "Click the spot on the map where the concern is located — Esc to cancel.",
+    pick: "Click the spot on the map where the incident happened.",
+    measure: "Click to add points · drag a point to move it · click a point to remove it · Esc to stop",
+  };
 
   const defsId = "gis-defs-" + gisDefsCounter++;
   const hazardGradientDefs = Object.entries(GIS_HAZARD_TYPE_META)
@@ -1536,6 +2052,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <rect width="5" height="5" fill="#111"/>
       <rect width="2.5" height="5" fill="#facc15"/>
     </pattern>`;
+
 
   // The filter row's three dropdowns — Building Type, Household
   // Classification, and Map Layers — all share the same button-plus-panel
@@ -1620,11 +2137,20 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     },
     { tool: "road", label: "Road", icon: "road", types: GIS_ROAD_TYPE_META },
     { tool: "vegetation", label: "Vegetation", icon: "wheat", types: GIS_VEGETATION_KIND_META },
-    { tool: "construction", label: "Construction", icon: "cone", types: GIS_CONSTRUCTION_STATUS_META },
+    // Construction retired as a DRAWING tool: no new construction areas can be
+    // traced from here. Everything else about them stays — areas already on
+    // the map still render, still answer a hover and a click, still carry
+    // their Map Layers toggle and legend entry, and can still be deleted in
+    // edit mode. Only the way to create more is gone.
     // Accident pings retired: accidents are filed as incident reports via
     // the map's "Report Incident" button and show as regular report pins.
     { tool: "hazard-ping", label: "Hazard Ping", icon: "warningTriangle", types: GIS_HAZARD_TYPE_META },
-    { tool: "measure", label: "Measure Distance", icon: "ruler", types: null },
+    // Not "add" so much as "put right": the traced base layer does not always
+    // agree with where a house actually stands, and re-drawing a building from
+    // scratch to correct it loses its tag, its household and its residents.
+    { tool: "building-move", label: "Move Building", icon: "hand", types: null },
+    // Measure Distance is not here. Measuring adds nothing to the map, so it
+    // lives in the top-left corner (toggleMeasure) and works with Edit Mode off.
   ];
   const drawPanelHtml = editable
     ? `
@@ -1663,7 +2189,20 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       </div>`
     : "";
 
+  // The top-left viewing aids. The outside toggle's icon and label are filled
+  // in by syncOutsideBtn(), since both flip with the state.
+  const viewToolsHtml = viewTools
+    ? `
+    <div class="gis-map-tools-left">
+      <button type="button" class="gis-toolbar-btn gis-measure-btn" data-gis-measure aria-pressed="false" aria-label="Measure distance" title="Measure a distance — click points on the map (Esc to stop)">${gisIcon("ruler")}<span class="gis-tool-label">Measure</span></button>
+      <button type="button" class="gis-toolbar-btn gis-outside-btn" data-gis-outside-toggle></button>
+    </div>`
+    : "";
+
   container.classList.add("gis-custom-map");
+  // Per-instance so two embeds on one page cannot collide on the clip id.
+  const boundaryClipId = `gis-boundary-clip-${Math.random().toString(36).slice(2, 9)}`;
+  const boundaryPathD = gisGeometryToPath(geojson.features[0].geometry, project);
   container.innerHTML = `
     <div class="gis-map-toolbar">
       <div class="gis-toolbar-row">
@@ -1673,17 +2212,39 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         ${editControlsHtml}
       </div>
     </div>
+    ${viewToolsHtml}
     <div class="gis-svg-wrap">
       <svg class="gis-svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
-        <defs>${hazardGradientDefs}${constructionStripeDef}</defs>
+        <defs>${hazardGradientDefs}${constructionStripeDef}
+          <!-- Clips the base layers to the barangay outline. The OSM import
+               deliberately carries some surrounding context (roads and
+               buildings just outside the boundary) because it helps orient a
+               reader on the full map — but on the analytics hotspot card that
+               context is noise around the shape being measured. Clipping is
+               done here rather than by filtering features so nothing has to be
+               recomputed: the same paths simply stop at the border.
+               The id is per-instance; two maps can share a page. -->
+          <clipPath id="${boundaryClipId}">
+            <path d="${boundaryPathD}"></path>
+          </clipPath>
+        </defs>
         <g class="gis-svg-viewport">
-          <path class="gis-boundary" d="${gisGeometryToPath(geojson.features[0].geometry, project)}"></path>
+          <path class="gis-boundary" d="${boundaryPathD}"></path>
+          <g class="gis-base-layers"${heatmap ? ` clip-path="url(#${boundaryClipId})"` : ""}>
           <g class="gis-vegetation-layer"></g>
           <g class="gis-water-layer"></g>
           <g class="gis-hazard-layer"></g>
           <g class="gis-construction-layer"></g>
           <g class="gis-roads-layer"></g>
           <g class="gis-buildings-layer"></g>
+          </g>
+          <!-- Density cloud: over the base map so it reads, under the pins so
+               an individual report can still be clicked through it. Clipped to
+               the boundary in heatmap mode, the same way the mobile app does it
+               (canvas.clipPath in analytics_page.dart) — a cloud spilling past
+               the border implies density outside the barangay, which is not
+               something this card is measuring. -->
+          <g class="gis-heat-layer"${heatmap ? ` clip-path="url(#${boundaryClipId})"` : ""}></g>
           <g class="gis-accidents-layer"></g>
           <g class="gis-reports-layer"></g>
           <g class="gis-draw-preview-layer"></g>
@@ -1741,6 +2302,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   }
   const legendItemHtml = (dotKey, label, layer) =>
     `<div class="gis-legend-item"${layer ? ` data-legend-layer="${layer}"` : ""}><div class="gis-dot gis-dot-${dotKey}"></div>${label}</div>`;
+  // A classification is the colour the whole household is painted, so its
+  // swatch is a plain dot like the Building Type column's — taken from
+  // GIS_HOUSEHOLD_SUBCAT_META, the same value renderBuildings() fills with.
+  const legendClassHtml = (key, label) =>
+    `<div class="gis-legend-item" data-legend-layer="buildings"><div class="gis-dot" style="background:${GIS_HOUSEHOLD_SUBCAT_META[key].color}"></div>${label}</div>`;
   const legendColumnHtml = (title, itemsHtml) =>
     `<div class="gis-legend-col"><div class="gis-legend-col-title">${title}</div>${itemsHtml}</div>`;
   const legendHtml = `<div class="gis-legend gis-legend-overlay">
@@ -1750,8 +2316,6 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         legendItemHtml("vegetation", "Vegetation", "vegetation"),
         legendItemHtml("water", "Water", "water"),
         legendItemHtml("roads", "Roads", "roads"),
-        legendItemHtml("hazard", "Hazard Zone", "hazard"),
-        legendItemHtml("construction", "Construction Area", "construction"),
         legendItemHtml("reports", "Incident Reports", "reports"),
         legendItemHtml("reports-official", "Official Report", "reports"),
       ].join(""),
@@ -1766,9 +2330,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       anonymous
         ? ""
         : legendColumnHtml(
-            "Classification",
+            "Household Classification",
             Object.entries(GIS_HOUSEHOLD_SUBCAT_META)
-              .map(([key, m]) => legendItemHtml(key, m.label, "buildings"))
+              .map(([key, m]) => legendClassHtml(key, m.label))
               .join(""),
           )
     }
@@ -1789,6 +2353,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const constructionLayer = container.querySelector(".gis-construction-layer");
   const roadsLayer = container.querySelector(".gis-roads-layer");
   const buildingsLayer = container.querySelector(".gis-buildings-layer");
+  const baseLayersEl = container.querySelector(".gis-base-layers");
+  const heatLayer = container.querySelector(".gis-heat-layer");
   const accidentsLayer = container.querySelector(".gis-accidents-layer");
   const reportsLayer = container.querySelector(".gis-reports-layer");
   const drawPreviewLayer = container.querySelector(".gis-draw-preview-layer");
@@ -1796,6 +2362,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const formEl = container.querySelector(".gis-pin-form");
   const reportHintEl = container.querySelector(".gis-report-hint");
   const drawHintEl = container.querySelector(".gis-draw-hint");
+  const measureBtn = container.querySelector("[data-gis-measure]");
+  const outsideBtn = container.querySelector("[data-gis-outside-toggle]");
   const editToggleBtn = container.querySelector("[data-gis-edit-toggle]");
   const deselectBtn = container.querySelector("[data-gis-deselect-tool]");
   const buildingsToggleBtn = toggleButtonsHost.querySelector("[data-gis-buildings-toggle]");
@@ -2010,8 +2578,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     renderScreenScaledMarkers();
   }
 
-  // Markers sized in screen pixels (accidents, community reports) must be
-  // re-rendered whenever the zoom changes so they keep a constant size.
+  // Markers sized in screen pixels (accidents, community reports, the draw
+  // preview's dots and labels) must be re-rendered whenever the zoom changes so
+  // they keep a constant size.
   function renderScreenScaledMarkers() {
     renderDrawPreview();
     renderAccidents();
@@ -2046,10 +2615,22 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     formEl.hidden = true;
   }
 
+  // Places a popup or pin form at a point on the map (container pixels) and
+  // keeps ALL of it inside the map. It opens just below the point; near the
+  // right edge it slides left, and near the bottom it opens upward from the
+  // point instead — a form dropped low on the map (a hazard ping's confirming
+  // click, often) used to hang off the bottom edge with its Save button out of
+  // reach. Measured from the element itself, so a wide card or a tall form
+  // fits as well as a small hover label.
   function positionFloatingEl(el, x, y, host) {
     const rect = host.getBoundingClientRect();
-    el.style.left = Math.min(x, rect.width - 220) + "px";
-    el.style.top = Math.max(y - 10, 8) + "px";
+    const pad = 8;
+    const w = el.offsetWidth || 220;
+    const h = el.offsetHeight || 0;
+    let top = y - 10;
+    if (top + h > rect.height - pad) top = y - h - 10; // no room below: open upward
+    el.style.left = Math.max(pad, Math.min(x, rect.width - w - pad)) + "px";
+    el.style.top = Math.max(pad, Math.min(top, rect.height - h - pad)) + "px";
   }
 
   // Read-only popup shown on hover while NOT in edit mode — info only, no
@@ -2079,22 +2660,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     popupEl.classList.add("gis-popup-hoverable");
     popupEl.hidden = false;
     positionFloatingEl(popupEl, screenX, screenY, container);
-    clampPopupToContainer();
   }
 
-  // positionFloatingEl assumes a ~220px-wide popup; the expanded report card
-  // is wider, so re-clamp using its real rendered size.
-  function clampPopupToContainer() {
-    const rect = container.getBoundingClientRect();
-    const left = parseFloat(popupEl.style.left) || 0;
-    const top = parseFloat(popupEl.style.top) || 0;
-    if (left + popupEl.offsetWidth > rect.width - 8) {
-      popupEl.style.left = Math.max(rect.width - popupEl.offsetWidth - 8, 8) + "px";
-    }
-    if (top + popupEl.offsetHeight > rect.height - 8) {
-      popupEl.style.top = Math.max(rect.height - popupEl.offsetHeight - 8, 8) + "px";
-    }
-  }
 
   function escapeHtml(str) {
     const div = document.createElement("div");
@@ -2191,7 +2758,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     return !popupEl.hidden && popupEl.classList.contains("gis-popup-expanded");
   }
 
-  function attachFeatureInteraction(el, { hoverHtml, onOpen }) {
+  function attachFeatureInteraction(el, { hoverHtml, onOpen, onMovePick }) {
     el.classList.add("gis-interactive-feature");
     el.addEventListener("mouseenter", (evt) => {
       if (state.drawTool || state.editMode || state.reportMode || state.pickMode || expandedCardOpen()) return;
@@ -2209,6 +2776,13 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       hidePopup();
     });
     el.addEventListener("click", (evt) => {
+      // The one draw tool that wants the feature it was clicked on rather than
+      // a point on the map: "move a building" starts by picking one up.
+      if (state.drawTool === "building-move" && onMovePick && !state.moveBuildingId) {
+        evt.stopPropagation();
+        onMovePick();
+        return;
+      }
       // While placing a community report or picking an incident location, let
       // the click fall through to the map's own handler (features cover most
       // of the map surface).
@@ -2232,17 +2806,46 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   });
 
   // ───────── Buildings (OSM + custom), taggable with resident/category info ─────────
+  // Both sides compared as strings. An OSM way's feature id is a JSON NUMBER
+  // (396816988) while the tombstone list comes back from the server as strings,
+  // so a raw Set.has() missed every numeric id and a deleted building reappeared
+  // on the next refresh. It never showed, because deleting a building also
+  // deleted its row — which is not something the tombstone should have to rely
+  // on, and is exactly what made removing a TAG erase the footprint.
   function allBuildingFeatures() {
-    const deleted = new Set(gisLoadDeletedBuildings());
+    const deleted = new Set(gisLoadDeletedBuildings().map(String));
+    // A base-layer building staff have moved is drawn at its corrected outline
+    // rather than the one the geojson ships — see gisSetBuildingGeom(). The
+    // override replaces the geometry only; the feature keeps its id, so its
+    // tag, its household and every filter still find it.
+    const moved = gisLoadBuildingGeoms();
     return (buildingsGeojson?.features || [])
-      .filter((f) => !deleted.has(f.properties.id))
+      .filter((f) => !deleted.has(String(f.properties.id)))
+      .map((f) => {
+        const ring = moved[String(f.properties.id)];
+        return ring
+          ? { ...f, geometry: { type: "Polygon", coordinates: [ring] } }
+          : f;
+      })
       .concat(gisCustomBuildingFeatures());
   }
 
   function buildingInfoHtml(buildingId) {
     const tags = gisLoadBuildingTags();
     const tag = tags[buildingId];
-    const displayMeta = gisTagDisplayMeta(tag);
+    // The classifications shown are the derived ones, so the popup agrees with
+    // the colour of the building underneath it — and names ALL of them, since
+    // the fill can only show the first.
+    const popupClasses = tag?.type === "households" ? gisHouseholdClassesOf(buildingId) : [];
+    const displayMeta = gisTagDisplayMeta(
+      tag?.type === "households" ? { ...tag, subcat: popupClasses[0] || "" } : tag,
+    );
+    if (displayMeta && popupClasses.length > 1) {
+      displayMeta.label =
+        GIS_BUILDING_TYPE_META.households.label +
+        " · " +
+        popupClasses.map((k) => GIS_HOUSEHOLD_SUBCAT_META[k]?.label || k).join(" + ");
+    }
     const groupSize = tag?.groupId ? Object.values(tags).filter((t) => t?.groupId === tag.groupId).length : 0;
     // Anonymous embeds keep tagged *households* private — only the generic
     // "Household" tag shows, never the resident name, vulnerable
@@ -2252,10 +2855,23 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       const typeMeta = GIS_BUILDING_TYPE_META.households;
       return `<div class="gis-popup-title">${gisIcon(typeMeta.icon)} ${escapeHtml(typeMeta.label)}</div>`;
     }
+    // A household tag IS the household record, so the popup can say how many
+    // residents have attached themselves to it — the whole point of tagging
+    // one. Staff-only (the anonymous branch above has already returned).
+    const members = tag?.type === "households" ? gisHouseholdMembers[buildingId] : undefined;
+    const memberLine =
+      members === undefined
+        ? ""
+        : `<div class="gis-popup-cat">${gisIcon("family")} ${
+            members === 0
+              ? "No residents connected yet"
+              : `${members} resident${members === 1 ? "" : "s"} connected`
+          }</div>`;
     return tag
       ? `
       <div class="gis-popup-title">${gisIcon(displayMeta ? displayMeta.icon : "home")} ${escapeHtml(tag.name)}</div>
       ${displayMeta ? `<div class="gis-popup-cat">${escapeHtml(displayMeta.label)}</div>` : ""}
+      ${memberLine}
       ${groupSize > 1 ? `<div class="gis-popup-cat">${gisIcon("layers")} Group of ${groupSize} buildings</div>` : ""}
       ${tag.notes ? `<div class="gis-popup-notes">${escapeHtml(tag.notes)}</div>` : ""}
     `
@@ -2294,12 +2910,16 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     allBuildingFeatures().forEach((feature) => {
       if (!featureInHomeExtent(feature)) return;
       const buildingId = feature.properties.id;
+      // Held by the move tool: the draw preview is showing it, so drawing it
+      // here as well would put the same building on the map twice.
+      if (state.moveBuildingId !== null && String(buildingId) === String(state.moveBuildingId)) return;
       const tag = tags[buildingId];
 
       // Surrounding-context buildings (outside the boundary): faded, not
-      // taggable/hoverable, and hidden entirely while filtering.
+      // taggable/hoverable, and hidden entirely while filtering or while the
+      // top-left outside-the-border toggle has them switched off.
       if (!featureInsideBoundary(feature)) {
-        if (filtering) return;
+        if (filtering || !state.showOutside) return;
         const ctx = document.createElementNS("http://www.w3.org/2000/svg", "path");
         ctx.setAttribute("d", gisGeometryToPath(feature.geometry, project));
         ctx.setAttribute("class", "gis-building gis-building-outside");
@@ -2307,29 +2927,45 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         return;
       }
 
+      // A household's classifications come from the residents connected to it,
+      // not from the tag — see gisLoadHouseholdMembers().
+      const householdClasses = tag?.type === "households" ? gisHouseholdClassesOf(buildingId) : [];
+
       // The two dropdown filters combine: building type narrows by tag.type;
-      // household classification narrows to households of that group.
+      // household classification narrows to households that HOLD that
+      // classification — a senior/solo-parent household answers to both
+      // filters, because it is genuinely both.
       if (state.typeFilter !== "all" && tag?.type !== state.typeFilter) return;
-      if (
-        state.sectorFilter !== "all" &&
-        !(tag?.type === "households" && tag?.subcat === state.sectorFilter)
-      ) {
-        return;
-      }
+      if (state.sectorFilter !== "all" && !householdClasses.includes(state.sectorFilter)) return;
 
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", gisGeometryToPath(feature.geometry, project));
       let cls = "gis-building";
       if (tag) cls += " gis-building-tagged";
-      if (tag?.type) {
-        // Households colored by classification when one is set (its group
-        // hues carry over from the old category system); other types get
-        // their own type color. Anonymous embeds ignore the classification so
-        // every household reads as the same neutral household color.
-        const catKey = !anonymous && tag.type === "households" && tag.subcat ? tag.subcat : tag.type;
-        cls += " gis-building-cat-" + catKey;
+      if (tag?.type) cls += " gis-building-cat-" + tag.type;
+
+      // A household someone vulnerable lives in is painted, whole, in that
+      // classification's colour — a senior citizen's house reads amber from
+      // across the map, with nothing to hunt for in a corner. A household that
+      // is several things takes the first in priority order
+      // (GIS_HOUSEHOLD_SUBCAT_META) and its popup names the rest. The colour
+      // rides in as a custom property so the meta dictionary stays the one
+      // place it is written down.
+      //
+      // Not on anonymous embeds: which vulnerable groups live in a house is
+      // exactly the fact a public map must not disclose, so there every
+      // household is the one household blue. Nor on a building being picked
+      // for group tagging, where the blue selection wash has to win.
+      const groupPicked = state.groupSelection.has(String(buildingId));
+      const classMeta =
+        !anonymous && !groupPicked && householdClasses.length
+          ? GIS_HOUSEHOLD_SUBCAT_META[householdClasses[0]]
+          : null;
+      if (classMeta) {
+        cls += " gis-building-classified";
+        path.style.setProperty("--class-color", classMeta.color);
       }
-      if (state.groupSelection.has(String(buildingId))) cls += " gis-building-grouped";
+      if (groupPicked) cls += " gis-building-grouped";
       path.setAttribute("class", cls);
       buildingPathsById.set(String(buildingId), path);
       path.addEventListener("mouseenter", () => highlightGroupPeers(buildingId, true));
@@ -2350,9 +2986,45 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
           const svgRect = svg.getBoundingClientRect();
           showBuildingPopup(buildingId, feature.properties.custom, evt.clientX - svgRect.left, evt.clientY - svgRect.top);
         },
+        onMovePick: () => pickBuildingToMove(buildingId, feature),
       });
       buildingsLayer.appendChild(path);
     });
+  }
+
+  // ── Move / rotate an existing building ──────────────────────────────────────
+  // Picking one up hands its outline to the ordinary draw preview, so every
+  // gesture the drawing tools already have applies to it unchanged: drag inside
+  // to move, drag a vertex to reshape, and the rotate handle to spin it. The
+  // building itself is hidden while it is held (see renderBuildings' skip),
+  // otherwise it would appear to be in two places at once.
+  function pickBuildingToMove(buildingId, feature) {
+    const ring = feature.geometry?.coordinates?.[0];
+    if (!Array.isArray(ring) || ring.length < 4) {
+      if (typeof showToast === "function")
+        showToast("That building has no outline to move", gisIcon("alertCircle"));
+      return;
+    }
+    state.moveBuildingId = buildingId;
+    state.moveBuildingIsCustom = !!feature.properties.custom;
+    // Drop the repeated closing vertex — drawPoints holds an open ring, and the
+    // finish step closes it again.
+    const open = ring.slice(0, -1).map((p) => p.slice());
+    state.drawPoints = open;
+    hidePopup();
+    renderBuildings();
+    renderDrawPreview();
+    updateDrawUI();
+  }
+
+  // Puts the building back exactly as it was and returns the tool to "pick one".
+  function releaseMovedBuilding() {
+    state.moveBuildingId = null;
+    state.moveBuildingIsCustom = false;
+    state.drawPoints = [];
+    renderBuildings();
+    renderDrawPreview();
+    updateDrawUI();
   }
 
   function showBuildingPopup(buildingId, isCustom, screenX, screenY) {
@@ -2374,7 +3046,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       enterGroupSelect(buildingId, tag);
     });
     popupEl.querySelector("[data-gis-untag-building]")?.addEventListener("click", () => {
-      gisClearBuildingTag(buildingId);
+      // Untag, NOT delete — "Remove tag" takes the label off a building that
+      // is staying on the map. gisClearBuildingTag() is the other thing: the
+      // tag half of deleting the building, whose DELETE drops the row the
+      // footprint's geometry lives in.
+      gisUntagBuilding(buildingId);
       if (typeof logAudit === "function")
         logAudit("MAP_TAG_REMOVE", `Tag "${tag?.name || "Untagged"}" removed from building ${buildingId}`, "info", "map");
       hidePopup();
@@ -2468,11 +3144,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   function showBuildingTagForm(buildingId, existingTag, screenX, screenY, presetType, groupIds) {
     hidePopup();
     const normalized = gisNormalizeBuildingTag(existingTag);
-    const effectiveType = presetType || normalized?.type || "";
     const typeOptions =
       `<option value="">— Select type —</option>` + optionsHtml(GIS_BUILDING_TYPE_META, normalized?.type);
-    const subcatOptions =
-      `<option value="">— None —</option>` + optionsHtml(GIS_HOUSEHOLD_SUBCAT_META, normalized?.subcat);
     const presetMeta = presetType ? GIS_BUILDING_TYPE_META[presetType] : null;
     const typeRowHtml = presetMeta
       ? `<div class="gis-pin-form-static">${gisIcon(presetMeta.icon)} ${escapeHtml(presetMeta.label)}</div>`
@@ -2485,12 +3158,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <label class="gis-pin-form-label">Name
         <input type="text" class="gis-pin-form-input" data-f="name" placeholder="${groupIds ? "e.g. Riverside Compound" : "e.g. Dela Cruz Residence"}" value="${normalized ? escapeHtml(normalized.name) : ""}" />
       </label>
-      <label class="gis-pin-form-label" data-subcat-row ${effectiveType === "households" ? "" : "hidden"}>Household Classification
-        <select class="gis-pin-form-input" data-f="subcat">${subcatOptions}</select>
-      </label>
       <label class="gis-pin-form-label">Notes
         <textarea class="gis-pin-form-input" data-f="notes" placeholder="Optional notes">${normalized ? escapeHtml(normalized.notes || "") : ""}</textarea>
       </label>
+      <div class="gis-pin-form-error" data-gis-form-error hidden></div>
       <div class="gis-pin-form-actions">
         <button type="button" class="btn btn-sm btn-outline" data-gis-cancel>Cancel</button>
         <button type="button" class="btn btn-sm btn-gold" data-gis-save>Save Tag</button>
@@ -2499,13 +3170,25 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     formEl.hidden = false;
     positionFloatingEl(formEl, screenX, screenY, container);
 
-    // Household classification only applies to households — hide it (and
-    // drop its value on save) for any other building type.
+    // There is no Household Classification field here any more. A household is
+    // senior / pwd / solo-parent / indigent because of who lives in it, so it
+    // is read off the residents connected to it (routes/households.js) instead
+    // of being picked twice — once on the resident, once on the building — and
+    // drifting apart the moment either changes.
     const typeSelect = formEl.querySelector('[data-f="type"]');
-    const subcatRow = formEl.querySelector("[data-subcat-row]");
-    typeSelect?.addEventListener("change", () => {
-      subcatRow.hidden = typeSelect.value !== "households";
-    });
+    typeSelect?.addEventListener("change", clearFormError);
+
+    // Validation messages live under the fields rather than in a toast: the
+    // form stays open on a rejected save, so the reason has to stay with it.
+    const errorEl = formEl.querySelector("[data-gis-form-error]");
+    function showFormError(msg) {
+      errorEl.textContent = msg;
+      errorEl.hidden = false;
+    }
+    function clearFormError() {
+      errorEl.hidden = true;
+    }
+    formEl.querySelector('[data-f="name"]').addEventListener("input", clearFormError);
 
     formEl.querySelector("[data-gis-cancel]").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2515,7 +3198,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       e.stopPropagation();
       const name = formEl.querySelector('[data-f="name"]').value.trim();
       const type = presetType || typeSelect.value;
-      const subcat = type === "households" ? formEl.querySelector('[data-f="subcat"]').value : "";
+      // Sent empty, which clears any classification an older tag still carries:
+      // the residents are the record now, and a leftover hand-picked value
+      // would be a second answer to the same question.
+      const subcat = "";
       const notes = formEl.querySelector('[data-f="notes"]').value.trim();
       if (!name) {
         formEl.querySelector('[data-f="name"]').focus();
@@ -2525,24 +3211,53 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         typeSelect.focus();
         return;
       }
+      // Two households cannot share a name — see gisFindHouseholdNameConflict.
+      // The ids being written now are excluded, so re-saving a household under
+      // its own name (or a group under the name it already has) is not a
+      // conflict; only a DIFFERENT household holding the name is.
+      if (type === "households") {
+        let savingIds = groupIds || [buildingId];
+        if (!groupIds && normalized?.groupId) {
+          const all = gisLoadBuildingTags();
+          savingIds = Object.keys(all).filter((id) => all[id]?.groupId === normalized.groupId);
+        }
+        const clash = gisFindHouseholdNameConflict(
+          name,
+          savingIds,
+          groupIds ? state.groupEditId : normalized?.groupId,
+        );
+        if (clash) {
+          showFormError(`A household named "${clash.tag.name}" already exists. Household names must be unique.`);
+          formEl.querySelector('[data-f="name"]').focus();
+          return;
+        }
+      }
+      clearFormError();
       const tagValue = { name, type, subcat, notes };
       const typeIcon = gisIcon(GIS_BUILDING_TYPE_META[type]?.icon || "home");
       if (groupIds) {
         // Members share a groupId so hovering one highlights the rest and
-        // editing one updates them all. Re-saving an existing group keeps
-        // its id; members unpicked during re-selection keep their tag but
-        // leave the group.
+        // editing one updates them all. Re-saving an existing group keeps its
+        // id; members unpicked during re-selection leave the group.
         const groupId = state.groupEditId || gisNewId("grp");
         if (state.groupEditId) {
           const all = gisLoadBuildingTags();
           Object.keys(all).forEach((id) => {
             if (all[id]?.groupId === groupId && !groupIds.includes(id)) {
               const { groupId: _removed, ...rest } = all[id];
-              gisSaveBuildingTag(id, rest);
+              // A footprint dropped from a HOUSEHOLD group is untagged rather
+              // than left holding a copy of the tag: the household IS the
+              // group, so a footprint that leaves is no longer part of it, and
+              // keeping the name would mint the exact duplicate the check above
+              // forbids. The building itself stays on the map, just untagged.
+              // Other building types have no uniqueness rule, so they keep
+              // their tag and merely leave the group.
+              if (rest.type === "households") gisUntagBuilding(id);
+              else gisSaveBuildingTag(id, rest);
             }
           });
         }
-        groupIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId }));
+        groupIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId }, groupIds));
         exitGroupSelect(); // also hides the form and re-renders
         if (typeof logAudit === "function")
           logAudit(
@@ -2559,7 +3274,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         // Editing a group member: the change applies to the whole group.
         const all = gisLoadBuildingTags();
         const memberIds = Object.keys(all).filter((id) => all[id]?.groupId === normalized.groupId);
-        memberIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId: normalized.groupId }));
+        memberIds.forEach((id) => gisSaveBuildingTag(id, { ...tagValue, groupId: normalized.groupId }, memberIds));
         hideForm();
         renderBuildings();
         if (typeof logAudit === "function")
@@ -2740,8 +3455,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", gisGeometryToPath(feature.geometry, project));
     path.setAttribute("class", "gis-vegetation gis-vegetation-" + (feature.properties.kind || "default"));
-    // Surrounding-context vegetation: faded, no hover/cut interactions.
+    // Surrounding-context vegetation: faded, no hover/cut interactions — and
+    // not drawn at all while the outside-the-border toggle is off.
     if (!featureInsideBoundary(feature)) {
+      if (!state.showOutside) return;
       path.classList.add("gis-vegetation-outside");
       vegetationLayer.appendChild(path);
       return;
@@ -3017,12 +3734,25 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         },
       });
       hazardLayer.appendChild(el);
+      // The zone flyToHazard() just landed on, ringed for a moment so the eye
+      // finds the right circle among several.
+      if (state.focusHazardId !== null && String(feature.properties.id) === state.focusHazardId) {
+        hazardLayer.appendChild(
+          gisSvgEl("circle", {
+            cx: x,
+            cy: y,
+            r: feature.properties.radius || GIS_HAZARD_PING_RADIUS,
+            class: "gis-hazard-focus-ring",
+          }),
+        );
+      }
     });
   }
 
-  // Accident/incident markers are drawn as a small vector icon (white disc +
-  // stroke glyph) rather than emoji text, so they render identically across
-  // platforms and scale cleanly with the icon set used everywhere else.
+  // Accident/incident markers are drawn as a small vector icon — one solid
+  // disc of a single colour with the type glyph knocked out of it in white,
+  // matching the report pins below. A flat one-colour marker holds up at map
+  // scale where the old thin-outline glyph on a pale disc did not.
   function renderAccidents() {
     accidentsLayer.innerHTML = "";
     if (!state.showAccidents) return;
@@ -3036,7 +3766,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.setAttribute("class", "gis-accident-icon");
       g.setAttribute("transform", `translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`);
-      g.innerHTML = `<circle cx="12" cy="12" r="11" class="gis-accident-icon-bg"></circle>${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}`;
+      // The glyph is scaled to ~60% and re-centred so it sits inside the disc
+      // with a margin instead of running off its edge.
+      g.innerHTML =
+        `<circle cx="12" cy="12" r="11.5" class="gis-accident-icon-bg"></circle>` +
+        `<g class="gis-accident-icon-glyph" transform="translate(12 12) scale(0.6) translate(-12 -12)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
 
       attachFeatureInteraction(g, {
         hoverHtml: () => accidentInfoHtml(feature.properties),
@@ -3206,27 +3940,131 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     formEl.addEventListener("click", (e) => e.stopPropagation());
   }
 
+  // ───────── Report-density heat map ─────────
+  // Every point the barangay has on record for the selected type: community /
+  // blotter reports plus the legacy staff accident markers, resolved ones
+  // included — a hotspot is a historical fact, and hiding closed cases would
+  // make a junction that floods every rainy season look safe in the dry
+  // months.
+  function heatPoints() {
+    const type = state.heatType || "all";
+    const pts = [];
+    gisAllCommunityReports().forEach((r) => {
+      if (!Array.isArray(r.point)) return;
+      if (type !== "all" && r.reportType !== type) return;
+      pts.push(r.point);
+    });
+    gisAllAccidentFeatures().forEach((f) => {
+      if (type !== "all" && f.properties.incidentType !== type) return;
+      pts.push(f.geometry.coordinates);
+    });
+    return pts;
+  }
+
+  // Last render's summary, so the host page can label its legend with real
+  // numbers instead of guessing.
+  let heatSummary = { total: 0, max: 0, cells: 0 };
+
+  // One blur filter per map instance, created on first use and reused by every
+  // later render. Applied to the whole group: blurring each cell on its own
+  // would leave the seams between them visible.
+  let heatFilterId = null;
+  function ensureHeatFilter() {
+    if (heatFilterId) return heatFilterId;
+    heatFilterId = `gis-heat-blur-${++gisDefsCounter}`;
+    // userSpaceOnUse over the whole 0..1000 viewBox plus a margin: the default
+    // bounding-box region is a percentage of the cells being filtered, so a
+    // lone cell would have its glow clipped to a few units either side.
+    defsEl.insertAdjacentHTML(
+      "beforeend",
+      `<filter id="${heatFilterId}" filterUnits="userSpaceOnUse" x="-120" y="-120" width="1240" height="1240">
+         <feGaussianBlur stdDeviation="${GIS_HEAT_BLUR}" />
+       </filter>`,
+    );
+    heatLayer.setAttribute("filter", `url(#${heatFilterId})`);
+    return heatFilterId;
+  }
+
+  function renderHeat() {
+    heatLayer.innerHTML = "";
+    heatSummary = { total: 0, max: 0, cells: 0 };
+    if (!state.showHeat) return;
+
+    // Bin into a sparse map keyed "col:row" — the grid is 45×45 but almost all
+    // of it is empty, so allocating the full matrix would be wasted work.
+    const bins = new Map();
+    let max = 0;
+    const points = heatPoints();
+    points.forEach((coord) => {
+      const [x, y] = project(coord[0], coord[1]);
+      const col = Math.floor(x / GIS_HEAT_CELL);
+      const row = Math.floor(y / GIS_HEAT_CELL);
+      const key = col + ":" + row;
+      const n = (bins.get(key) || 0) + 1;
+      bins.set(key, n);
+      if (n > max) max = n;
+    });
+    heatSummary = { total: points.length, max: max, cells: bins.size };
+    if (!bins.size) return;
+    ensureHeatFilter();
+
+    // Intensity is the cell's count against the busiest cell. When nothing has
+    // happened twice in the same place (max === 1) every cell sits at the cool
+    // end — a scatter of one-off reports must not be painted as a barangay on
+    // fire. Opacity has a floor so a single cell is still visible at all.
+    const parts = [];
+    bins.forEach((count, key) => {
+      const [col, row] = key.split(":").map(Number);
+      const t = max <= 1 ? 0 : (count - 1) / (max - 1);
+      const opacity = 0.3 + 0.5 * t;
+      parts.push(
+        `<rect x="${col * GIS_HEAT_CELL}" y="${row * GIS_HEAT_CELL}" width="${GIS_HEAT_CELL}" height="${GIS_HEAT_CELL}" fill="${gisHeatColor(t)}" fill-opacity="${opacity.toFixed(3)}"></rect>`,
+      );
+    });
+    heatLayer.innerHTML = parts.join("");
+  }
+
   // ───────── Community Reports (resident-submitted concern pins) ─────────
   function renderReports() {
     reportsLayer.innerHTML = "";
-    if (state.showReports) {
+    // The report the Blotter's "View on Map" sent us to. It is drawn whatever
+    // the layer toggle and the resolved filter say, and ringed, so the fly-to
+    // lands on something the user can actually see — a resolved report used to
+    // fly the camera to an empty patch of map.
+    const focusId = state.focusReportId == null ? null : String(state.focusReportId);
+    if (state.showReports || focusId) {
       gisAllReportFeatures().forEach((feature) => {
         const props = feature.properties;
+        const focused = focusId !== null && String(props.id) === focusId;
+        if (!focused && !state.showReports) return;
         // Resolved concerns drop off the map — they live on only in the history.
-        if (props.resolved) return;
+        if (props.resolved && !focused) return;
         const [x, y] = project(...feature.geometry.coordinates);
         // Constant on-screen size (same trick as accidents), but translated so
         // the pin's TIP — not its center — sits on the reported location.
         const size = GIS_REPORT_ICON_SIZE / state.zoom;
         const meta = GIS_REPORT_TYPE_META[props.reportType] || GIS_REPORT_TYPE_META.other;
-        // Bare type icon on a transparent background, centered on the
-        // reported location — colored by who filed it (resident green /
-        // official navy). No pin body.
+        // One solid disc of a single flat colour with the type glyph knocked
+        // out of it in white, centred on the reported location. The colour
+        // says who filed it (resident green / official navy); the glyph says
+        // what it was. No pin body, no outline, no second hue.
         const official = ["Admin", "Officer", "Staff"].includes(props.reporterRole || "");
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.setAttribute("class", "gis-report-pin" + (official ? " gis-report-pin-official" : ""));
+        g.setAttribute(
+          "class",
+          "gis-report-pin" +
+            (official ? " gis-report-pin-official" : "") +
+            (focused ? " gis-report-pin-focus" : "")
+        );
         g.setAttribute("transform", `translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`);
-        g.innerHTML = `<g class="gis-report-pin-glyph">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
+        // The glyph is scaled to ~60% and re-centred so it sits inside the
+        // disc with a margin instead of running off its edge.
+        g.innerHTML =
+          (focused
+            ? `<circle cx="12" cy="12" r="11.5" class="gis-report-pin-ring"></circle>`
+            : "") +
+          `<circle cx="12" cy="12" r="11.5" class="gis-report-pin-disc"></circle>` +
+          `<g class="gis-report-pin-glyph" transform="translate(12 12) scale(0.6) translate(-12 -12)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
         attachReportInteraction(g, props);
         reportsLayer.appendChild(g);
       });
@@ -3255,7 +4093,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <div class="gis-popup-title">${gisIcon(meta.icon)} ${escapeHtml(props.title || meta.label)}</div>
       <div class="gis-popup-cat">Reported by ${escapeHtml(reportedBy)} · ${escapeHtml(gisTimeAgo(props.createdAt))}</div>
       ${truncated ? `<div class="gis-popup-notes">${escapeHtml(truncated)}</div>` : ""}
-      <button type="button" class="gis-popup-action" data-gis-report-more>See more</button>
+      ${
+        blotterLinks
+          ? `<div class="gis-popup-actions-row">
+               <button type="button" class="gis-popup-action" data-gis-report-more>See more</button>
+               ${blotterBtnHtml}
+             </div>`
+          : `<button type="button" class="gis-popup-action" data-gis-report-more>See more</button>`
+      }
     `;
   }
 
@@ -3270,6 +4115,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       const top = parseFloat(popupEl.style.top) || 0;
       showExpandedReportCard(props, left, top + 10);
     });
+    wireBlotterLink(props);
   }
 
   // Full-detail card: complete comment, submission time, and the reporter's
@@ -3298,6 +4144,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <div class="gis-popup-title">${gisIcon(meta.icon)} ${escapeHtml(props.title || meta.label)}</div>
       <div class="gis-popup-cat">${escapeHtml(meta.label)}${when ? ` · ${escapeHtml(when)}` : ""}</div>
       ${props.comment ? `<div class="gis-popup-notes">${escapeHtml(props.comment)}</div>` : ""}
+      ${blotterLinks ? blotterBtnHtml : ""}
       ${
         // Resolving is a plain moderation action available to MIS staff any time
         // (no need to arm Edit Mode); deleting stays gated behind Edit Mode as a
@@ -3315,12 +4162,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     popupEl.hidden = false;
     cancelHidePopup();
     positionFloatingEl(popupEl, screenX, screenY, container);
-    clampPopupToContainer();
 
     popupEl.querySelector("[data-gis-report-close]").addEventListener("click", (e) => {
       e.stopPropagation();
       hidePopup();
     });
+    wireBlotterLink(props);
     // Staff moderation: resolving clears the pin off the map and out of the
     // active feed; it remains in the View All history where it can be reopened.
     popupEl.querySelector("[data-gis-report-resolve]")?.addEventListener("click", () => {
@@ -3350,6 +4197,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     });
   }
 
+  // "View in Blotter" on either report card: off to the Blotter page, which
+  // opens this report's full record on arrival (gisOpenInBlotter).
+  function wireBlotterLink(props) {
+    popupEl.querySelector("[data-gis-report-blotter]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      gisOpenInBlotter(props.id);
+    });
+  }
+
   function attachReportInteraction(g, props) {
     g.classList.add("gis-interactive-feature");
     g.addEventListener("mouseenter", (evt) => {
@@ -3376,10 +4232,24 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // independent of editMode/drawTool so public embeds never expose editing.
   function updateReportModeUI() {
     container.classList.toggle("gis-reporting", state.reportMode);
-    reportHintEl.hidden = !state.reportMode;
-    reportHintEl.textContent = state.reportMode
-      ? "Click the spot on the map where the concern is located — Esc to cancel."
-      : "";
+    refreshMapHint();
+  }
+
+  // One hint pill along the map's bottom edge, shared by the modes that are not
+  // dock tools. They do not overlap in practice — report and pick modes live on
+  // resident-facing embeds, measuring on staff ones — but if they did, the pin
+  // drop would win: it is the one waiting on the user.
+  function refreshMapHint() {
+    const text = state.reportMode
+      ? MAP_HINTS.report
+      : state.pickMode
+        ? MAP_HINTS.pick
+        : state.drawTool === "measure"
+          ? MAP_HINTS.measure
+          : "";
+    reportHintEl.hidden = !text;
+    reportHintEl.textContent = text;
+    reportHintEl.classList.toggle("gis-map-hint-top", text === MAP_HINTS.measure);
   }
 
   function beginCommunityReport(reporter) {
@@ -3404,10 +4274,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // the form and the actual persistence. Re-clicking moves the marker.
   function updatePickModeUI() {
     container.classList.toggle("gis-reporting", state.pickMode);
-    reportHintEl.hidden = !state.pickMode;
-    reportHintEl.textContent = state.pickMode
-      ? "Click the spot on the map where the incident happened."
-      : "";
+    refreshMapHint();
   }
 
   function beginLocationPick(onPick) {
@@ -3516,6 +4383,46 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     return el;
   }
 
+  // A freeform outline can be spun too, the same way a square can. Where the
+  // square keeps its rotation as an angle applied to two stored corners, a
+  // freeform shape has no such canonical form — so rotating it moves the points
+  // themselves, around the centre of their own bounding box. The pivot is the
+  // box centre rather than the centroid so the shape turns about the middle of
+  // where it LOOKS like it is, which is what a hand expects to happen.
+  //
+  // Returns the pivot and where the handle sits — above the shape, as on the
+  // square, at a constant distance on screen.
+  function freeformRotateGeom() {
+    if (isSquareMode() || state.drawPoints.length < 3) return null;
+    const pts = state.drawPoints.map(([lng, lat]) => project(lng, lat));
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    const center = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+    const topMid = [center[0], Math.min(...ys)];
+    return { center, topMid, handlePos: [topMid[0], topMid[1] - 26 / state.zoom] };
+  }
+
+  // The rotate handle itself — one builder for both shapes, so the square and a
+  // freeform outline offer the identical grip in the identical place.
+  function appendRotateHandle(stemFrom, handleAt, onGrab) {
+    const [tx, ty] = stemFrom;
+    const [hx, hy] = handleAt;
+    const s = 13 / state.zoom / 24;
+    const handle = gisSvgEl("g", { class: "gis-draw-rotate-handle" });
+    handle.innerHTML =
+      `<line x1="${tx}" y1="${ty}" x2="${hx}" y2="${hy}" class="gis-draw-rotate-stem"/>` +
+      `<circle cx="${hx}" cy="${hy}" r="${9 / state.zoom}" class="gis-draw-rotate-handle-bg"/>` +
+      `<g transform="translate(${hx} ${hy}) scale(${s}) translate(-12 -12)" class="gis-draw-rotate-handle-icon">${GIS_ICON_PATHS.rotate}</g>`;
+    handle.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // right-drag should still pan
+      e.stopPropagation();
+      e.preventDefault();
+      onGrab();
+      suppressClickAdd = true;
+    });
+    drawPreviewLayer.appendChild(handle);
+  }
+
   // Renders the square/rectangle preview: the (rotated) outline, a dot at each
   // corner, a meter label on each edge, and — once both corners are down — a
   // rotate handle above the shape that the user drags to spin it before Finish.
@@ -3578,22 +4485,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
 
     // Rotate handle only after the box is locked in (two real corners).
     if (state.drawPoints.length >= 2) {
-      const [tx, ty] = sq.topEdgeMid;
-      const [hx, hy] = sq.handlePos;
-      const s = 13 / state.zoom / 24;
-      const handle = gisSvgEl("g", { class: "gis-draw-rotate-handle" });
-      handle.innerHTML =
-        `<line x1="${tx}" y1="${ty}" x2="${hx}" y2="${hy}" class="gis-draw-rotate-stem"/>` +
-        `<circle cx="${hx}" cy="${hy}" r="${9 / state.zoom}" class="gis-draw-rotate-handle-bg"/>` +
-        `<g transform="translate(${hx} ${hy}) scale(${s}) translate(-12 -12)" class="gis-draw-rotate-handle-icon">${GIS_ICON_PATHS.rotate}</g>`;
-      handle.addEventListener("mousedown", (e) => {
-        if (e.button !== 0) return; // right-drag should still pan
-        e.stopPropagation();
-        e.preventDefault();
+      appendRotateHandle(sq.topEdgeMid, sq.handlePos, () => {
         rotatingSquare = true;
-        suppressClickAdd = true;
       });
-      drawPreviewLayer.appendChild(handle);
     }
   }
 
@@ -3703,6 +4597,22 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       label.textContent = gisFormatDistance(gisMeasureDistance(state.drawPoints));
       drawPreviewLayer.appendChild(label);
     }
+
+    // A closed freeform outline gets the same rotate handle the square has, so
+    // a traced building can be squared up to the road without re-drawing it.
+    // Areas only — a road or a measurement has no orientation to speak of.
+    if (isPolygon && state.drawTool !== "measure") {
+      const rot = freeformRotateGeom();
+      if (rot) {
+        appendRotateHandle(rot.topMid, rot.handlePos, () => {
+          freeformRotate = {
+            center: rot.center,
+            origPoints: state.drawPoints.map((p) => p.slice()),
+            startAngle: null, // set on the first move, so a grab alone turns nothing
+          };
+        });
+      }
+    }
   }
 
   // Sums great-circle distance across consecutive lng/lat points.
@@ -3713,6 +4623,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   }
 
   function updateDrawUI() {
+    updateMeasureUI();
     if (!editable) return;
     drawPanelEl.querySelectorAll("[data-gis-draw-tool]").forEach((btn) => {
       const subtype = btn.getAttribute("data-gis-draw-subtype") || null;
@@ -3728,34 +4639,57 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       btn.classList.toggle("open", openTypesGroup === group);
       btn.classList.toggle("armed", state.drawTool === group);
     });
+    // Measuring is run from its own toolbar button (and Esc), not from the dock:
+    // it has nothing to Finish or save, so the dock's Finish/Cancel, Deselect
+    // and hint box all leave it alone.
+    const editTool = state.drawTool && state.drawTool !== "measure" ? state.drawTool : null;
     // A square is finishable once its two corners are down; freeform shapes use
     // their per-tool minimum vertex count.
-    const min = isSquareMode() ? 2 : state.drawTool ? MIN_POINTS[state.drawTool] : Infinity;
-    drawFinishBtn.hidden = !(state.drawTool && state.drawPoints.length >= min);
-    drawCancelBtn.hidden = !(state.drawTool && (state.drawPoints.length > 0 || state.pingCenter));
+    const min = isSquareMode() ? 2 : editTool ? MIN_POINTS[editTool] : Infinity;
+    drawFinishBtn.hidden = !(editTool && state.drawPoints.length >= min);
+    drawCancelBtn.hidden = !(editTool && (state.drawPoints.length > 0 || state.pingCenter));
     // The Finish/Cancel box only shows while it has something to offer.
     actionsPanelEl.hidden = drawFinishBtn.hidden && drawCancelBtn.hidden;
-    deselectBtn.hidden = !state.drawTool;
-    drawHintEl.hidden = !state.drawTool;
-    drawHintEl.textContent = !state.drawTool
+    deselectBtn.hidden = !editTool;
+    drawHintEl.hidden = !editTool;
+    drawHintEl.textContent = !editTool
       ? ""
       : isSquareMode()
         ? DRAW_HINTS.square
-        : DRAW_HINTS[state.drawTool] || "";
+        : editTool === "building-move" && state.moveBuildingId !== null
+          ? DRAW_HINTS["building-move-picked"]
+          : DRAW_HINTS[editTool] || "";
+  }
+
+  // Everything measuring shows, on every embed that can measure — editable or
+  // not, Edit Mode on or off: the toolbar button's pressed state, the running
+  // distance chips and the hint pill.
+  function updateMeasureUI() {
+    const measuring = state.drawTool === "measure";
+    if (measureBtn) {
+      measureBtn.classList.toggle("active", measuring);
+      measureBtn.setAttribute("aria-pressed", measuring ? "true" : "false");
+    }
     // Running distance chips sit above the legend (bottom-left) so they never
     // crowd the Add to Map dock; the offset tracks the legend's live height.
-    const measuring = state.drawTool === "measure" && state.drawPoints.length > 1;
-    measureReadoutEl.hidden = !measuring;
-    if (measuring) {
+    const showChips = measuring && state.drawPoints.length > 1;
+    measureReadoutEl.hidden = !showChips;
+    if (showChips) {
       const parts = gisFormatDistanceParts(gisMeasureDistance(state.drawPoints));
       measureReadoutEl.innerHTML = parts.map((p) => `<span class="gis-measure-chip">${p}</span>`).join("");
       const legendH = legendEl ? legendEl.offsetHeight : 0;
       measureReadoutEl.style.bottom = `${legendH ? legendH + 18 : 10}px`;
     }
     container.classList.toggle("gis-drawing", !!state.drawTool);
+    refreshMapHint();
   }
 
   function addDrawVertex(evt) {
+    // The move tool never places points from the map: its outline comes from
+    // the building that was picked up, and a stray click on open ground would
+    // otherwise graft a spike onto it.
+    if (state.drawTool === "building-move") return;
+
     const svgPoint = gisScreenToSvg(svg, evt.clientX, evt.clientY);
     const [lng, lat] = project.invert(svgPoint);
 
@@ -3828,12 +4762,18 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   }
 
   function cancelDrawing() {
+    // Cancelling a move puts the building back where it was — it is still on
+    // the map, just hidden, so it only has to be drawn again.
+    const wasMoving = state.moveBuildingId !== null;
+    state.moveBuildingId = null;
+    state.moveBuildingIsCustom = false;
     state.drawPoints = [];
     state.pingCenter = null;
     state.pingRadius = 0;
     state.cutTargetVegId = null;
     state.squareRotation = 0;
     state.squareHover = null;
+    if (wasMoving) renderBuildings();
     renderDrawPreview();
     updateDrawUI();
     hideForm();
@@ -3845,6 +4785,24 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   function deselectTool() {
     state.drawTool = null;
     state.drawSubtype = null;
+    cancelDrawing();
+  }
+
+  // The top-left Measure button. Measuring adds nothing to the map, so unlike
+  // the dock's tools it needs neither Edit Mode nor an editable embed: it arms
+  // the same "measure" draw tool the vertex and drag machinery already handle.
+  // Pressing it again (or Esc) stops and clears the line. Arming it replaces
+  // whatever dock tool was armed, as picking another tool there does — and
+  // cancelDrawing() puts a building held by Move Building back down.
+  function toggleMeasure() {
+    if (state.drawTool === "measure") {
+      deselectTool();
+      return;
+    }
+    if (state.reportMode) cancelCommunityReport();
+    state.drawTool = "measure";
+    state.drawSubtype = null;
+    hidePopup();
     cancelDrawing();
   }
 
@@ -3910,6 +4868,21 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       finishDrawing();
       renderVegetation();
       if (typeof showToast === "function") showToast("Vegetation area trimmed", gisIcon("scissors"));
+    } else if (state.drawTool === "building-move") {
+      const id = state.moveBuildingId;
+      const isCustom = state.moveBuildingIsCustom;
+      const ring = state.drawPoints.concat([state.drawPoints[0]]);
+      gisSetBuildingGeom(id, ring, isCustom);
+      const name = gisLoadBuildingTags()[id]?.name;
+      releaseMovedBuilding();
+      if (typeof logAudit === "function")
+        logAudit(
+          "MAP_BUILDING_MOVE",
+          `Building ${name ? `"${name}" ` : ""}(${id}) moved on the map`,
+          "info",
+          "map",
+        );
+      if (typeof showToast === "function") showToast("Building moved", gisIcon("building"));
     } else if (state.drawTool === "measure") {
       // Nothing to save — Finish just ends the measuring session (same as
       // Deselect/Esc), clearing the traced line and its distance label.
@@ -3922,9 +4895,16 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       const sameSelection = state.drawTool === tool && state.drawSubtype === subtype;
       state.drawTool = sameSelection ? null : tool;
       state.drawSubtype = sameSelection ? null : subtype;
+      // Switching tools while holding a building puts it back down — it is only
+      // hidden while the move tool has it, and leaving it hidden would look
+      // exactly like having deleted it.
+      const wasMoving = state.moveBuildingId !== null;
+      state.moveBuildingId = null;
+      state.moveBuildingIsCustom = false;
       state.drawPoints = [];
       state.squareRotation = 0;
       state.squareHover = null;
+      if (wasMoving) renderBuildings();
       renderDrawPreview();
       updateDrawUI();
       hidePopup();
@@ -4144,6 +5124,41 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     updateLegendDimStates();
   });
 
+  // ── Top-left viewing aids ──
+  measureBtn?.addEventListener("click", toggleMeasure);
+
+  // Past the border. The base layers are clipped to the barangay outline — the
+  // clip path the Analytics heat map already uses — so a road or a field that
+  // straddles the border stops at it, and features lying wholly outside are not
+  // drawn at all (renderBuildings, renderVegetationFeature).
+  function applyOutsideClip() {
+    if (heatmap || !state.showOutside) baseLayersEl.setAttribute("clip-path", `url(#${boundaryClipId})`);
+    else baseLayersEl.removeAttribute("clip-path");
+  }
+  // The label names what a click will DO, so it flips with the state; the
+  // button lights up while the non-default "hidden" state is on, the way an
+  // active filter does.
+  function syncOutsideBtn() {
+    if (!outsideBtn) return;
+    const label = state.showOutside ? "Hide Outside" : "Show Outside";
+    outsideBtn.innerHTML = `${gisIcon(state.showOutside ? "eyeOff" : "toggleEye")}<span class="gis-tool-label">${label}</span>`;
+    outsideBtn.setAttribute("aria-label", `${label} the barangay border`);
+    outsideBtn.title = state.showOutside
+      ? "Hide everything outside the barangay border"
+      : "Show the surroundings outside the barangay border again";
+    outsideBtn.classList.toggle("active", !state.showOutside);
+  }
+  outsideBtn?.addEventListener("click", () => {
+    state.showOutside = !state.showOutside;
+    gisWriteShowOutside(state.showOutside);
+    syncOutsideBtn();
+    applyOutsideClip();
+    renderBuildings();
+    renderVegetation();
+  });
+  syncOutsideBtn();
+  applyOutsideClip();
+
   function renderWater() {
     waterLayer.innerHTML = "";
     if (!waterGeojson || !state.showWater) return;
@@ -4181,17 +5196,231 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
 
   // Pans/zooms to a community report pin and opens its hover card — used by
   // the MIS GIS page's "Recent Community Reports" feed.
+  // ── Eased camera move ──────────────────────────────────────────────────────
+  // Jumping straight to a pin loses the reader: they get a new view with no
+  // sense of where it came from. Tweening zoom and pan together over ~650ms
+  // keeps that continuity. Ease-in-out (slow at both ends, quick through the
+  // middle) is what reads as a camera move rather than a scroll.
+  let viewAnimFrame = null;
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function animateView(target, duration, onDone) {
+    // A second fly-to while one is running must take over, not fight it.
+    if (viewAnimFrame) cancelAnimationFrame(viewAnimFrame);
+    const from = { zoom: state.zoom, panX: state.panX, panY: state.panY };
+    const dur = duration || 650;
+    const start = performance.now();
+
+    // Nothing to travel — skip the frame loop entirely.
+    if (
+      Math.abs(target.zoom - from.zoom) < 0.001 &&
+      Math.abs(target.panX - from.panX) < 0.5 &&
+      Math.abs(target.panY - from.panY) < 0.5
+    ) {
+      if (onDone) onDone();
+      return;
+    }
+
+    function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const e = easeInOutCubic(t);
+      state.zoom = from.zoom + (target.zoom - from.zoom) * e;
+      state.panX = from.panX + (target.panX - from.panX) * e;
+      state.panY = from.panY + (target.panY - from.panY) * e;
+      applyTransform();
+      renderScreenScaledMarkers();
+      if (t < 1) {
+        viewAnimFrame = requestAnimationFrame(step);
+      } else {
+        viewAnimFrame = null;
+        if (onDone) onDone();
+      }
+    }
+    viewAnimFrame = requestAnimationFrame(step);
+  }
+
   function flyToReport(rawId) {
     const record = gisAllCommunityReports().find((r) => String(r.id) === String(rawId));
-    if (!record) return;
-    const [localX, localY] = project(record.point[0], record.point[1]);
-    state.zoom = Math.min(Math.max(state.zoom, 10), maxZoom);
-    state.panX = 500 - state.zoom * localX;
-    state.panY = 500 - state.zoom * localY;
-    applyTransform();
-    renderScreenScaledMarkers();
-    const [screenX, screenY] = localToContainerPixels(localX, localY);
-    openReportHoverCard(record, screenX, screenY);
+    if (!record) return false;
+    return flyToRecord(record);
+  }
+
+  // The Blotter's "View on Map" entry point. Beyond flying the camera it makes
+  // sure the pin is actually on screen to land on: the reports layer is
+  // switched back on if it was off, and the pin is marked as focused so
+  // renderReports() draws it (even when resolved) with a highlight ring.
+  // Returns false when no such report is in the store — the caller can then
+  // re-sync from the API and try again.
+  function focusReport(rawId) {
+    const record = gisAllCommunityReports().find((r) => String(r.id) === String(rawId));
+    if (!record) return false;
+    if (!state.showReports) {
+      state.showReports = true;
+      if (reportsToggleBtn) reportsToggleBtn.classList.add("active");
+      updateLegendDimStates();
+    }
+    state.focusReportId = String(record.id);
+    renderReports();
+    return flyToRecord(record);
+  }
+
+  // Drops the highlight — the next plain render puts the map back to normal.
+  function clearReportFocus() {
+    if (state.focusReportId == null) return;
+    state.focusReportId = null;
+    renderReports();
+  }
+
+  // Same move, addressed by the human case number ("INC-2026-005") rather than
+  // the internal id — that is what the AI briefing lists, and what staff read.
+  function flyToCaseNo(caseNo) {
+    const want = String(caseNo || "").trim().toUpperCase();
+    if (!want) return false;
+    const record = gisAllCommunityReports().find(
+      (r) => String(r.caseNo || "").trim().toUpperCase() === want
+    );
+    if (!record) return false;
+    return flyToRecord(record);
+  }
+
+  function flyToRecord(record) {
+    // A report filed without coordinates would project to NaN and blank the
+    // whole viewport's transform — refuse the move instead.
+    const lng = Number(record.point && record.point[0]);
+    const lat = Number(record.point && record.point[1]);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
+    const [localX, localY] = project(lng, lat);
+    // Zoom in to at least a street-level view. Reading Math.max off the
+    // current zoom alone meant arriving from a zoomed-out map left the pin a
+    // dot in a field of roofs — 10 is the floor, not the target.
+    const zoom = Math.min(Math.max(state.zoom, 10), maxZoom);
+    // Close any card from a previous fly-to: leaving it pinned to its old
+    // screen position while the map slides is worse than showing nothing.
+    hidePopup();
+    animateView(
+      { zoom, panX: 500 - zoom * localX, panY: 500 - zoom * localY },
+      650,
+      () => {
+        // The card is placed from container pixels, so it can only be
+        // positioned once the camera has actually stopped.
+        const [screenX, screenY] = localToContainerPixels(localX, localY);
+        openReportHoverCard(record, screenX, screenY);
+      }
+    );
+    return true;
+  }
+
+  // The AI briefing's hazard watch: fly to a zone, framed so the whole circle
+  // is in view (its diameter ~60% of the map's shorter side), with the hazard
+  // layer switched back on if it was off, the circle pulsed, and its hover card
+  // opened once the camera stops. False when no such zone is plotted.
+  let hazardFocusTimer = null;
+  function flyToHazard(rawId) {
+    const feature = gisAllHazardFeatures().find((f) => String(f.properties.id) === String(rawId));
+    const lng = Number(feature?.geometry?.coordinates?.[0]);
+    const lat = Number(feature?.geometry?.coordinates?.[1]);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
+    if (!state.showHazard) {
+      state.showHazard = true;
+      hazardToggleBtn?.classList.add("active");
+      updateLegendDimStates();
+    }
+    const [localX, localY] = project(lng, lat);
+    const radius = feature.properties.radius || GIS_HAZARD_PING_RADIUS;
+    const zoom = Math.min(Math.max(300 / radius, minZoom), maxZoom);
+    hidePopup();
+    clearTimeout(hazardFocusTimer);
+    state.focusHazardId = String(feature.properties.id);
+    renderHazards();
+    animateView({ zoom, panX: 500 - zoom * localX, panY: 500 - zoom * localY }, 650, () => {
+      const [screenX, screenY] = localToContainerPixels(localX, localY);
+      showInfoPopup(hazardInfoHtml(feature.properties), screenX, screenY);
+      hazardFocusTimer = setTimeout(() => {
+        state.focusHazardId = null;
+        renderHazards();
+      }, 3200);
+    });
+    return true;
+  }
+
+  // ...and to a building inside it: the search's flyToHousehold, but eased, and
+  // outlined for a moment so it stands out from its neighbours. When it is one
+  // of a group-tagged set — a household or a school spread over several
+  // footprints — it is the WHOLE group: the camera frames every member and
+  // every member is outlined, because the thing named on the card is the
+  // group, not whichever footprint happened to fall inside the zone. False
+  // when the building is no longer on the map.
+  let buildingFocusTimer = null;
+  let buildingFocusPaths = [];
+  function clearBuildingFocus() {
+    clearTimeout(buildingFocusTimer);
+    buildingFocusPaths.forEach((p) => p.classList.remove("gis-building-focus"));
+    buildingFocusPaths = [];
+  }
+  function focusBuilding(rawId) {
+    const id = String(rawId);
+    const features = allBuildingFeatures();
+    const feature = features.find((f) => String(f.properties.id) === id);
+    const ring = feature?.geometry?.coordinates?.[0];
+    if (!Array.isArray(ring) || !ring.length) return false;
+    if (!state.showBuildings) {
+      state.showBuildings = true;
+      buildingsToggleBtn?.classList.add("active");
+      renderBuildings();
+      updateLegendDimStates();
+    }
+
+    // Every footprint sharing this tag's groupId — or just this one.
+    const tags = gisLoadBuildingTags();
+    const groupId = tags[id]?.groupId;
+    const memberIds = new Set(
+      groupId ? Object.keys(tags).filter((k) => tags[k]?.groupId === groupId) : [],
+    );
+    memberIds.add(id);
+    const members = features.filter((f) => memberIds.has(String(f.properties.id)));
+
+    // Frame all of them: centred on their joint bounding box, at street level
+    // (zoom 10) unless the group is too spread out for that, in which case as
+    // close as still shows it whole — its longer side ~60% of the view.
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    members.forEach((f) =>
+      (f.geometry?.coordinates?.[0] || []).forEach(([lng, lat]) => {
+        const [x, y] = project(lng, lat);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }),
+    );
+    const span = Math.max(maxX - minX, maxY - minY, 1e-6);
+    const zoom = Math.min(Math.max(Math.min(Math.max(state.zoom, 10), 600 / span), minZoom), maxZoom);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    hidePopup();
+    clearBuildingFocus();
+    animateView({ zoom, panX: 500 - zoom * cx, panY: 500 - zoom * cy }, 650, () => {
+      // The card opens just BELOW the outlined buildings, centred under them —
+      // or just above them when there is no room below. Opened on the clicked
+      // footprint, it covered the very group it had just outlined.
+      const [gx, gyTop] = localToContainerPixels(cx, minY);
+      const [, gyBottom] = localToContainerPixels(cx, maxY);
+      showInfoPopup(buildingInfoHtml(id), gx, gyBottom);
+      const rect = container.getBoundingClientRect();
+      const h = popupEl.offsetHeight;
+      const gap = 14;
+      const top =
+        gyBottom + gap + h <= rect.height - 8 || gyTop - gap - h < 8 ? gyBottom + gap : gyTop - gap - h;
+      // positionFloatingEl puts the top 10px above the point it is handed.
+      positionFloatingEl(popupEl, gx - popupEl.offsetWidth / 2, top + 10, container);
+      buildingFocusPaths = [...memberIds].map((m) => buildingPathsById.get(m)).filter(Boolean);
+      buildingFocusPaths.forEach((p) => p.classList.add("gis-building-focus"));
+      buildingFocusTimer = setTimeout(clearBuildingFocus, 3200);
+    });
+    return true;
   }
 
   function renderSearchResults(query) {
@@ -4251,12 +5480,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       hideForm();
       if (!state.editMode) {
         exitGroupSelect();
-        state.drawTool = null;
-        state.drawSubtype = null;
-        state.drawPoints = [];
-        state.cutTargetVegId = null;
-        state.squareRotation = 0;
-        state.squareHover = null;
+        // A measurement in progress survives: measuring is not an editing tool,
+        // and was never armed from the dock this is closing. Any dock tool is
+        // dropped — through cancelDrawing(), so a building held by Move
+        // Building is put back rather than left hidden until the next reload.
+        if (state.drawTool !== "measure") {
+          state.drawTool = null;
+          state.drawSubtype = null;
+          cancelDrawing();
+        }
         openTypesGroup = null;
         typesPanelEl.hidden = true;
         shapePanelEl.hidden = true;
@@ -4277,6 +5509,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   let squareCornerDrag = null; // { anchorLocal } — resizing the square by a corner
   let shapeDrag = null; // { startLocal, origPoints, moved } — moving a whole formed shape
   let rotatingSquare = false; // dragging the square's rotate handle
+  // Dragging a freeform outline's rotate handle. Unlike the square — whose
+  // rotation is an angle applied to two stored corners — this turns the points
+  // themselves, so it holds the originals and re-derives them from the angle
+  // swept since the grab. Re-deriving (rather than accumulating) means a slow
+  // drag and a fast one land in exactly the same place.
+  let freeformRotate = null; // { center, origPoints, startAngle }
   let suppressClickAdd = false; // set by a drag/rotate/point-move so the trailing click doesn't drop a vertex
   // Mousedown inside a formed shape (freeform polygon or placed square) arms a
   // whole-shape move; it only becomes one once the cursor clears the slop, so
@@ -4379,6 +5617,26 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       updateDrawUI();
       return;
     }
+    // Dragging a freeform outline's rotate handle spins every point around the
+    // shape's centre, by however far the cursor has swept since the grab.
+    if (freeformRotate) {
+      const { center, origPoints } = freeformRotate;
+      const [mx, my] = gisScreenToSvg(svg, evt.clientX, evt.clientY);
+      const angle = Math.atan2(my - center[1], mx - center[0]);
+      if (freeformRotate.startAngle === null) freeformRotate.startAngle = angle;
+      const delta = angle - freeformRotate.startAngle;
+      const cos = Math.cos(delta);
+      const sin = Math.sin(delta);
+      state.drawPoints = origPoints.map(([lng, lat]) => {
+        const [x, y] = project(lng, lat);
+        const dx = x - center[0];
+        const dy = y - center[1];
+        return project.invert([center[0] + dx * cos - dy * sin, center[1] + dx * sin + dy * cos]);
+      });
+      renderDrawPreview();
+      updateDrawUI();
+      return;
+    }
     // Dragging the rotate handle spins the square around its centre so the
     // handle keeps pointing at the cursor.
     if (rotatingSquare) {
@@ -4432,6 +5690,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     if (rotatingSquare) {
       rotatingSquare = false;
       suppressClickAdd = true;
+      return;
+    }
+    if (freeformRotate) {
+      freeformRotate = null;
+      suppressClickAdd = true;
+      updateDrawUI();
       return;
     }
     // A drag that actually moved was a pan, not a point placement.
@@ -4490,6 +5754,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     renderWater();
     renderHazards();
     renderConstruction();
+    renderHeat();
     renderAccidents();
     renderReports();
     renderRoads();
@@ -4555,10 +5820,37 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     },
     refreshAll: renderAll,
     resetView,
+    // ── Report-density heat map (Analytics "Incident Hotspots") ──
+    // Narrow the cloud to one report type, or "all". Returns the fresh
+    // summary so the caller can relabel its legend in the same breath.
+    setHeatType(type) {
+      state.heatType = type || "all";
+      renderHeat();
+      return heatSummary;
+    },
+    // { total, max, cells } from the last heat render: how many reports the
+    // cloud is built from, how many the busiest cell holds, and how many cells
+    // are occupied at all.
+    getHeatSummary() {
+      return Object.assign({}, heatSummary);
+    },
     // Community Reports — resident pin drop + feed navigation.
     beginCommunityReport,
     cancelCommunityReport,
     flyToReport,
+    // The Blotter's "View on Map" handoff: fly to the pin AND make it visible
+    // and highlighted. Returns false if the report isn't in the store yet, so
+    // the caller can re-sync and retry.
+    focusReport,
+    clearReportFocus,
+    // Addressed by human case number ("INC-2026-005"): what the AI briefing
+    // lists and what staff read. Returns false when no such case is plotted.
+    flyToCaseNo,
+    // The AI briefing's hazard watch: fly to a zone (by map_feature id) or to a
+    // building inside it (by building key — the whole group when it is
+    // group-tagged). Both return false when the thing is no longer on the map.
+    flyToHazard,
+    focusBuilding,
     // Location picker for the "File an Incident" modal's embedded map.
     beginLocationPick,
     endLocationPick,

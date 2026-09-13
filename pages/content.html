@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brgy. Conde Labac – Site Content</title>
+    <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
+    <script src="../js/theme.js"></script>
+    <script src="../js/i18n.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/tokens.css" />
+    <link rel="stylesheet" href="../css/shared.css" />
+    <!-- The Site Content editor's own components (.sc-*) live in the SITE
+         CONTENT block at the bottom of system.css. This page used to carry
+         ~290 lines of <style> here instead — the only module page that did,
+         and the reason it drifted off the design tokens. -->
+    <link rel="stylesheet" href="../css/system.css" />
+    <!-- gis.css: the shared .gis-filter-row / .gis-search-* pill toolbar, the
+         same one Residency, Certificates and User Management use. -->
+    <link rel="stylesheet" href="../css/gis.css" />
+    <!-- The motion layer loads last: a few of its rules replace a one-shot
+         animation with a two-way one and have to win the cascade. -->
+    <link rel="stylesheet" href="../css/motion.css" />
+    <script src="../js/icons.js"></script>
+    <script src="../js/preferences.js"></script>
+    <script src="../js/account-edit.js"></script>
+    <script src="../js/change-password.js"></script>
+    <script src="../js/api-config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/mis-access.js"></script>
+    <script src="../js/site-config.js"></script>
+    <script src="../js/audit-log.js"></script>
+    <script src="../js/feedback-store.js"></script>
+  </head>
+  <body data-module="content">
+    <!-- --- APP SHELL --- -->
+    <!-- App shell (sidebar, topbar, module launcher) is rendered by js/app-shell.js -->
+    <div id="app"></div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">
+      <span id="toast-icon"><i data-icon=check></i></span><span id="toast-msg">Success</span>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="../js/app-shell.js"></script>
+    <script src="../js/shell.js"></script>
+    <script src="../js/pages/content.js"></script>
+    <!-- Certificates: the shared type list, then the export machinery,
+         then the printable forms (each reads the one before it). All three
+         must precede portal-account.js. -->
+    <!-- Escape closes the topmost modal. -->
+    <script src="../js/ui-modals.js"></script>
+    <script src="../js/certificate-types.js"></script>
+    <script src="../js/certificate-export.js"></script>
+    <script src="../js/certificate-templates.js"></script>
+    <script src="../js/certificate-attachments.js"></script>
+    <script src="../js/portal-account.js"></script>
+    <!-- Motion runtime: collapse/validation/exit animations. Last, so it
+         observes a DOM every other script has already set up. -->
+    <script src="../js/motion.js"></script>
+  </body>
+</html>

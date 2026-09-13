@@ -5,16 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Brgy. Conde Labac — Sign In</title>
     <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
+    <script src="js/theme.js"></script>
+    <script src="js/i18n.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/shared.css" />
     <link rel="stylesheet" href="css/system.css" />
+    <!-- The motion layer loads last: a few of its rules replace a one-shot
+         animation with a two-way one and have to win the cascade. -->
+    <link rel="stylesheet" href="css/motion.css" />
       <script src="js/api-config.js"></script>
       <script src="js/api.js"></script>
       <script src="js/icons.js"></script>
+      <script src="js/preferences.js"></script>
+      <script src="js/account-edit.js"></script>
+      <script src="js/change-password.js"></script>
     <script src="js/audit-log.js"></script>
   </head>
   <body>
@@ -48,7 +58,7 @@
           placeholder="••••••••"
         />
 
-        <div id="login-error" style="color:#fca5a5;font-size:13px;min-height:18px;margin:6px 0"></div>
+        <div id="login-error" class="login-error"></div>
 
         <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In to System</button>
 
@@ -155,5 +165,8 @@
         }
       }
     </script>
+    <!-- Motion runtime: collapse/validation/exit animations. Last, so it
+         observes a DOM every other script has already set up. -->
+    <script src="js/motion.js"></script>
   </body>
 </html>

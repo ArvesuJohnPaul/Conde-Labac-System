@@ -5,302 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Brgy. Conde Labac – Analytics</title>
     <link rel="icon" type="image/x-icon" href="../img/conde_labac_icon.ico" />
+    <script src="../js/theme.js"></script>
+    <script src="../js/i18n.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="../css/tokens.css" />
     <link rel="stylesheet" href="../css/shared.css" />
     <link rel="stylesheet" href="../css/system.css" />
+    <link rel="stylesheet" href="../css/gis.css" />
+    <!-- The motion layer loads last: a few of its rules replace a one-shot
+         animation with a two-way one and have to win the cascade. -->
+    <link rel="stylesheet" href="../css/motion.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
       <script src="../js/icons.js"></script>
+      <script src="../js/preferences.js"></script>
+      <script src="../js/account-edit.js"></script>
+      <script src="../js/change-password.js"></script>
       <script src="../js/api-config.js"></script>
       <script src="../js/api.js"></script>
+      <script src="../js/mis-access.js"></script>
       <script src="../js/audit-log.js"></script>
       <script src="../js/feedback-store.js"></script>
   </head>
-  <body>
+  <body data-module="analytics">
     <!-- --- APP SHELL --- -->
-    <div id="app" style="display: none">
-      <!-- NAVBAR -->
-      <nav class="navbar" id="main-navbar">
-        <a href="../index.html" class="nav-logo">
-          <img src="../img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
-          <span class="nav-brand">C.A.R.E.S.<br />Barangay Conde Labac</span>
-        </a>
-        <ul class="nav-links" id="app-nav-links">
-          <li><a href="../index.html">Home</a></li>
-          <li id="nav-services-li" class="is-hidden">
-            <a href="#" onclick="scrollToServices(event)">Services</a>
-          </li>
-          <li id="nav-dashboard-li" class="is-hidden">
-            <a href="#" onclick="nav(null, 'dashboard')">Dashboard</a>
-          </li>
-        </ul>
-        <div class="nav-right">
-          <div class="nav-user-menu is-hidden" id="nav-user-menu">
-            <button class="nav-user-menu-trigger" id="nav-user-trigger">
-              <div class="nav-user-avatar" id="nav-avatar">JD</div>
-            </button>
-            <div class="nav-user-menu-dropdown" id="nav-user-dropdown">
-              <div class="nav-user-menu-header">
-                <div class="nav-user-avatar-lg" id="nav-avatar-lg">JD</div>
-                <div class="nav-user-menu-info">
-                  <div class="nav-user-name-full" id="nav-user-name-full">
-                    Juan D. Administrator
-                  </div>
-                  <div class="nav-user-role" id="nav-user-role">
-                    System Admin
-                  </div>
-                </div>
-              </div>
-              <button class="nav-user-menu-logout" onclick="doLogout()">
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <!-- SIDEBAR -->
-      <nav id="sidebar" class="hidden">
-        <div class="sidebar-head">
-          <div class="sidebar-brand">
-            <div class="brand-seal">
-              <img
-                src="../img/conde%20labac%20logo.png"
-                alt="Conde Labac Seal"
-              />
-            </div>
-            <div class="brand-name">
-              Brgy. Conde Labac MIS <span>Batangas City – Philippines</span>
-            </div>
-          </div>
-        </div>
-        <div class="sidebar-section-label">Core Services</div>
-        <div class="nav-item" onclick="nav(this, 'dashboard')">
-          <span class="nav-icon"><i data-icon=chart></i></span> Dashboard
-        </div>
-        <div class="nav-item" onclick="nav(this, 'residency')">
-          <span class="nav-icon"><i data-icon=houses></i></span> Barangay Residency
-        </div>
-        <div class="nav-item" onclick="nav(this, 'certificates')">
-          <span class="nav-icon"><i data-icon=file-text></i></span> Certificate Processing<span
-            class="nav-badge"
-            id="cert-badge"
-            >7</span
-          >
-        </div>
-        <div class="nav-item" onclick="nav(this, 'incidents')">
-          <span class="nav-icon"><i data-icon=siren></i></span> Blotter / Incidents<span
-            class="nav-badge"
-            id="inc-badge"
-            >3</span
-          >
-        </div>
-        <div class="nav-item" onclick="nav(this, 'feedback')">
-          <span class="nav-icon"><i data-icon=message-square></i></span> Feedback
-        </div>
-        <div class="nav-item" onclick="nav(this, 'gis')">
-          <span class="nav-icon"><i data-icon=map></i></span> GIS Mapping
-        </div>
-        <div class="nav-item" onclick="nav(this, 'accounts')">
-          <span class="nav-icon"><i data-icon=key></i></span> Account Claiming<span
-            class="nav-badge"
-            id="acc-badge"
-            >12</span
-          >
-        </div>
-        <div class="nav-item" onclick="nav(this, 'analytics')">
-          <span class="nav-icon"><i data-icon=chart></i></span> Analytics
-        </div>
-        <div class="sidebar-section-label">Administration</div>
-        <div class="nav-item" onclick="nav(this, 'users')">
-          <span class="nav-icon"><i data-icon=users></i></span> User Management
-        </div>
-        <div class="nav-item" onclick="nav(this, 'audit')">
-          <span class="nav-icon"><i data-icon=clipboard></i></span> Audit Logs
-        </div>
-        <div class="nav-item" onclick="nav(this, 'archive')">
-          <span class="nav-icon"><i data-icon=archive></i></span> Archive
-        </div>
-        <div class="sidebar-footer">
-          <div class="user-pill">
-            <div class="user-avatar" id="sidebar-avatar">JD</div>
-            <div>
-              <div class="user-name" id="sidebar-user">
-                Juan D. Administrator
-              </div>
-              <div class="user-role" id="sidebar-role">System Admin</div>
-            </div>
-            <button class="logout-btn" onclick="doLogout()" title="Logout">
-              <i data-icon=log-out></i>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <!-- MAIN -->
-      <div id="main">
-        <div id="topbar" class="is-hidden">
-          <div class="topbar-modules-menu">
-            <button
-              class="topbar-modules-trigger"
-              id="topbarModulesTrigger"
-              title="Navigate Modules"
-            >
-              <span></span><span></span><span></span>
-            </button>
-            <div class="topbar-modules-dropdown" id="topbarModulesDropdown">
-              <div class="topbar-modules-section">Core Services</div>
-              <div class="topbar-module-item" onclick="nav(null, 'dashboard')">
-                <span class="topbar-module-icon"><i data-icon=chart></i></span> Dashboard
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'residency')">
-                <span class="topbar-module-icon"><i data-icon=houses></i></span> Barangay Residency
-              </div>
-              <div
-                class="topbar-module-item"
-                onclick="nav(null, 'certificates')"
-              >
-                <span class="topbar-module-icon"><i data-icon=file-text></i></span> Certificate
-                Processing
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'incidents')">
-                <span class="topbar-module-icon"><i data-icon=siren></i></span> Blotter / Incidents
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'feedback')">
-                <span class="topbar-module-icon"><i data-icon=message-square></i></span> Feedback
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'gis')">
-                <span class="topbar-module-icon"><i data-icon=map></i></span> GIS Mapping
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'accounts')">
-                <span class="topbar-module-icon"><i data-icon=key></i></span> Account Claiming
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'analytics')">
-                <span class="topbar-module-icon"><i data-icon=chart></i></span> Analytics
-              </div>
-              <div class="topbar-modules-section">Administration</div>
-              <div class="topbar-module-item" onclick="nav(null, 'users')">
-                <span class="topbar-module-icon"><i data-icon=users></i></span> User Management
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'audit')">
-                <span class="topbar-module-icon"><i data-icon=clipboard></i></span> Audit Logs
-              </div>
-              <div class="topbar-module-item" onclick="nav(null, 'archive')">
-                <span class="topbar-module-icon"><i data-icon=archive></i></span> Archive
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="topbar-title" id="topbar-title">Analytics</div>
-            <div class="topbar-subtitle" id="topbar-sub">
-              Descriptive statistics & trend charts
-            </div>
-          </div>
-          <div class="topbar-right">
-            <div class="topbar-date" id="topbar-date"></div>
-            <button class="topbar-notif-btn" onclick="toggleNotif()">
-              <i data-icon=bell></i>
-              <div id="notif-dot" class="topbar-notif-dot"></div>
-            </button>
-          </div>
-        </div>
-        <div id="page-content"></div>
-      </div>
-    </div>
+    <!-- App shell (sidebar, topbar, module launcher) is rendered by js/app-shell.js -->
+    <div id="app"></div>
 
     <!-- --- SERVICE MODALS --- -->
-    <div
-      class="modal-backdrop"
-      id="modal-residency"
-      onclick="closeServiceModal('residency', event)"
-    >
-      <div class="modal-box modal-lg">
-        <div class="modal-header">
-          <div class="modal-title">
-            <div class="modal-title-icon"><i data-icon=houses></i></div>
-            Barangay Residency Resident Search
-          </div>
-          <button class="modal-close" onclick="closeServiceModal('residency')">
-            <i data-icon=x></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p class="modal-help-text">
-            Search for registered residents in the Barangay Conde Labac system.
-            Lookups are logged per RA 10173.
-          </p>
-          <div class="form-row form-row-tight">
-            <div class="form-group form-group-flat">
-              <label class="form-label">Full Name</label
-              ><input
-                class="form-control"
-                id="res-search-name"
-                placeholder="e.g. Santos, Pedro"
-                oninput="filterResidents()"
-              />
-            </div>
-            <div class="form-group form-group-flat">
-              <label class="form-label">Purok / Zone</label
-              ><select
-                class="form-control"
-                id="res-search-purok"
-                onchange="filterResidents()"
-              >
-                <option value="">All Puroks</option>
-                <option>Purok 1 Sitio Maliwanag</option>
-                <option>Purok 2 Sitio Masagana</option>
-                <option>Purok 3 Sitio Malinis</option>
-                <option>Purok 4 Sitio Mapayapa</option>
-                <option>Purok 5 Sitio Bagong Pag-Asa</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row form-row-roomy">
-            <div class="form-group form-group-flat">
-              <label class="form-label">Category</label
-              ><select
-                class="form-control"
-                id="res-search-cat"
-                onchange="filterResidents()"
-              >
-                <option value="">All Categories</option>
-                <option>Senior Citizen</option>
-                <option>PWD</option>
-                <option>Solo Parent</option>
-                <option>Indigent Family</option>
-              </select>
-            </div>
-            <div class="form-group form-group-flat">
-              <label class="form-label">Status</label
-              ><select
-                class="form-control"
-                id="res-search-status"
-                onchange="filterResidents()"
-              >
-                <option value="">All Statuses</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Deceased</option>
-              </select>
-            </div>
-          </div>
-          <div id="resident-results"></div>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="closeServiceModal('residency')"
-          >
-            Close</button
-          ><button class="btn btn-primary" onclick="exportResidents()">
-            <i data-icon=file-text></i> Export Results
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- The Barangay Residency resident-search modal was here. It searched
+         the whole resident directory and offered an "Export Results" button;
+         names, ages, puroks and the senior / PWD / solo parent / indigent
+         classifications are personal information under RA 10173. Removed
+         along with its entry points and its JS in js/shell.js. Staff use the
+         MIS directory at pages/residency.html. -->
 
     <div
       class="modal-backdrop"
@@ -327,48 +69,8 @@
           </p>
           <label class="form-label">Select Certificate Type</label>
           <div class="cert-type-grid" id="cert-type-grid">
-            <div
-              class="cert-type-card selected"
-              onclick="selectCert(this, 'Barangay Clearance')"
-            >
-              <span class="cert-icon"><i data-icon=clipboard></i></span>
-              <div class="cert-name">Barangay Clearance</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Indigency')"
-            >
-              <span class="cert-icon"><i data-icon=briefcase></i></span>
-              <div class="cert-name">Certificate of Indigency</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Residency')"
-            >
-              <span class="cert-icon"><i data-icon=clipboard></i></span>
-              <div class="cert-name">Certificate of Residency</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Business Clearance')"
-            >
-              <span class="cert-icon"><i data-icon=clipboard></i></span>
-              <div class="cert-name">Business Clearance</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Good Moral')"
-            >
-              <span class="cert-icon"><i data-icon=star class=ic-fill></i></span>
-              <div class="cert-name">Good Moral Certificate</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Solo Parent')"
-            >
-              <span class="cert-icon"><i data-icon=family></i></span>
-              <div class="cert-name">Solo Parent Certificate</div>
-            </div>
+              <!-- Cards are rendered by renderCertTypeGrid() in
+                   js/portal-account.js, the one list of certificate types. -->
           </div>
           <div id="cert-selected-badge" class="cert-selected-badge">
             <span class="badge badge-gold">Selected: Barangay Clearance</span>
@@ -376,14 +78,14 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">First Name</label
-              ><input class="form-control" placeholder="Juan" id="cert-fname" />
+              ><input class="form-control" placeholder="Juan" id="cert-fname" required />
             </div>
             <div class="form-group">
               <label class="form-label">Last Name</label
               ><input
                 class="form-control"
                 placeholder="Santos"
-                id="cert-lname"
+                id="cert-lname" required
               />
             </div>
           </div>
@@ -528,7 +230,7 @@
             <label class="form-label">Detailed Narration of Incident</label
             ><textarea
               class="form-control textarea-tall"
-              id="inc-narration"
+              id="inc-narration" required
               placeholder="Describe what happened in detail..."
             ></textarea>
           </div>
@@ -606,20 +308,20 @@
           </div>
           <div class="form-group">
             <label class="form-label">Overall Satisfaction</label>
-            <div class="star-rating" id="star-rating">
-              <span class="star active" onclick="setRating(1)"><i data-icon=star class=ic-fill></i></span
-              ><span class="star active" onclick="setRating(2)"><i data-icon=star class=ic-fill></i></span
-              ><span class="star active" onclick="setRating(3)"><i data-icon=star class=ic-fill></i></span
-              ><span class="star active" onclick="setRating(4)"><i data-icon=star class=ic-fill></i></span
+            <div class="star-rating" id="star-rating" tabindex="-1">
+              <span class="star" onclick="setRating(1)"><i data-icon=star></i></span
+              ><span class="star" onclick="setRating(2)"><i data-icon=star></i></span
+              ><span class="star" onclick="setRating(3)"><i data-icon=star></i></span
+              ><span class="star" onclick="setRating(4)"><i data-icon=star></i></span
               ><span class="star" onclick="setRating(5)"><i data-icon=star></i></span>
             </div>
-            <div id="rating-label" class="rating-label">4 out of 5 Good</div>
+            <div id="rating-label" class="rating-label">Select a rating</div>
           </div>
           <div class="form-group">
             <label class="form-label">Your Comment or Suggestion</label
             ><textarea
               class="form-control textarea-medium"
-              id="fb-comment"
+              id="fb-comment" required
               placeholder="Share your experience, suggestions, or concerns..."
             ></textarea>
           </div>
@@ -732,7 +434,7 @@
                 <label class="form-label">First Name</label
                 ><input
                   class="form-control"
-                  id="acc-fname"
+                  id="acc-fname" required
                   placeholder="Juan"
                 />
               </div>
@@ -740,7 +442,7 @@
                 <label class="form-label">Last Name</label
                 ><input
                   class="form-control"
-                  id="acc-lname"
+                  id="acc-lname" required
                   placeholder="Santos"
                 />
               </div>
@@ -764,7 +466,7 @@
               ><input
                 class="form-control"
                 type="email"
-                id="acc-email"
+                id="acc-email" required
                 placeholder="your@email.com"
               />
             </div>
@@ -782,7 +484,7 @@
               ><input
                 class="form-control"
                 type="password"
-                id="acc-pass"
+                id="acc-pass" required
                 placeholder="Minimum 8 characters"
               />
             </div>
@@ -791,7 +493,7 @@
               ><input
                 class="form-control"
                 type="password"
-                id="acc-pass2"
+                id="acc-pass2" required
                 placeholder="Re-enter password"
               />
             </div>
@@ -840,8 +542,21 @@
     <!-- SCRIPTS -->
     <script src="../js/gis-map.js"></script>
     <script src="../js/incident-report.js"></script>
+    <script src="../js/app-shell.js"></script>
     <script src="../js/shell.js"></script>
     <script src="../js/pages/analytics.js"></script>
+    <!-- Certificates: the shared type list, then the export machinery,
+         then the printable forms (each reads the one before it). All three
+         must precede portal-account.js. -->
+    <!-- Escape closes the topmost modal. -->
+    <script src="../js/ui-modals.js"></script>
+    <script src="../js/certificate-types.js"></script>
+    <script src="../js/certificate-export.js"></script>
+    <script src="../js/certificate-templates.js"></script>
+    <script src="../js/certificate-attachments.js"></script>
     <script src="../js/portal-account.js"></script>
+    <!-- Motion runtime: collapse/validation/exit animations. Last, so it
+         observes a DOM every other script has already set up. -->
+    <script src="../js/motion.js"></script>
   </body>
 </html>

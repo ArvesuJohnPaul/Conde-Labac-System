@@ -16,6 +16,13 @@ async function apiRequest(method, path, body) {
     method: method,
     headers: headers,
     body: body ? JSON.stringify(body) : undefined,
+    // Never serve an API response from the browser's disk cache. Express sends
+    // an ETag on every JSON response, so a GET is otherwise cacheable — and a
+    // barangay record read from cache is a record that may already be wrong.
+    // It also removes a whole class of "the server is fine but the browser
+    // shows something else" failure, where a corrupted cache entry is replayed
+    // in place of the live response.
+    cache: "no-store",
   });
   if (!res.ok) {
     let msg = res.status + " " + res.statusText;
@@ -27,7 +34,22 @@ async function apiRequest(method, path, body) {
   }
   if (res.status === 204) return null;
   const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // A 200 that isn't JSON means the request reached something that is not
+    // this API — most often window.API_BASE (js/api-config.js) pointing at a
+    // stale tunnel, a login/interstitial page, or the static site itself.
+    // "Unexpected token" alone cannot tell you that, so say where the request
+    // went and show what came back instead.
+    const type = res.headers.get("content-type") || "unknown";
+    const head = text.slice(0, 80).replace(/\s+/g, " ");
+    throw new Error(
+      `${path} did not return JSON (content-type: ${type}). ` +
+        `Got: ${head}${text.length > 80 ? "…" : ""} — check window.API_BASE (${window.API_BASE || "same origin"}).`
+    );
+  }
 }
 
 const apiGet = (p) => apiRequest("GET", p);

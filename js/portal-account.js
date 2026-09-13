@@ -2,10 +2,11 @@
 // page (index.html) and the MIS pages. Loaded LAST on purpose: it upgrades
 // the older demo handlers (fake submitCertificate/submitFeedback/toggleNotif)
 // to real API-backed versions, and injects the account panels:
-//   • My Information   — the resident's full record (GET /api/residents/:id)
-//   • My Requests      — certificates this account filed (?resident_id=)
-//   • Activity History — incident reports + feedback given
-//   • Notifications    — /api/notifications feed with unread badge + polling
+//   • My Information — the resident's full record (GET /api/residents/:id)
+//   • My Activity    — everything this account has sent the barangay:
+//                      certificate requests, profile change requests, incident
+//                      reports and feedback, in one list, newest first
+//   • Notifications  — /api/notifications feed with unread badge + polling
 //
 // Everything reads the session from localStorage (ibmdss.session) and calls
 // the same API the mobile app uses. All functions are defensive: signed-out
@@ -42,6 +43,26 @@
     if (typeof showToast === "function") showToast(msg, icon || "<i data-icon=check></i>");
   }
 
+  // Validation feedback goes on the field: it shakes, turns amber and says
+  // what is missing under its own label (Motion.require, js/motion.js). These
+  // two shims keep working — as the old window.alert() — on a page where
+  // motion.js is not loaded, so validation can never disappear entirely.
+  function requireFields(fields, fallbackMessage) {
+    if (window.Motion) return Motion.require(fields);
+    const empty = fields.some((f) => {
+      const el = document.getElementById(typeof f === "string" ? f : f.id);
+      return el && !String(el.value || "").trim();
+    });
+    if (empty) alert(fallbackMessage);
+    return !empty;
+  }
+
+  // For a field that is filled in but rejected — usually by the server.
+  function rejectField(id, message) {
+    if (window.Motion) Motion.reject(id, message);
+    else alert(message);
+  }
+
   function hydrate(el) {
     if (typeof hydrateIcons === "function") hydrateIcons(el);
     else if (typeof window.renderIcons === "function") window.renderIcons(el);
@@ -62,23 +83,68 @@
     indigent: "Indigent Family",
   };
 
-  const CERT_SLUGS = {
-    "Barangay Clearance": "barangay-clearance",
-    "Certificate of Indigency": "indigency",
-    "Certificate of Residency": "residency",
-    "Business Clearance": "business-clearance",
-    "Certificate of Good Moral": "good-moral",
-    "Good Moral Certificate": "good-moral",
-    "Certificate of Solo Parent": "solo-parent",
-    "Solo Parent Certificate": "solo-parent",
-  };
-  const CERT_LABELS = {
-    "barangay-clearance": "Barangay Clearance",
-    indigency: "Certificate of Indigency",
-    residency: "Certificate of Residency",
-    "business-clearance": "Business Clearance",
-    "good-moral": "Certificate of Good Moral",
-    "solo-parent": "Certificate of Solo Parent",
+  // The certificate list lives in js/certificate-types.js (loaded before this
+  // file) so the queue page and the printable forms share the same one.
+  const CERT_TYPE_OPTIONS = window.CERT_TYPE_OPTIONS || [];
+  const CERT_LABELS = window.CERT_TYPE_LABELS || {};
+
+  // label -> slug, including the short labels the older hardcoded type cards
+  // used, so a stale page still resolves to the right type.
+  const CERT_SLUGS = { "Certificate of Residency": "residency" };
+  CERT_TYPE_OPTIONS.forEach(function (t) {
+    CERT_SLUGS[t.label] = t.slug;
+    CERT_SLUGS[t.short] = t.slug;
+  });
+
+  // Fill in the picker wherever the service modal exists. Called on load, so
+  // the pages themselves only need the empty <div id="cert-type-grid">.
+  //
+  // A dropdown rather than a card per type: fifteen cards is a wall to read
+  // through, and the list only grows as the barangay adds forms.
+  function renderCertTypeGrid() {
+    const grid = document.getElementById("cert-type-grid");
+    if (!grid) return;
+    // The container is a CSS grid meant for cards; one full-width control.
+    grid.style.display = "block";
+    grid.innerHTML =
+      '<select class="form-control" id="cert-type-select"' +
+      ' onchange="certTypeChanged(this)">' +
+      CERT_TYPE_OPTIONS.map(function (t) {
+        return `<option value="${t.slug}">${esc(t.label)}</option>`;
+      }).join("") +
+      "</select>";
+    // The "Selected: …" badge only existed because the cards were hard to read
+    // at a glance; the dropdown states the choice itself. Reuse its slot for the
+    // requirement list, which does change with the selection.
+    const badge = document.getElementById("cert-selected-badge");
+    if (badge) {
+      badge.style.display = "none";
+      if (!document.getElementById("cert-requirements")) {
+        const reqs = document.createElement("div");
+        reqs.id = "cert-requirements";
+        reqs.style.marginBottom = "8px";
+        badge.parentNode.insertBefore(reqs, badge.nextSibling);
+      }
+    }
+    certTypeChanged(document.getElementById("cert-type-select"));
+  }
+
+  // Keeps the legacy `selectedCert` global in step with the dropdown. The real
+  // submit path reads the slug straight off the <select>.
+  window.certTypeChanged = function (sel) {
+    if (!sel) return;
+    const label = CERT_LABELS[sel.value] || sel.value;
+    // shell.js / index.html declare `selectedCert` with a top-level let, which
+    // is not a window property — and this file runs strict, so a missing
+    // binding throws rather than quietly creating a global.
+    try {
+      selectedCert = label;
+    } catch (_) {
+      /* page without the demo global */
+    }
+    // Each certificate asks for different documents.
+    if (typeof certRenderRequirements === "function")
+      certRenderRequirements(sel.value);
   };
 
   const CERT_BADGES = {
@@ -93,19 +159,35 @@
   // it works with both index.html's and shell.js's copies of the modal.
   function selectedCertName() {
     const el = document.querySelector(".cert-type-card.selected .cert-name");
-    return (el && el.textContent.trim()) || "Barangay Clearance";
+    return (el && el.textContent.trim()) || CERT_TYPE_OPTIONS[0].short;
+  }
+
+  // The dropdown's value *is* the slug. The card lookups behind it are there
+  // for any page still showing the old hardcoded type cards.
+  function selectedCertSlug() {
+    const sel = document.getElementById("cert-type-select");
+    if (sel && sel.value) return sel.value;
+    const card = document.querySelector(".cert-type-card.selected");
+    return (
+      (card && card.dataset.slug) ||
+      CERT_SLUGS[selectedCertName()] ||
+      CERT_TYPE_OPTIONS[0].slug
+    );
   }
 
   window.submitCertificate = async function () {
     const val = (id) => (document.getElementById(id)?.value || "").trim();
+    if (
+      !requireFields(
+        ["cert-fname", "cert-lname"],
+        "Please enter your first and last name."
+      )
+    )
+      return;
     const fname = val("cert-fname");
     const lname = val("cert-lname");
-    if (!fname || !lname) {
-      alert("Please enter your first and last name.");
-      return;
-    }
-    const certName = selectedCertName();
-    const type = CERT_SLUGS[certName] || "barangay-clearance";
+    const type = selectedCertSlug();
+    const certName = CERT_LABELS[type] || selectedCertName();
     // Extra details ride along in `purpose` — the certificate table keeps a
     // single free-text purpose column (same convention as the mobile app).
     const extras = [
@@ -116,6 +198,34 @@
     ]
       .filter(Boolean)
       .join(" · ");
+
+    // Missing requirements are a warning, not a wall: a walk-in can still bring
+    // the paper to the hall, and the barangay would rather have the request in
+    // the queue than turned away at the form.
+    //
+    // Asked through uiConfirm() rather than window.confirm() — the last raw
+    // browser dialog in this submit path, and the same reason the rest of the
+    // system stopped using them: it cannot carry the barangay's styling, it
+    // cannot show the list as a list, and it names the page's origin in the
+    // title bar as though the request were coming from somewhere else.
+    if (typeof certMissingRequirements === "function") {
+      const missing = certMissingRequirements(type);
+      if (missing.length && typeof uiConfirm === "function") {
+        const go = await uiConfirm({
+          icon: "triangle-alert",
+          accent: true,
+          title: "Submit without these documents?",
+          message:
+            "You can still file the request now and bring the missing documents " +
+            "to the barangay hall — processing is just faster with them attached.",
+          notes: missing.map((m) => ({ icon: "file-text", text: m })),
+          confirmLabel: "Submit anyway",
+          confirmIcon: "check",
+          cancelLabel: "Attach them first",
+        });
+        if (!go) return;
+      }
+    }
 
     const s = session();
     let res;
@@ -128,9 +238,32 @@
         account_id: s?.account_id || null,
       });
     } catch (err) {
-      alert("Could not submit the request: " + err.message);
+      // The form stays open with everything the user typed still in it, and
+      // the submit button shakes to say the press did not take.
+      toast("Could not submit the request: " + err.message, "<i data-icon=triangle-alert></i>");
+      if (window.Motion) Motion.shakeBox(document.getElementById("modal-certificates"));
       return;
     }
+
+    // Documents can only be attached once the request exists to hold them. A
+    // failed upload is reported but never undoes the filing.
+    if (typeof certAttachPending === "function") {
+      const failed = await certAttachPending(res.id, s?.account_id);
+      // The filing itself succeeded, so this is a notice rather than a
+      // failure — and it must not be a modal one, because there is nothing
+      // for the user to decide.
+      if (failed.length)
+        toast(
+          "Filed as " +
+            res.request_no +
+            ", but " +
+            failed.length +
+            (failed.length === 1 ? " document" : " documents") +
+            " did not upload — bring them to the barangay hall instead.",
+          "<i data-icon=triangle-alert></i>"
+        );
+    }
+
     if (typeof closeServiceModal === "function") closeServiceModal("certificates");
     if (typeof logAudit === "function")
       logAudit(
@@ -140,6 +273,40 @@
         "certificate"
       );
     toast(`${certName} request submitted! Ref: ${res.request_no}`, "<i data-icon=file-text></i>");
+
+    // Show the requester the actual form so they can fill in the blanks only
+    // they know (relation, employer, purpose wording). What they type saves to
+    // certificate.form_fields, so the barangay prints their words rather than
+    // guessing. Skipped when the export machinery isn't on the page, or when
+    // this certificate type has no printable form yet.
+    if (
+      typeof certOpenSheet === "function" &&
+      typeof certHasTemplate === "function" &&
+      certHasTemplate(type)
+    ) {
+      // POST returns the row, but not the joined columns the details panel
+      // shows — and an older server returns fewer columns still. Everything the
+      // sheet needs is already known here, so seed it all and let the response
+      // override only what it actually carries.
+      certOpenSheet(
+        Object.assign(
+          {
+            type: type,
+            applicant_name: lname + ", " + fname,
+            purpose: extras || null,
+            status: "pending",
+            created_at: new Date().toISOString(),
+            resident_id: s?.resident_id || null,
+            processed_by_name: null,
+            processed_at: null,
+            remarks: null,
+            form_fields: null,
+          },
+          res
+        ),
+        { mode: "requester" }
+      );
+    }
   };
 
   // Auto-fill the request form from the signed-in resident's record.
@@ -182,12 +349,30 @@
 
   // ── real feedback submission (replaces the demo handler) ──────────────
   window.submitFeedback = async function () {
-    const comment = (document.getElementById("fb-comment")?.value || "").trim();
-    if (!comment) {
-      alert("Please enter a comment or suggestion.");
+    // How many stars are lit IS the rating — there is no default. This used to
+    // read `.length || 4`, so a resident who never touched the control had
+    // their submission filed as four stars: an opinion they never gave,
+    // counted into the barangay's average rating and into the sentiment split
+    // beside it. Now an untouched row is 0, and 0 is refused below.
+    const rating = document.querySelectorAll(".star.active").length;
+    // The star row is a <div>, so the validation helpers can only see it
+    // through a `.value` (setRating writes one). Set it from what is lit right
+    // here as well, so the check below can never disagree with the number that
+    // would be submitted — whichever copy of setRating the page happens to be
+    // running.
+    const starBox = document.getElementById("star-rating");
+    if (starBox) starBox.value = rating ? String(rating) : "";
+    if (
+      !requireFields(
+        [
+          { id: "star-rating", message: "Choose a star rating — one to five." },
+          { id: "fb-comment", message: "Tell us what you would like to say." },
+        ],
+        "Please choose a star rating and enter a comment."
+      )
+    )
       return;
-    }
-    const rating = document.querySelectorAll(".star.active").length || 4;
+    const comment = (document.getElementById("fb-comment")?.value || "").trim();
     const category = document.getElementById("fb-category")?.value || "Other";
     const name = (document.getElementById("fb-name")?.value || "").trim();
     const contact = (document.getElementById("fb-contact")?.value || "").trim();
@@ -202,7 +387,8 @@
         account_id: s?.account_id || null,
       });
     } catch (err) {
-      alert("Could not submit feedback: " + err.message);
+      toast("Could not submit feedback: " + err.message, "<i data-icon=triangle-alert></i>");
+      if (window.Motion) Motion.shakeBox(document.getElementById("modal-feedback"));
       return;
     }
     // Keep the local store in sync so the staff Feedback page's "Recent" list
@@ -210,99 +396,33 @@
     if (window.FeedbackStore)
       FeedbackStore.add({ rating, category, comment, name, contact });
     if (typeof closeServiceModal === "function") closeServiceModal("feedback");
+    // Back to no stars, so the next person at a shared terminal is not handed
+    // the last one's rating. This handler replaces the shell's, so the reset
+    // it does has to happen here too.
+    if (typeof resetRating === "function") resetRating();
     if (typeof logAudit === "function")
       logAudit("FEEDBACK_SUBMIT", `Feedback submitted — rated ${rating}/5`, "info", "feedback");
     if (typeof refreshRecentFeedback === "function") refreshRecentFeedback();
     toast("Feedback submitted! Thank you for your input.", "<i data-icon=message-square></i>");
   };
 
-  // ── live resident search on index.html ────────────────────────────────
-  // index.html ships a hardcoded RESIDENTS_DATA demo list; the MIS pages get
-  // the live version from shell.js. Only override where shell.js is absent.
-  if (typeof window.loadSearchResidents !== "function") {
-    let LIVE_RESIDENTS = null;
-
-    window.renderResidentResults = function (filtered) {
-      const container = document.getElementById("resident-results");
-      if (!container) return;
-      if (LIVE_RESIDENTS === null) {
-        container.innerHTML = '<div class="resident-summary">Loading residents…</div>';
-        get("/api/residents")
-          .then((rows) => {
-            LIVE_RESIDENTS = rows;
-            window.filterResidents();
-          })
-          .catch((err) => {
-            container.innerHTML =
-              '<div class="resident-empty">Could not reach the server (' +
-              esc(err.message) +
-              ").</div>";
-          });
-        return;
-      }
-      const list = Array.isArray(filtered) ? filtered : LIVE_RESIDENTS;
-      if (!list.length) {
-        container.innerHTML =
-          '<div class="resident-empty">No residents found matching your search criteria.</div>';
-        return;
-      }
-      container.innerHTML =
-        `<div class="resident-summary">Showing ${list.length} result${list.length !== 1 ? "s" : ""}</div>` +
-        list
-          .map((r) => {
-            const claimed = r.claimed === true;
-            const cats = (r.cats || []).map((c) => CAT_LABELS[c] || c).join(", ");
-            const parts = (r.name || "").split(",");
-            const initials =
-              ((parts[1] ? parts[1].trim()[0] : "") + (parts[0] ? parts[0][0] : "")) || "?";
-            return `
-        <div class="resident-card">
-          <div class="resident-avatar-sm">${esc(initials)}</div>
-          <div class="resident-info">
-            <h4>${esc(r.name)}</h4>
-            <p>${r.age == null ? "—" : r.age + " yrs"} · ${esc(r.purok || "—")}${cats ? " · " + esc(cats) : ""}</p>
-          </div>
-          <span class="badge ${claimed ? "badge-success" : "badge-gray"} badge-align-right">${claimed ? "Active" : "Unclaimed"}</span>
-        </div>`;
-          })
-          .join("");
-    };
-
-    window.filterResidents = function () {
-      if (LIVE_RESIDENTS === null) {
-        window.renderResidentResults("");
-        return;
-      }
-      const nameQ = (document.getElementById("res-search-name")?.value || "").toLowerCase();
-      const purokQ = document.getElementById("res-search-purok")?.value || "";
-      const catQ = document.getElementById("res-search-cat")?.value || "";
-      const statusQ = document.getElementById("res-search-status")?.value || "";
-      const filtered = LIVE_RESIDENTS.filter((r) => {
-        const cats = (r.cats || []).map((c) => CAT_LABELS[c] || c);
-        const statusLabel = r.claimed === true ? "Active" : "Unclaimed";
-        return (
-          (!nameQ || (r.name || "").toLowerCase().includes(nameQ)) &&
-          (!purokQ || (r.purok && purokQ.indexOf(r.purok) === 0)) &&
-          (!catQ || cats.indexOf(catQ) !== -1) &&
-          (!statusQ || statusLabel === statusQ)
-        );
-      });
-      window.renderResidentResults(filtered);
-    };
-  }
+  // The live resident-search override for index.html used to sit here. The
+  // search it backed — a public lookup over every resident record — was
+  // removed on data-privacy grounds, along with its modal and both entry
+  // points, so there is nothing left to override.
 
   // ── account panels (injected modals) ───────────────────────────────────
   function ensurePanels() {
     if (document.getElementById("modal-acct-info")) return;
     const wrap = document.createElement("div");
-    wrap.innerHTML = ["acct-info", "acct-requests", "acct-activity", "acct-notifs"]
+    wrap.innerHTML = ["acct-info", "acct-activity", "acct-notifs"]
       .map(
         (key) => `
       <div class="modal-backdrop" id="modal-${key}" onclick="closeServiceModal('${key}', event)">
         <div class="modal-box">
           <div class="modal-header">
             <div class="modal-title"><div class="modal-title-icon"><i data-icon="${
-              { "acct-info": "user", "acct-requests": "file-text", "acct-activity": "clock", "acct-notifs": "bell" }[key]
+              { "acct-info": "user", "acct-activity": "inbox", "acct-notifs": "bell" }[key]
             }"></i></div> <span id="${key}-title"></span></div>
             <button class="modal-close" onclick="closeServiceModal('${key}')"><i data-icon=x></i></button>
           </div>
@@ -386,124 +506,188 @@
         row("Occupation", v(r.occupation)) +
         row("Voter Status", v(r.voter_status)) +
         row("Purok", v(r.purok)) +
-        row("Household No.", v(r.household_no)) +
         row("Address", v(r.address_text)) +
+        // Named, not numbered: a household is a building tagged on the GIS
+        // map ("Bahay ni Shane"), so it has no household number.
+        row("Household", v(r.household_name)) +
         row("Classifications", cats || dash) +
         row("Date Registered", v(fmtDate(r.date_registered)));
     });
   };
 
-  // My Requests — the certificates this account has filed.
-  window.openMyRequests = function () {
-    openPanel("acct-requests", "My Requests", async (body, s) => {
-      if (!s.resident_id) {
-        body.innerHTML =
-          '<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Requests are tracked through your barangay record — this account has no linked resident record.' +
-          (s.account_id ? "" : " If you claimed your account recently, sign out and back in.") +
-          "</div>";
-        return;
-      }
-      let rows;
-      try {
-        rows = await get("/api/certificates?resident_id=" + s.resident_id);
-      } catch (err) {
-        body.innerHTML = `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> Could not load your requests (${esc(err.message)}).</div>`;
-        hydrate(body);
-        return;
-      }
-      if (!rows.length) {
-        body.innerHTML =
-          '<p class="table-muted" style="text-align:center;padding:24px">No requests yet. Certificates you request will appear here so you can track their status.</p>';
-        return;
-      }
-      body.innerHTML = rows
-        .map((r) => {
-          const badge = CERT_BADGES[r.status] || "badge-gray";
-          return `
-        <div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <span class="table-mono" style="font-size:12px;color:#6b7280">${esc(r.request_no)}</span>
-            <span class="badge ${badge}">${esc(r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span>
-          </div>
-          <div style="font-weight:700;margin-top:2px">${esc(CERT_LABELS[r.type] || r.type)}</div>
-          <div class="table-muted" style="font-size:12px">Filed ${fmtDate(r.created_at)}${r.remarks ? " · Remarks: " + esc(r.remarks) : ""}</div>
-          ${r.purpose ? `<div class="table-muted" style="font-size:12px;margin-top:2px">${esc(r.purpose)}</div>` : ""}
-        </div>`;
-        })
-        .join("");
-    });
+  // ── My Activity ─────────────────────────────────────────────────────────
+  // One panel, four sources. "My Requests" and "Activity History" used to be
+  // separate menu entries, which meant a resident chasing "what did I send the
+  // barangay, and what happened to it?" had to check two places and hold the
+  // dates in their head to interleave them. It is one question, so it is one
+  // list — everything this account has sent in, newest first:
+  //
+  //   • certificate requests   GET /api/certificates?resident_id=
+  //   • profile edit requests  GET /api/edit-requests?resident_id=
+  //   • incident reports       GET /api/incidents?complainant_id=
+  //   • feedback given         GET /api/feedback (filtered to this account)
+  //
+  // Each source is fetched independently and a failure in one is shown as a
+  // note rather than replacing the whole panel — a feedback endpoint being
+  // down must not hide the certificate you are trying to track.
+  const EDIT_REQ_FIELD_LABELS = {
+    last_name: "Last Name",
+    first_name: "First Name",
+    middle_name: "Middle Name",
+    suffix: "Suffix",
+    birthdate: "Birthdate",
+    sex: "Sex",
+    civil_status: "Civil Status",
+    contact_no: "Contact No.",
+    occupation: "Occupation",
+    voter_status: "Voter Status",
+    photo: "Profile Photo",
   };
 
-  // Activity History — incident reports filed + feedback given.
-  window.openActivityHistory = function () {
-    openPanel("acct-activity", "Activity History", async (body, s) => {
-      const items = [];
+  const EDIT_REQ_BADGES = {
+    pending: "badge-warning",
+    approved: "badge-success",
+    rejected: "badge-danger",
+  };
+
+  async function collectMyActivity(s) {
+    const items = [];
+    const failed = [];
+
+    async function pull(label, fn) {
       try {
-        if (s.resident_id) {
-          const incidents = await get("/api/incidents?complainant_id=" + s.resident_id);
-          for (const i of incidents) {
+        await fn();
+      } catch (e) {
+        failed.push(label);
+      }
+    }
+
+    await Promise.all([
+      s.resident_id &&
+        pull("certificate requests", async () => {
+          const rows = await get("/api/certificates?resident_id=" + s.resident_id);
+          rows.forEach((r) => {
+            items.push({
+              ts: new Date(r.created_at).getTime(),
+              icon: "file-text",
+              title: CERT_LABELS[r.type] || r.type,
+              ref: r.request_no,
+              sub: [r.purpose, r.remarks ? "Remarks: " + r.remarks : ""]
+                .filter(Boolean)
+                .join(" · "),
+              badge: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+              badgeClass: CERT_BADGES[r.status] || "badge-gray",
+            });
+          });
+        }),
+      s.resident_id &&
+        pull("profile change requests", async () => {
+          const rows = await get("/api/edit-requests?resident_id=" + s.resident_id);
+          rows.forEach((r) => {
+            const fields = Object.keys(r.changes || {})
+              .map((k) => EDIT_REQ_FIELD_LABELS[k] || k)
+              .join(", ");
+            items.push({
+              ts: new Date(r.created_at).getTime(),
+              icon: "user",
+              title: "Profile change: " + (fields || "—"),
+              // The reason the resident gave is the useful line here — it is
+              // what staff are deciding on. A rejection's remarks replace it,
+              // because that is the part that says what to do next.
+              sub:
+                r.status === "rejected" && r.remarks
+                  ? "Remarks: " + r.remarks
+                  : r.reason || "",
+              badge: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+              badgeClass: EDIT_REQ_BADGES[r.status] || "badge-gray",
+            });
+          });
+        }),
+      s.resident_id &&
+        pull("incident reports", async () => {
+          const rows = await get("/api/incidents?complainant_id=" + s.resident_id);
+          rows.forEach((i) => {
+            const closed = i.status === "resolved" || i.status === "dismissed";
             items.push({
               ts: new Date(i.created_at).getTime(),
               icon: "siren",
               title: "Reported: " + (i.title || i.report_type),
-              sub: `${i.case_no} · ${i.narration || ""}`,
-              badge: i.status === "resolved" || i.status === "dismissed" ? "Resolved" : "Open",
-              badgeClass:
-                i.status === "resolved" || i.status === "dismissed"
-                  ? "badge-success"
-                  : "badge-warning",
+              ref: i.case_no,
+              sub: i.narration || "",
+              badge: closed ? "Resolved" : "Open",
+              badgeClass: closed ? "badge-success" : "badge-warning",
             });
-          }
-        }
-        if (s.account_id) {
-          const feedback = await get("/api/feedback");
-          for (const f of feedback) {
-            if (f.account_id !== s.account_id) continue;
-            items.push({
-              ts: new Date(f.created_at).getTime(),
-              icon: "message-square",
-              title: "Feedback: " + (f.category || "Other"),
-              sub: f.comment || "(no comment)",
-              badge: (f.rating || 0) + "★",
-              badgeClass: "badge-gold",
+          });
+        }),
+      s.account_id &&
+        pull("feedback", async () => {
+          const rows = await get("/api/feedback");
+          rows
+            .filter((f) => f.account_id === s.account_id)
+            .forEach((f) => {
+              items.push({
+                ts: new Date(f.created_at).getTime(),
+                icon: "message-square",
+                title: "Feedback: " + (f.category || "Other"),
+                sub: f.comment || "(no comment)",
+                badge: (f.rating || 0) + "★",
+                badgeClass: "badge-gold",
+              });
             });
-          }
-        }
-      } catch (err) {
-        body.innerHTML = `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> Could not load your activity (${esc(err.message)}).</div>`;
-        hydrate(body);
-        return;
-      }
+        }),
+    ].filter(Boolean));
+
+    items.sort((a, b) => b.ts - a.ts);
+    return { items, failed };
+  }
+
+  window.openMyActivity = function () {
+    openPanel("acct-activity", "My Activity", async (body, s) => {
       if (!s.account_id && !s.resident_id) {
         body.innerHTML =
           '<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Your session is missing its account link — please sign out and sign back in.</div>';
+        hydrate(body);
         return;
       }
+      const { items, failed } = await collectMyActivity(s);
+      const note = failed.length
+        ? `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> Could not load your ${esc(failed.join(" or "))}.</div>`
+        : "";
       if (!items.length) {
         body.innerHTML =
-          '<p class="table-muted" style="text-align:center;padding:24px">No activity yet. Incident reports you file and feedback you send will show up here.</p>';
+          note ||
+          '<p class="table-muted" style="text-align:center;padding:24px">Nothing yet. Certificates you request, changes you propose to your details, incidents you report, and feedback you send all appear here.</p>';
+        hydrate(body);
         return;
       }
-      items.sort((a, b) => b.ts - a.ts);
-      body.innerHTML = items
-        .map(
-          (a) => `
+      body.innerHTML =
+        note +
+        items
+          .map(
+            (a) => `
         <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)">
           <div style="flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(11,29,58,.08);display:flex;align-items:center;justify-content:center"><i data-icon=${a.icon}></i></div>
           <div style="min-width:0;flex:1">
             <div style="font-weight:700">${esc(a.title)}</div>
-            <div class="table-muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.sub)}</div>
+            ${a.ref ? `<div class="table-mono" style="font-size:11px;color:#6b7280">${esc(a.ref)}</div>` : ""}
+            ${a.sub ? `<div class="table-muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.sub)}</div>` : ""}
             <div style="margin-top:4px;display:flex;gap:8px;align-items:center">
               <span class="badge ${a.badgeClass}">${esc(a.badge)}</span>
               <span class="table-muted" style="font-size:11px">${fmtDate(a.ts)}</span>
             </div>
           </div>
         </div>`
-        )
-        .join("");
+          )
+          .join("");
       hydrate(body);
     });
   };
+
+  // The two menu entries this replaced. Kept as aliases so any page, cached
+  // markup or translation file still pointing at the old names opens the
+  // merged panel rather than throwing.
+  window.openMyRequests = window.openMyActivity;
+  window.openActivityHistory = window.openMyActivity;
 
   // ── notifications ───────────────────────────────────────────────────────
   const NOTIF_ICONS = { certificate: "file-text", message: "mail", system: "info" };
@@ -588,6 +772,7 @@
   // ── boot: unread polling ────────────────────────────────────────────────
   function boot() {
     ensurePanels();
+    renderCertTypeGrid();
     refreshUnread();
     setInterval(refreshUnread, 60000);
   }

@@ -4,38 +4,146 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>C.A.R.E.S. | Barangay Conde Labac, Batangas City</title>
+    <meta
+      name="description"
+      content="Official web portal of Barangay Conde Labac, Batangas City. Request barangay certificates, file a blotter report, explore the community GIS map, and read the latest barangay announcements."
+    />
+    <meta name="theme-color" content="#091228" />
     <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
+
+    <!-- Un-deferred and first, on purpose:
+         · `js` unlocks the scroll-reveal start states in landing.css. Without
+           it every .reveal block stays at its final, visible values, so a
+           visitor whose JS never arrives reads the whole page instead of a
+           blank one.
+         · theme.js must set data-theme before the first stylesheet resolves,
+           or a dark-mode visitor gets a white flash. -->
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script src="js/theme.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/landing.css?v=20260712" />
-    <script src="js/icons.js"></script>
-    <script src="js/api-config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/audit-log.js"></script>
-    <script src="js/site-config.js"></script>
-    <script src="js/feedback-store.js"></script>
+    <link rel="stylesheet" href="css/landing.css?v=20260725" />
+    <!-- The motion layer loads last: a few of its rules replace a one-shot
+         animation with a two-way one and have to win the cascade. -->
+    <link rel="stylesheet" href="css/motion.css" />
+
+    <!-- The hall photo is this page's largest contentful paint; start it in
+         parallel with the CSS instead of waiting for the parser to reach it. -->
+    <link
+      rel="preload"
+      as="image"
+      href="img/brgy-hall.webp"
+      type="image/webp"
+      fetchpriority="high"
+    />
+
+    <!-- Everything below needs a parsed document, so none of it has any
+         business blocking the parser. `defer` keeps execution in document
+         order — api-config → api → the callers that use apiGet — and runs the
+         whole set before DOMContentLoaded, which is where the page's own boot
+         code waits. The GIS engine is missing from this list deliberately:
+         it is 200 KB of script in front of ~900 KB of GeoJSON, and it is
+         fetched on demand by loadGisEngine() further down. -->
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/icons.js"></script>
+    <script defer src="js/preferences.js"></script>
+    <script defer src="js/account-edit.js"></script>
+    <script defer src="js/change-password.js"></script>
+    <script defer src="js/api-config.js"></script>
+    <script defer src="js/api.js"></script>
+    <script defer src="js/mis-access.js"></script>
+    <script defer src="js/audit-log.js"></script>
+    <script defer src="js/site-config.js"></script>
+    <script defer src="js/feedback-store.js"></script>
+    <script defer src="js/incident-report.js"></script>
   </head>
   <body>
+    <a class="skip-link" href="#main" data-i18n="skipToContent"
+      >Skip to main content</a
+    >
+
     <!-- --- OFFICIAL MASTHEAD --- -->
+    <!-- The thin gov.ph-style strip also carries the two preferences a
+         signed-out visitor could not reach before: appearance and language.
+         Both were only offered inside the account dropdown's Settings sheet,
+         which requires an account — while theme.js happily follows the
+         visitor's OS into dark mode and i18n.js ships a full Filipino
+         translation nobody could switch on. -->
     <div class="gov-masthead">
-      <span class="gov-flag" aria-hidden="true"
-        ><span></span><span></span><span></span
-      ></span>
-      <span class="gov-masthead-text">
-        The Official Web Portal of Barangay Conde Labac, Batangas City
-      </span>
-      <span class="gov-masthead-gov">Republic of the Philippines</span>
+      <div class="gov-masthead-inner">
+        <!-- The national flag, drawn to spec rather than as three coloured
+             bars: 1:2 field, equilateral white triangle on the hoist, the
+             eight-rayed sun on the triangle's centroid and a star at each of
+             its corners. Inline SVG so it stays sharp at any zoom and costs
+             no extra request in a bar that is fixed above the fold. -->
+        <span class="gov-flag" aria-hidden="true">
+          <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet">
+            <rect width="200" height="50" fill="#0038a8" />
+            <rect y="50" width="200" height="50" fill="#ce1126" />
+            <path d="M0 0 86.6 50 0 100Z" fill="#fff" />
+            <g fill="#fcd116">
+              <circle cx="28.9" cy="50" r="9.5" />
+              <path
+                d="M38.4 46.4L48.9 50.0L38.4 53.6ZM38.1 54.2L43.0 64.1L33.0 59.3ZM32.5 59.5L28.9 70.0L25.3 59.5ZM24.7 59.3L14.7 64.1L19.6 54.2ZM19.4 53.6L8.9 50.0L19.4 46.4ZM19.6 45.8L14.7 35.9L24.7 40.7ZM25.3 40.5L28.9 30.0L32.5 40.5ZM33.0 40.7L43.0 35.9L38.1 45.8Z"
+              />
+              <path
+                d="M14.0 6.5L15.8 12.0L21.6 12.0L16.9 15.4L18.7 21.0L14.0 17.6L9.3 21.0L11.1 15.4L6.4 12.0L12.2 12.0Z"
+              />
+              <path
+                d="M14.0 77.5L15.8 83.0L21.6 83.0L16.9 86.4L18.7 92.0L14.0 88.6L9.3 92.0L11.1 86.4L6.4 83.0L12.2 83.0Z"
+              />
+              <path
+                d="M62.5 42.0L64.3 47.5L70.1 47.5L65.4 50.9L67.2 56.5L62.5 53.1L57.8 56.5L59.6 50.9L54.9 47.5L60.7 47.5Z"
+              />
+            </g>
+          </svg>
+        </span>
+        <span class="gov-masthead-text" data-i18n="officialPortal">
+          The Official Web Portal of Barangay Conde Labac, Batangas City
+        </span>
+
+        <div class="gov-tools">
+          <button
+            type="button"
+            class="gov-tool"
+            id="lang-toggle"
+            aria-label="Switch language"
+          >
+            <i data-icon="languages"></i>
+            <span id="lang-toggle-label">Filipino</span>
+          </button>
+          <button
+            type="button"
+            class="gov-tool"
+            id="theme-toggle"
+            aria-label="Switch appearance"
+          >
+            <i data-icon="moon" id="theme-toggle-icon"></i>
+            <span id="theme-toggle-label">Dark</span>
+          </button>
+          <span class="gov-masthead-gov" data-i18n="republic"
+            >Republic of the Philippines</span
+          >
+        </div>
+      </div>
     </div>
 
     <!-- --- SHARED NAVBAR --- -->
-    <nav class="navbar">
+    <nav class="navbar" id="navbar" aria-label="Main">
       <a href="index.html" class="nav-logo">
         <img
-          src="img/conde%20labac%20logo.png"
+          src="img/seal-256.webp"
+          width="40"
+          height="40"
           onerror="
             this.style.display = 'none';
             this.nextElementSibling.classList.remove('is-hidden');
@@ -50,12 +158,19 @@
       </a>
 
       <ul class="nav-links" id="nav-links">
-        <li><a href="#features">Services</a></li>
-        <li><a href="#gis">GIS Map</a></li>
+        <li><a href="#features" data-i18n="navServices">Services</a></li>
+        <li><a href="#gis" data-i18n="navGisMap">GIS Map</a></li>
+        <li><a href="#bulletin" data-i18n="navBulletin">Bulletin</a></li>
+        <li><a href="#team" data-i18n="navOfficials">Officials</a></li>
+        <li><a href="#visit" data-i18n="navContact">Contact</a></li>
+        <!-- MIS sits last, hard against the right edge of the link row. It is
+             the only item here that leaves the public portal for the staff
+             system, and it is staff-only besides — sitting third of six put a
+             door to another application in the middle of the page's own
+             table of contents. -->
         <li id="nav-mis-li" class="is-hidden">
           <a href="system.html">MIS</a>
         </li>
-        <li><a href="#team">Officials</a></li>
       </ul>
 
       <div class="nav-right">
@@ -67,13 +182,33 @@
             fill="none"
             stroke="currentColor"
             stroke-width="2.5"
+            aria-hidden="true"
           >
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
             <polyline points="10 17 15 12 10 7" />
             <line x1="15" y1="12" x2="3" y2="12" />
           </svg>
-          Sign In
+          <span data-i18n="signIn">Sign In</span>
         </a>
+        <!-- Notifications live in the bar itself, not buried in the user
+             dropdown: an unread count is only useful if it is visible without
+             a click. The badge keeps its id so portal-account.js's
+             paintUnread() still finds it. -->
+        <button
+          type="button"
+          class="nav-notif-btn is-hidden"
+          id="nav-notif-btn"
+          onclick="openNotifications()"
+          aria-label="Notifications"
+          title="Notifications"
+        >
+          <i data-icon="bell"></i>
+          <span
+            class="nav-notif-badge"
+            id="nav-notif-badge"
+          ></span>
+        </button>
+
         <div class="nav-user is-hidden" id="nav-user-pill">
           <button
             type="button"
@@ -94,6 +229,7 @@
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
+              aria-hidden="true"
             >
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -109,44 +245,38 @@
             <button
               type="button"
               class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openNotifications()"
-            >
-              <i data-icon="bell"></i> Notifications
-              <span
-                id="nav-notif-badge"
-                style="display: none; margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--yellow, #eab308); color: #0b1d3a; font-size: 11px; font-weight: 800; align-items: center; justify-content: center;"
-              ></span>
-            </button>
-            <button
-              type="button"
-              class="nav-user-menu-item"
               onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyInfo()"
             >
-              <i data-icon="user"></i> My Information
+              <i data-icon="user"></i>
+              <span data-i18n="myInformation">My Information</span>
+            </button>
+            <!-- My Requests and Activity History were two entries answering
+                 one question ("what did I send in, and what happened to it?").
+                 Merged into My Activity, which also carries profile change
+                 requests. See openMyActivity() in js/portal-account.js. -->
+            <button
+              type="button"
+              class="nav-user-menu-item"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyActivity()"
+            >
+              <i data-icon="inbox"></i>
+              <span data-i18n="myActivity">My Activity</span>
             </button>
             <button
               type="button"
               class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyRequests()"
+              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openPreferences()"
             >
-              <i data-icon="file-text"></i> My Requests
+              <i data-icon="settings"></i>
+              <span data-i18n="settings">Settings</span>
             </button>
-            <button
-              type="button"
-              class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openActivityHistory()"
-            >
-              <i data-icon="clock"></i> Activity History
-            </button>
-            <a class="nav-user-menu-item" href="settings.html">
-              <i data-icon="settings"></i> Settings
-            </a>
             <button
               type="button"
               class="nav-user-menu-item nav-user-menu-item-danger"
               onclick="signOut()"
             >
-              <i data-icon="log-out"></i> Sign Out
+              <i data-icon="log-out"></i>
+              <span data-i18n="signOut">Sign Out</span>
             </button>
           </div>
         </div>
@@ -154,198 +284,479 @@
           class="nav-toggle"
           id="nav-toggle"
           aria-label="Toggle navigation"
+          aria-expanded="false"
+          aria-controls="nav-links"
         >
           <span></span><span></span><span></span>
         </button>
       </div>
     </nav>
 
-    <!-- --- HERO --- -->
-    <section class="hero" id="home">
-      <div class="container hero-shell">
-        <div class="hero-grid">
-          <!-- Left: copy -->
-          <div class="hero-copy">
-            <div class="hero-eyebrow">
-              <i data-icon="landmark"></i>
-              Official Digital Portal · Batangas City
+    <main id="main">
+      <!-- --- HERO --- -->
+      <section class="hero" id="home">
+        <div class="container hero-shell">
+          <div class="hero-grid">
+            <!-- Left: copy -->
+            <div class="hero-copy">
+              <p class="hero-eyebrow">
+                <i data-icon="landmark"></i>
+                <span data-i18n="heroEyebrow"
+                  >Official Digital Portal · Batangas City</span
+                >
+              </p>
+              <h1 class="hero-title">
+                C.A.R.E.S.
+                <!-- The letters the acronym is built from are marked up rather
+                     than left for the reader to work out: C-onde l-A-bak
+                     R-E-sident System. <b> (not <span>) so the mapping still
+                     reads without CSS, and aria-hidden on the wrapper is
+                     deliberately absent — a screen reader should still hear
+                     the plain expansion. -->
+                <span class="hero-title-expansion"
+                  ><b>C</b>onde l<b>A</b>bak <b>RE</b>sident <b>S</b>ystem</span
+                >
+              </h1>
+              <p class="hero-subtitle" data-i18n="heroDescription">
+                The official service platform of Barangay Conde Labac — request
+                certificates, file blotter reports, explore the community GIS
+                map, and reach your barangay from anywhere.
+              </p>
+              <div class="hero-cta-row">
+                <a href="#features" class="btn-hero btn-hero-gold">
+                  <span data-i18n="exploreServices">Explore Services</span>
+                  <i data-icon="arrow-right"></i>
+                </a>
+                <a href="#gis" class="btn-hero btn-hero-ghost">
+                  <i data-icon="map"></i>
+                  <span data-i18n="viewGisMap">View GIS Map</span>
+                </a>
+              </div>
+              <dl class="hero-meta">
+                <div class="hero-meta-item">
+                  <i data-icon="phone"></i>
+                  <div>
+                    <dt class="hero-meta-label" data-i18n="infoHotline">
+                      Barangay Hotline
+                    </dt>
+                    <dd class="hero-meta-value">
+                      <a href="tel:+63437024011">(043) 702-4011</a>
+                    </dd>
+                  </div>
+                </div>
+                <div class="hero-meta-item">
+                  <i data-icon="clock"></i>
+                  <div>
+                    <dt class="hero-meta-label">
+                      <span data-i18n="infoHours">Office Hours</span>
+                      <!-- Filled by paintOfficeStatus() from the visitor's own
+                           clock, so "is the hall open right now?" — the first
+                           question behind a barangay phone call — is answered
+                           without doing the arithmetic. -->
+                      <span
+                        class="office-status is-hidden"
+                        id="office-status"
+                      ></span>
+                    </dt>
+                    <dd class="hero-meta-value">Mon–Fri · 8:00 AM–5:00 PM</dd>
+                  </div>
+                </div>
+                <div class="hero-meta-item">
+                  <i data-icon="map-pin"></i>
+                  <div>
+                    <dt class="hero-meta-label" data-i18n="infoAddress">
+                      Address
+                    </dt>
+                    <dd class="hero-meta-value">
+                      Barangay Hall · Conde Labac, Batangas City
+                    </dd>
+                  </div>
+                </div>
+              </dl>
             </div>
-            <h1 class="hero-title">
-              C.A.R.E.S.
-              <span class="hero-title-expansion"
-                >Conde Labac Residents System</span
+
+            <!-- Right: barangay hall photo + official seal -->
+            <div class="hero-visual">
+              <figure class="hero-photo-card">
+                <picture>
+                  <source srcset="img/brgy-hall.webp" type="image/webp" />
+                  <img
+                    src="img/brgy-hall.jpg"
+                    width="1200"
+                    height="616"
+                    fetchpriority="high"
+                    decoding="async"
+                    alt="The two-storey Barangay Conde Labac hall, seen from the street"
+                    onerror="this.closest('.hero-visual').classList.add('hero-visual-noimg')"
+                  />
+                </picture>
+                <figcaption>
+                  Barangay Hall · Conde Labac, Batangas City
+                </figcaption>
+              </figure>
+              <div class="hero-seal-badge">
+                <img
+                  src="img/seal-256.webp"
+                  width="96"
+                  height="96"
+                  decoding="async"
+                  alt="Official seal of Barangay Conde Labac"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --- ADVISORY RIBBON --- -->
+      <!-- Shown only when the newest bulletin item is tagged Emergency or
+           Advisory (paintAdvisory()). A calamity notice posted at the MIS was
+           previously three screens down the page, in the same grey card as a
+           basketball tournament. -->
+      <aside
+        class="advisory-ribbon is-hidden"
+        id="advisory-ribbon"
+        aria-label="Barangay advisory"
+      >
+        <div class="container advisory-inner">
+          <span class="advisory-badge" id="advisory-badge">Advisory</span>
+          <p class="advisory-text" id="advisory-text"></p>
+          <a class="advisory-link" href="#bulletin">
+            <span data-i18n="readBulletin">Read the bulletin</span>
+            <i data-icon="arrow-right"></i>
+          </a>
+        </div>
+      </aside>
+
+      <!-- --- CITIZEN SERVICES --- -->
+      <section id="features" class="section-services">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-kicker" data-i18n="citizenServices">
+              Citizen Services
+            </p>
+            <h2 class="section-title" data-i18n="servicesHeading">
+              How can the barangay help you today?
+            </h2>
+            <p class="section-desc" data-i18n="servicesSub">
+              Transact with Barangay Conde Labac without lining up at the hall.
+            </p>
+          </div>
+
+          <!-- One <button> per card, stretched over the card by CSS. The old
+               markup nested an <h3> inside a <button>, which is invalid (a
+               button takes phrasing content only) and left screen readers
+               announcing the title, body and link as one run-on label. -->
+          <!-- Barangay Residency was removed from this public grid: it opened
+               a lookup over the whole resident directory to anyone who loaded
+               the landing page. Names, ages, puroks and classifications
+               (senior / PWD / solo parent / indigent) are personal information
+               under RA 10173, and there is no lawful basis for showing one
+               resident another's record. Residents see their own details under
+               My Information; staff use the MIS directory. -->
+          <ul class="services-grid reveal">
+            <li class="service-card">
+              <span class="service-icon" aria-hidden="true"
+                ><i data-icon="file-text"></i
+              ></span>
+              <h3 class="service-title" data-i18n="svcCertificates">
+                Certificate Issuance
+              </h3>
+              <p class="service-desc" data-i18n="svcCertificatesSub">
+                Request clearances, indigency, residency &amp; more
+              </p>
+              <p class="service-note">
+                <i data-icon="clock" aria-hidden="true"></i>
+                <span data-i18n="noteProcessing"
+                  >Ready for pickup in 1–3 working days</span
+                >
+              </p>
+              <button
+                type="button"
+                class="service-cta"
+                onclick="openServicePopup('certificates')"
               >
-            </h1>
-            <p class="hero-subtitle">
-              The official service platform of Barangay Conde Labac — request
-              certificates, file blotter reports, explore the community GIS
-              map, and reach your barangay from anywhere.
+                <span data-i18n="openService">Open service</span>
+                <i data-icon="arrow-right"></i>
+              </button>
+            </li>
+
+            <li class="service-card">
+              <span class="service-icon" aria-hidden="true"
+                ><i data-icon="siren"></i
+              ></span>
+              <h3 class="service-title" data-i18n="svcIncidents">
+                Blotter Reporting
+              </h3>
+              <p class="service-desc" data-i18n="svcIncidentsSub">
+                File an incident report for complaints or concerns
+              </p>
+              <p class="service-note">
+                <i data-icon="phone" aria-hidden="true"></i>
+                <span data-i18n="noteResponse"
+                  >An official contacts you within 24 hours</span
+                >
+              </p>
+              <button
+                type="button"
+                class="service-cta"
+                onclick="openServicePopup('incidents')"
+              >
+                <span data-i18n="openService">Open service</span>
+                <i data-icon="arrow-right"></i>
+              </button>
+            </li>
+
+            <li class="service-card">
+              <span class="service-icon" aria-hidden="true"
+                ><i data-icon="message-square"></i
+              ></span>
+              <h3 class="service-title" data-i18n="svcFeedback">Feedback</h3>
+              <p class="service-desc" data-i18n="svcFeedbackSub">
+                Share comments and suggestions on barangay services
+              </p>
+              <p class="service-note">
+                <i data-icon="users" aria-hidden="true"></i>
+                <span data-i18n="noteReviewed"
+                  >Reviewed monthly by barangay officials</span
+                >
+              </p>
+              <button
+                type="button"
+                class="service-cta"
+                onclick="openServicePopup('feedback')"
+              >
+                <span data-i18n="openService">Open service</span>
+                <i data-icon="arrow-right"></i>
+              </button>
+            </li>
+          </ul>
+
+          <p class="services-footnote reveal">
+            <i data-icon="info" aria-hidden="true"></i>
+            <span data-i18n="accountRequired"
+              >Accounts are required for most services.</span
+            >
+            <a href="claim-account.html" data-i18n="claimToTrack"
+              >Claim an account to track your requests</a
+            >
+          </p>
+        </div>
+      </section>
+
+      <!-- --- HOW IT WORKS --- -->
+      <section id="how" class="section-how">
+        <div class="container">
+          <div class="section-head section-head-center reveal">
+            <p class="section-kicker" data-i18n="howKicker">How it works</p>
+            <h2 class="section-title" data-i18n="howTitle">
+              Three steps, no queue
+            </h2>
+          </div>
+          <ol class="how-steps reveal">
+            <li class="how-step">
+              <span class="how-num" aria-hidden="true">1</span>
+              <h3 class="how-step-title" data-i18n="how1Title">
+                Choose a service
+              </h3>
+              <p class="how-step-desc" data-i18n="how1Desc">
+                Pick a service above. It opens right here on the page — nothing
+                to download or install.
+              </p>
+            </li>
+            <li class="how-step">
+              <span class="how-num" aria-hidden="true">2</span>
+              <h3 class="how-step-title" data-i18n="how2Title">
+                Fill in your details
+              </h3>
+              <p class="how-step-desc" data-i18n="how2Desc">
+                Give your name, purok and purpose. For an incident, drop a pin
+                on the map where it happened.
+              </p>
+            </li>
+            <li class="how-step">
+              <span class="how-num" aria-hidden="true">3</span>
+              <h3 class="how-step-title" data-i18n="how3Title">
+                Get notified
+              </h3>
+              <p class="how-step-desc" data-i18n="how3Desc">
+                Barangay staff review your request and notify you when it is
+                ready or acted upon.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- --- GIS MAPPING --- -->
+      <section id="gis" class="section-gis">
+        <div class="container">
+          <div class="gis-head-row reveal">
+            <div class="section-head section-head-flush">
+              <p class="section-kicker" data-i18n="gisKicker">
+                Geographic Information System
+              </p>
+              <h2 class="section-title" data-i18n="gisTitle">
+                Community GIS Map
+              </h2>
+              <p class="section-desc" data-i18n="gisDesc">
+                Explore households, hazard zones, roads, and community concerns
+                across Barangay Conde Labac. Toggle the layers to view specific
+                datasets on the interactive map.
+              </p>
+            </div>
+            <ul class="gis-facts">
+              <li>
+                <i data-icon="houses" aria-hidden="true"></i>
+                <span data-i18n="gisFactBuildings"
+                  >Every mapped household and building in the barangay</span
+                >
+              </li>
+              <li>
+                <i data-icon="map" aria-hidden="true"></i>
+                <span data-i18n="gisFactBase"
+                  >Roads, waterways and vegetation as base layers</span
+                >
+              </li>
+              <li>
+                <i data-icon="siren" aria-hidden="true"></i>
+                <span data-i18n="gisFactConcerns"
+                  >Community concerns and incident pins filed by residents</span
+                >
+              </li>
+              <li>
+                <i data-icon="lock" aria-hidden="true"></i>
+                <span data-i18n="gisFactPrivacy"
+                  >Names and household classifications stay private on this
+                  public view</span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="gis-section-panel reveal">
+            <!-- The engine injects its layer toggles here and requires this to
+                 be the map container's immediate previous sibling. -->
+            <div class="gis-filter-row"></div>
+
+            <div
+              class="gis-modal-map gis-section-map"
+              id="gis-map-section"
+            ></div>
+
+            <div class="alert alert-info alert-spacing-top">
+              <span class="alert-icon"><i data-icon="info"></i></span>
+              <span data-i18n="gisDisclaimer"
+                >This map is for reference only. For precise coordinates,
+                contact the barangay GIS officer.</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --- LATEST ANNOUNCEMENTS --- -->
+      <section id="bulletin" class="section-announcements">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-kicker" data-i18n="bulletinKicker">
+              Community Bulletin
             </p>
-            <div class="hero-cta-row">
-              <a href="#features" class="btn-hero btn-hero-gold">
-                Explore Services <i data-icon="arrow-right"></i>
+            <h2 class="section-title" data-i18n="bulletinTitle">
+              Latest Announcements
+            </h2>
+            <p class="section-desc" data-i18n="bulletinDesc">
+              Advisories, events, and community updates from the barangay.
+            </p>
+          </div>
+          <div class="announcements-grid reveal" id="announcements-grid">
+            <!-- populated from /api/announcements (js/site-config.js) -->
+          </div>
+        </div>
+      </section>
+
+      <!-- --- BARANGAY OFFICIALS --- -->
+      <section id="team" class="section-officials">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-kicker" data-i18n="leadershipKicker">
+              Leadership
+            </p>
+            <h2 class="section-title" data-i18n="officialsTitle">
+              Barangay Officials
+            </h2>
+            <p class="section-desc" data-i18n="officialsDesc">
+              The current elected officials serving Barangay Conde Labac.
+            </p>
+          </div>
+          <div class="officials-grid reveal" id="officials-grid">
+            <!-- populated from site config (js/site-config.js) -->
+          </div>
+        </div>
+      </section>
+
+      <!-- --- VISIT / CONTACT --- -->
+      <section id="visit" class="section-visit">
+        <div class="container">
+          <div class="visit-grid reveal">
+            <div class="visit-main">
+              <p class="section-kicker" data-i18n="visitKicker">Get in touch</p>
+              <h2 class="section-title" data-i18n="visitTitle">
+                Visit or call the barangay hall
+              </h2>
+              <p class="section-desc" data-i18n="visitDesc">
+                Walk-in transactions, document pickup, and anything the portal
+                cannot settle online are handled at the hall during office
+                hours.
+              </p>
+              <ul class="visit-list">
+                <li>
+                  <i data-icon="map-pin" aria-hidden="true"></i>
+                  <span>Barangay Hall, Conde Labac, Batangas City</span>
+                </li>
+                <li>
+                  <i data-icon="phone" aria-hidden="true"></i>
+                  <a href="tel:+63437024011">(043) 702-4011</a>
+                </li>
+                <li>
+                  <i data-icon="mail" aria-hidden="true"></i>
+                  <a href="mailto:condelabac@batangascity.gov.ph"
+                    >condelabac@batangascity.gov.ph</a
+                  >
+                </li>
+                <li>
+                  <i data-icon="clock" aria-hidden="true"></i>
+                  <span>Monday–Friday · 8:00 AM – 5:00 PM</span>
+                </li>
+              </ul>
+            </div>
+
+            <aside class="visit-emergency">
+              <span class="visit-emergency-icon" aria-hidden="true"
+                ><i data-icon="siren"></i
+              ></span>
+              <h3 class="visit-emergency-title" data-i18n="emergencyTitle">
+                In an emergency
+              </h3>
+              <p class="visit-emergency-desc" data-i18n="emergencyDesc">
+                Do not wait for an online report. Call the national emergency
+                hotline, then the barangay.
+              </p>
+              <a class="visit-emergency-num" href="tel:911">
+                <strong>911</strong>
+                <span data-i18n="emergencyNational"
+                  >National Emergency Hotline</span
+                >
               </a>
-              <a href="#gis" class="btn-hero btn-hero-ghost">
-                <i data-icon="map"></i> View GIS Map
+              <a class="visit-emergency-num" href="tel:+63437024011">
+                <strong>(043) 702-4011</strong>
+                <span data-i18n="infoHotline">Barangay Hotline</span>
               </a>
-            </div>
-            <div class="hero-meta">
-              <div class="hero-meta-item">
-                <i data-icon="bell"></i>
-                <div>
-                  <span class="hero-meta-label">Barangay Hotline</span>
-                  <span class="hero-meta-value">(043) 702-4011</span>
-                </div>
-              </div>
-              <div class="hero-meta-item">
-                <i data-icon="info"></i>
-                <div>
-                  <span class="hero-meta-label">Office Hours</span>
-                  <span class="hero-meta-value">Mon–Fri · 8:00 AM–5:00 PM</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right: barangay hall photo + official seal -->
-          <div class="hero-visual">
-            <figure class="hero-photo-card">
-              <img
-                src="img/brgy_hall_img.png"
-                alt="Barangay Conde Labac Hall"
-                onerror="this.closest('.hero-visual').classList.add('hero-visual-noimg')"
-              />
-              <figcaption>Barangay Hall · Conde Labac, Batangas City</figcaption>
-            </figure>
-            <div class="hero-seal-badge">
-              <img
-                src="img/conde%20labac%20logo.png"
-                alt="Official Seal of Barangay Conde Labac"
-              />
-            </div>
+            </aside>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- --- CITIZEN SERVICES --- -->
-    <section id="features" class="section-services">
-      <div class="container">
-        <div class="section-head reveal">
-          <div class="section-kicker">Citizen Services</div>
-          <h2 class="section-title">How can the barangay help you today?</h2>
-          <p class="section-desc">
-            Transact with Barangay Conde Labac without lining up at the hall.
-            Choose a service below to get started — no account required.
-          </p>
-        </div>
-        <div class="services-grid reveal">
-          <button
-            type="button"
-            class="service-card"
-            onclick="openServicePopup('residency')"
-          >
-            <div class="service-icon"><i data-icon="houses"></i></div>
-            <h3 class="service-title">Barangay Residency</h3>
-            <p class="service-desc">
-              Search the resident registry and verify residency records within
-              the barangay.
-            </p>
-            <span class="service-link"
-              >Open service <i data-icon="arrow-right"></i
-            ></span>
-          </button>
-          <button
-            type="button"
-            class="service-card"
-            onclick="openServicePopup('certificates')"
-          >
-            <div class="service-icon"><i data-icon="file-text"></i></div>
-            <h3 class="service-title">Certificate Issuance</h3>
-            <p class="service-desc">
-              Request clearances, indigency, residency, and other official
-              documents for pickup in 1–3 working days.
-            </p>
-            <span class="service-link"
-              >Open service <i data-icon="arrow-right"></i
-            ></span>
-          </button>
-          <button
-            type="button"
-            class="service-card"
-            onclick="openServicePopup('incidents')"
-          >
-            <div class="service-icon"><i data-icon="siren"></i></div>
-            <h3 class="service-title">Blotter Reporting</h3>
-            <p class="service-desc">
-              File an incident report online. A barangay official will contact
-              you within 24 hours.
-            </p>
-            <span class="service-link"
-              >Open service <i data-icon="arrow-right"></i
-            ></span>
-          </button>
-          <button
-            type="button"
-            class="service-card"
-            onclick="openServicePopup('feedback')"
-          >
-            <div class="service-icon"><i data-icon="message-square"></i></div>
-            <h3 class="service-title">Resident Feedback</h3>
-            <p class="service-desc">
-              Rate barangay services and send suggestions — reviewed monthly by
-              barangay officials.
-            </p>
-            <span class="service-link"
-              >Open service <i data-icon="arrow-right"></i
-            ></span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- --- GIS MAPPING --- -->
-    <section id="gis">
-      <div class="container">
-        <div class="section-head reveal">
-          <div class="section-kicker">Geographic Information System</div>
-          <h2 class="section-title">Community GIS Map</h2>
-          <p class="section-desc">
-            Explore households, hazard zones, roads, and community concerns
-            across Barangay Conde Labac. Toggle the layers below to view
-            specific datasets on the interactive map.
-          </p>
-        </div>
-
-        <div class="gis-section-panel reveal">
-          <div class="gis-filter-row"></div>
-
-          <div class="gis-modal-map gis-section-map" id="gis-map-section"></div>
-
-          <div class="alert alert-info alert-spacing-top">
-            <span class="alert-icon"><i data-icon="info"></i></span> This map is
-            for reference only. For precise coordinates, contact the barangay
-            GIS officer.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- --- BARANGAY OFFICIALS --- -->
-    <section id="team" class="section-officials">
-      <div class="container">
-        <div class="section-head reveal">
-          <div class="section-kicker">Leadership</div>
-          <h2 class="section-title">Barangay Officials</h2>
-          <p class="section-desc">
-            The current elected officials serving Barangay Conde Labac.
-          </p>
-        </div>
-        <div class="officials-grid reveal" id="officials-grid">
-          <!-- populated from site config (js/site-config.js) -->
-        </div>
-      </div>
-    </section>
+      </section>
+    </main>
 
     <!-- ------------------------------- SERVICE MODALS ------------------------------- -->
 
@@ -402,99 +813,17 @@
       </div>
     </div>
 
-    <!-- -- 1. BARANGAY RESIDENCY -- -->
-    <div
-      class="modal-backdrop"
-      id="modal-residency"
-      onclick="closeServiceModal('residency', event)"
-    >
-      <div class="modal-box modal-lg">
-        <div class="modal-header">
-          <div class="modal-title">
-            <div class="modal-title-icon"><i data-icon="houses"></i></div>
-            Barangay Residency – Resident Search
-          </div>
-          <button class="modal-close" onclick="closeServiceModal('residency')">
-            <i data-icon="x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p class="modal-help-text">
-            Search for registered residents in the Barangay Conde Labac system.
-            Lookups are logged per RA 10173.
-          </p>
-          <div class="form-row form-row-tight">
-            <div class="form-group form-group-flat">
-              <label class="form-label">Full Name</label>
-              <input
-                class="form-control"
-                id="res-search-name"
-                placeholder="e.g. Santos, Pedro"
-                oninput="filterResidents()"
-              />
-            </div>
-            <div class="form-group form-group-flat">
-              <label class="form-label">Purok / Zone</label>
-              <select
-                class="form-control"
-                id="res-search-purok"
-                onchange="filterResidents()"
-              >
-                <option value="">All Puroks</option>
-                <option>Purok 1 – Sitio Maliwanag</option>
-                <option>Purok 2 – Sitio Masagana</option>
-                <option>Purok 3 – Sitio Malinis</option>
-                <option>Purok 4 – Sitio Mapayapa</option>
-                <option>Purok 5 – Sitio Bagong Pag-Asa</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row form-row-roomy">
-            <div class="form-group form-group-flat">
-              <label class="form-label">Category</label>
-              <select
-                class="form-control"
-                id="res-search-cat"
-                onchange="filterResidents()"
-              >
-                <option value="">All Categories</option>
-                <option>Senior Citizen</option>
-                <option>PWD</option>
-                <option>Solo Parent</option>
-                <option>Indigent Family</option>
-              </select>
-            </div>
-            <div class="form-group form-group-flat">
-              <label class="form-label">Status</label>
-              <select
-                class="form-control"
-                id="res-search-status"
-                onchange="filterResidents()"
-              >
-                <option value="">All Statuses</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Deceased</option>
-              </select>
-            </div>
-          </div>
-          <div id="resident-results">
-            <!-- populated by JS -->
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="closeServiceModal('residency')"
-          >
-            Close
-          </button>
-          <button class="btn btn-primary" onclick="exportResidents()">
-            <i data-icon="file-text"></i> Export Results
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- 1. BARANGAY RESIDENCY — removed. This modal searched the whole
+         resident directory (names, ages, puroks, and the senior / PWD / solo
+         parent / indigent classifications) and offered an "Export Results"
+         button, to anyone who opened the public landing page. That is
+         personal and, for the classifications, sensitive personal information
+         under RA 10173, and a resident has no basis to see another's record.
+         Deleting the markup as well as the two entry points matters: leaving
+         it in place would keep the lookup one console call away via
+         openServicePopup('residency').
+         Residents read their own details under My Information; staff use the
+         MIS directory at pages/residency.html. -->
 
     <!-- -- 2. CERTIFICATE ISSUANCE -- -->
     <div
@@ -523,50 +852,8 @@
 
           <label class="form-label">Select Certificate Type</label>
           <div class="cert-type-grid" id="cert-type-grid">
-            <div
-              class="cert-type-card selected"
-              onclick="selectCert(this, 'Barangay Clearance')"
-            >
-              <span class="cert-icon"><i data-icon="clipboard"></i></span>
-              <div class="cert-name">Barangay Clearance</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Indigency')"
-            >
-              <span class="cert-icon"><i data-icon="briefcase"></i></span>
-              <div class="cert-name">Certificate of Indigency</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Residency')"
-            >
-              <span class="cert-icon"><i data-icon="home"></i></span>
-              <div class="cert-name">Certificate of Residency</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Business Clearance')"
-            >
-              <span class="cert-icon"><i data-icon="building"></i></span>
-              <div class="cert-name">Business Clearance</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Good Moral')"
-            >
-              <span class="cert-icon"
-                ><i data-icon="star" class="ic-fill"></i
-              ></span>
-              <div class="cert-name">Good Moral Certificate</div>
-            </div>
-            <div
-              class="cert-type-card"
-              onclick="selectCert(this, 'Certificate of Solo Parent')"
-            >
-              <span class="cert-icon"><i data-icon="family"></i></span>
-              <div class="cert-name">Solo Parent Certificate</div>
-            </div>
+              <!-- Cards are rendered by renderCertTypeGrid() in
+                   js/portal-account.js, the one list of certificate types. -->
           </div>
 
           <div id="cert-selected-badge" class="cert-selected-badge">
@@ -576,14 +863,14 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">First Name</label>
-              <input class="form-control" placeholder="Juan" id="cert-fname" />
+              <input class="form-control" placeholder="Juan" id="cert-fname" required />
             </div>
             <div class="form-group">
               <label class="form-label">Last Name</label>
               <input
                 class="form-control"
                 placeholder="Santos"
-                id="cert-lname"
+                id="cert-lname" required
               />
             </div>
           </div>
@@ -738,7 +1025,7 @@
             <label class="form-label">Detailed Narration of Incident</label>
             <textarea
               class="form-control textarea-tall"
-              id="inc-narration"
+              id="inc-narration" required
               placeholder="Describe what happened in detail – include sequence of events, persons involved, and any witnesses..."
             ></textarea>
           </div>
@@ -825,31 +1112,31 @@
 
           <div class="form-group">
             <label class="form-label">Overall Satisfaction</label>
-            <div class="star-rating" id="star-rating">
-              <span class="star active" onclick="setRating(1)"
-                ><i data-icon="star" class="ic-fill"></i
+            <div class="star-rating" id="star-rating" tabindex="-1">
+              <span class="star" onclick="setRating(1)"
+                ><i data-icon="star"></i
               ></span>
-              <span class="star active" onclick="setRating(2)"
-                ><i data-icon="star" class="ic-fill"></i
+              <span class="star" onclick="setRating(2)"
+                ><i data-icon="star"></i
               ></span>
-              <span class="star active" onclick="setRating(3)"
-                ><i data-icon="star" class="ic-fill"></i
+              <span class="star" onclick="setRating(3)"
+                ><i data-icon="star"></i
               ></span>
-              <span class="star active" onclick="setRating(4)"
-                ><i data-icon="star" class="ic-fill"></i
+              <span class="star" onclick="setRating(4)"
+                ><i data-icon="star"></i
               ></span>
               <span class="star" onclick="setRating(5)"
                 ><i data-icon="star"></i
               ></span>
             </div>
-            <div id="rating-label" class="rating-label">4 out of 5 – Good</div>
+            <div id="rating-label" class="rating-label">Select a rating</div>
           </div>
 
           <div class="form-group">
             <label class="form-label">Your Comment or Suggestion</label>
             <textarea
               class="form-control textarea-medium"
-              id="fb-comment"
+              id="fb-comment" required
               placeholder="Share your experience, suggestions, or concerns about barangay services..."
             ></textarea>
           </div>
@@ -905,7 +1192,11 @@
           <div class="footer-col footer-brand">
             <div class="footer-seal-row">
               <img
-                src="img/conde%20labac%20logo.png"
+                src="img/seal-256.webp"
+                width="52"
+                height="52"
+                loading="lazy"
+                decoding="async"
                 alt="Conde Labac Seal"
                 class="footer-seal"
               />
@@ -916,37 +1207,96 @@
                 </div>
               </div>
             </div>
-            <p class="footer-text">
+            <p class="footer-text" data-i18n="footerBlurb">
               GIS-Enabled Integrated Barangay Management and Decision Support
               System for evidence-based local governance.
             </p>
+            <p class="footer-privacy">
+              <i data-icon="lock" aria-hidden="true"></i>
+              <span data-i18n="footerPrivacy"
+                >Resident data is handled under the Data Privacy Act of 2012
+                (RA 10173). Record lookups are logged.</span
+              >
+            </p>
           </div>
+
           <div class="footer-col">
-            <div class="footer-heading">Quick Links</div>
+            <div class="footer-heading" data-i18n="citizenServices">
+              Citizen Services
+            </div>
+            <!-- Barangay Residency is not listed here either — removing the
+                 card but leaving a footer link would only hide the same
+                 public directory lookup one scroll further down. -->
             <ul class="footer-links">
-              <li><a href="#features">Citizen Services</a></li>
-              <li><a href="#gis">GIS Map</a></li>
-              <li><a href="#team">Barangay Officials</a></li>
-              <li><a href="system.html">Staff Sign In</a></li>
+              <li>
+                <button
+                  type="button"
+                  onclick="openServicePopup('certificates')"
+                >
+                  <span data-i18n="svcCertificates">Certificate Issuance</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onclick="openServicePopup('incidents')">
+                  <span data-i18n="svcIncidents">Blotter Reporting</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onclick="openServicePopup('feedback')">
+                  <span data-i18n="svcFeedback">Feedback</span>
+                </button>
+              </li>
             </ul>
           </div>
+
           <div class="footer-col">
-            <div class="footer-heading">Contact the Barangay</div>
+            <div class="footer-heading" data-i18n="footerQuickLinks">
+              Quick Links
+            </div>
+            <ul class="footer-links">
+              <li><a href="#gis" data-i18n="navGisMap">GIS Map</a></li>
+              <li>
+                <a href="#bulletin" data-i18n="announcements">Announcements</a>
+              </li>
+              <li>
+                <a href="#team" data-i18n="officialsTitle"
+                  >Barangay Officials</a
+                >
+              </li>
+              <li>
+                <a href="claim-account.html" data-i18n="claimAccount"
+                  >Claim your account</a
+                >
+              </li>
+              <li>
+                <a href="system.html" data-i18n="footerStaffSignIn"
+                  >Staff Sign In</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <div class="footer-heading" data-i18n="footerContact">
+              Contact the Barangay
+            </div>
             <ul class="footer-contact">
               <li>
-                <i data-icon="map"></i>
+                <i data-icon="map-pin"></i>
                 <span>Barangay Hall, Conde Labac, Batangas City</span>
               </li>
               <li>
-                <i data-icon="bell"></i>
-                <span>Hotline: (043) 702-4011</span>
+                <i data-icon="phone"></i>
+                <a href="tel:+63437024011">(043) 702-4011</a>
               </li>
               <li>
-                <i data-icon="message-square"></i>
-                <span>condelabac@batangascity.gov.ph</span>
+                <i data-icon="mail"></i>
+                <a href="mailto:condelabac@batangascity.gov.ph"
+                  >condelabac@batangascity.gov.ph</a
+                >
               </li>
               <li>
-                <i data-icon="info"></i>
+                <i data-icon="clock"></i>
                 <span>Monday–Friday · 8:00 AM – 5:00 PM</span>
               </li>
             </ul>
@@ -964,24 +1314,334 @@
       </div>
     </footer>
 
-    <script src="js/gis-map.js"></script>
-    <script src="js/incident-report.js"></script>
+    <button
+      type="button"
+      class="to-top"
+      id="to-top"
+      aria-label="Back to top"
+      title="Back to top"
+    >
+      <i data-icon="arrow-up"></i>
+    </button>
+
     <script>
+      // ── The GIS engine, on demand ───────────────────────────────────────
+      // gis-map.js is 200 KB of script that then fetches ~900 KB of GeoJSON,
+      // and it used to be a blocking <script> in the page followed by an
+      // unconditional initGisMap() 200 ms after DOMContentLoaded — paid in
+      // full by every visitor who only came to request a clearance. It is now
+      // fetched the first time something actually needs a map: the section
+      // scrolling into view, or the incident modal opening.
+      let gisEnginePromise = null;
+
+      function loadGisEngine() {
+        if (gisEnginePromise) return gisEnginePromise;
+        gisEnginePromise = new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "js/gis-map.js";
+          s.onload = () => resolve();
+          s.onerror = () => {
+            // Let a later attempt retry rather than caching the failure.
+            gisEnginePromise = null;
+            reject(new Error("failed to load js/gis-map.js"));
+          };
+          document.head.appendChild(s);
+        });
+        return gisEnginePromise;
+      }
+
+      // Anonymous mode keeps tagged households private (no names or
+      // classification) and hides reporter names on community-concern pins.
+      function initSectionMap() {
+        return loadGisEngine()
+          .then(() => initGisMap("gis-map-section", { anonymous: true }))
+          .catch((err) => {
+            console.error("[landing]", err);
+            const host = document.getElementById("gis-map-section");
+            if (host)
+              host.innerHTML =
+                '<div class="gis-load-error">Unable to load the map right now.</div>';
+          });
+      }
+
+      function watchGisSection() {
+        const panel = document.getElementById("gis-map-section");
+        if (!panel) return;
+        if (!("IntersectionObserver" in window)) {
+          initSectionMap();
+          return;
+        }
+        // 600px of lead time: the map is usually drawn by the time the
+        // section reaches the fold.
+        const io = new IntersectionObserver(
+          (entries, obs) => {
+            if (!entries.some((e) => e.isIntersecting)) return;
+            obs.disconnect();
+            initSectionMap();
+          },
+          { rootMargin: "600px 0px" },
+        );
+        io.observe(panel);
+      }
+
+      // ── Office hours, from the visitor's own clock ───────────────────────
+      const OFFICE_OPEN_HOUR = 8; // 8:00 AM
+      const OFFICE_CLOSE_HOUR = 17; // 5:00 PM
+
+      function paintOfficeStatus() {
+        const el = document.getElementById("office-status");
+        if (!el) return;
+        const now = new Date();
+        const day = now.getDay(); // 0 Sun … 6 Sat
+        const open =
+          day >= 1 &&
+          day <= 5 &&
+          now.getHours() >= OFFICE_OPEN_HOUR &&
+          now.getHours() < OFFICE_CLOSE_HOUR;
+        const t = (key, fallback) =>
+          window.L && typeof L.t === "function" ? L.t(key) : fallback;
+        el.textContent = open
+          ? t("openNow", "Open now")
+          : t("closedNow", "Closed now");
+        el.classList.toggle("is-open", open);
+        el.classList.remove("is-hidden");
+      }
+
+      // ── Advisory ribbon ─────────────────────────────────────────────────
+      // Surfaces the newest bulletin item only while it is urgent — an
+      // Emergency or Advisory tag — so a calamity notice is not buried three
+      // screens below the fold next to a fiesta schedule.
+      const ADVISORY_TAGS = ["Emergency", "Advisory"];
+
+      function paintAdvisory() {
+        if (!window.SiteConfig) return;
+        SiteConfig.fetchAnnouncements()
+          .then((list) => {
+            const latest = (list || [])[0];
+            if (!latest || ADVISORY_TAGS.indexOf(latest.tag) === -1) return;
+            const ribbon = document.getElementById("advisory-ribbon");
+            const badge = document.getElementById("advisory-badge");
+            const text = document.getElementById("advisory-text");
+            if (!ribbon || !badge || !text) return;
+            badge.textContent = latest.tag;
+            text.textContent = latest.title || "";
+            ribbon.classList.toggle(
+              "advisory-emergency",
+              latest.tag === "Emergency",
+            );
+            ribbon.classList.remove("is-hidden");
+          })
+          .catch(() => {
+            /* no bulletin, no ribbon */
+          });
+      }
+
+      // ── Masthead preference toggles ──────────────────────────────────────
+      // Appearance and language were reachable only from the account
+      // dropdown's Settings sheet, i.e. never for a signed-out visitor —
+      // even though theme.js follows the OS into dark mode on its own and
+      // i18n.js carries a complete Filipino translation.
+      const THEME_CYCLE = ["light", "dark", "system"];
+      const THEME_ICON = { light: "sun", dark: "moon", system: "monitor" };
+
+      function paintThemeToggle() {
+        const btn = document.getElementById("theme-toggle");
+        const icon = document.getElementById("theme-toggle-icon");
+        const label = document.getElementById("theme-toggle-label");
+        if (!btn || !icon || !label || !window.Theme) return;
+        const key =
+          Theme.mode === "light"
+            ? "themeLight"
+            : Theme.mode === "dark"
+              ? "themeDark"
+              : "themeSystem";
+        icon.setAttribute("data-icon", THEME_ICON[Theme.mode] || "monitor");
+        icon.innerHTML = "";
+        if (window.hydrateIcons) hydrateIcons(icon);
+        const name =
+          window.L && typeof L.t === "function" ? L.t(key) : Theme.label;
+        label.textContent = name;
+        // The label shows the current appearance while the language button
+        // shows the one you'd switch to — they are different kinds of control
+        // (a three-way cycle and a two-way swap), so spell out which is which
+        // instead of leaving a screen reader to guess.
+        btn.setAttribute("aria-label", "Appearance: " + name + ". Change it.");
+        btn.setAttribute("title", "Appearance: " + name);
+      }
+
+      function paintLangToggle() {
+        const btn = document.getElementById("lang-toggle");
+        const label = document.getElementById("lang-toggle-label");
+        if (!btn || !label || !window.L) return;
+        // Label the language you would switch *to*, the way a toggle should.
+        const next = L.isFilipino ? "English" : "Filipino";
+        label.textContent = next;
+        btn.setAttribute("aria-label", "Switch to " + next);
+        btn.setAttribute("title", "Switch to " + next);
+      }
+
+      function initChromeToggles() {
+        const themeBtn = document.getElementById("theme-toggle");
+        if (themeBtn && window.Theme) {
+          themeBtn.addEventListener("click", () => {
+            const next =
+              THEME_CYCLE[(THEME_CYCLE.indexOf(Theme.mode) + 1) % 3];
+            Theme.setMode(next);
+          });
+          Theme.subscribe(paintThemeToggle);
+          paintThemeToggle();
+        }
+
+        const langBtn = document.getElementById("lang-toggle");
+        if (langBtn && window.L) {
+          langBtn.addEventListener("click", () => {
+            L.setLanguage(L.isFilipino ? "english" : "filipino");
+          });
+          L.subscribe(() => {
+            paintLangToggle();
+            paintThemeToggle();
+            paintOfficeStatus();
+          });
+          paintLangToggle();
+        }
+      }
+
+      // ── Scroll reveal ───────────────────────────────────────────────────
+      // The start state lives behind `html.js` in landing.css, so a visitor
+      // whose scripts never arrive gets the finished page instead of a blank
+      // one. Each block is unobserved once shown — the old version kept
+      // firing and re-applied a stagger delay based on the batch index, which
+      // made late blocks fade in at random offsets.
+      function initReveals() {
+        const blocks = document.querySelectorAll(".reveal");
+        if (!("IntersectionObserver" in window)) {
+          blocks.forEach((el) => el.classList.add("visible"));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries, obs) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add("visible");
+              obs.unobserve(entry.target);
+            });
+          },
+          { threshold: 0.08, rootMargin: "0px 0px -40px" },
+        );
+        blocks.forEach((el) => io.observe(el));
+      }
+
+      // ── Navbar: scrolled state, active section, back-to-top ─────────────
+      function initScrollChrome() {
+        const navbar = document.getElementById("navbar");
+        const toTop = document.getElementById("to-top");
+        const sections = Array.from(document.querySelectorAll("main section[id]"));
+        const links = Array.from(document.querySelectorAll(".nav-links a"));
+        let queued = false;
+
+        function paint() {
+          queued = false;
+          const y = window.scrollY;
+          if (navbar) navbar.classList.toggle("is-scrolled", y > 24);
+          if (toTop) toTop.classList.toggle("is-visible", y > 700);
+
+          let current = "";
+          sections.forEach((sec) => {
+            if (y >= sec.offsetTop - 140) current = sec.id;
+          });
+          links.forEach((link) => {
+            const active = link.getAttribute("href") === "#" + current;
+            link.classList.toggle("is-active", active);
+            // aria-current says "you are here" to a screen reader; the old
+            // code only nudged link.style.color, which says nothing.
+            if (active) link.setAttribute("aria-current", "true");
+            else link.removeAttribute("aria-current");
+          });
+        }
+
+        window.addEventListener(
+          "scroll",
+          () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(paint);
+          },
+          { passive: true },
+        );
+        if (toTop)
+          toTop.addEventListener("click", () =>
+            window.scrollTo({ top: 0, behavior: "smooth" }),
+          );
+        paint();
+      }
+
+      // ── Mobile navigation ───────────────────────────────────────────────
+      function initMobileNav() {
+        const toggle = document.getElementById("nav-toggle");
+        const links = document.getElementById("nav-links");
+        if (!toggle || !links) return;
+
+        function setOpen(open) {
+          toggle.classList.toggle("is-open", open);
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+
+          if (open) {
+            // Dropping `is-closing` also cancels an exit that is still
+            // playing, so tapping the hamburger twice quickly reopens the
+            // drawer instead of leaving it half-way out.
+            links.classList.remove("is-closing");
+            links.classList.add("open");
+            // Numbers the links so they arrive one after another rather than
+            // all at once — see .nav-links.open > li in css/motion.css.
+            if (window.Motion) Motion.index(links);
+            return;
+          }
+
+          // A drawer that is display:none the instant it is dismissed gives no
+          // sense of where it went. Motion.closeOverlay plays the exit and
+          // then takes `open` off; without the runtime it is the same instant
+          // close it always was.
+          if (window.Motion && links.classList.contains("open"))
+            Motion.closeOverlay(links);
+          else links.classList.remove("open", "is-closing");
+        }
+
+        toggle.addEventListener("click", () =>
+          setOpen(!links.classList.contains("open")),
+        );
+        links
+          .querySelectorAll("a")
+          .forEach((a) => a.addEventListener("click", () => setOpen(false)));
+        // Escape closes it, and so does tapping the page behind it.
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") setOpen(false);
+        });
+        document.addEventListener("click", (e) => {
+          if (!links.classList.contains("open")) return;
+          if (!links.contains(e.target) && !toggle.contains(e.target))
+            setOpen(false);
+        });
+      }
+
+      // ── Boot ────────────────────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
-        // Render the (customizable) Barangay Officials section from site config.
-        if (window.SiteConfig) SiteConfig.renderOfficials("officials-grid");
+        // Render the DB-backed landing sections (announcements + officials).
+        if (window.SiteConfig) {
+          SiteConfig.renderAnnouncements("announcements-grid", 6);
+          SiteConfig.renderOfficials("officials-grid");
+        }
+        paintAdvisory();
 
         // Wire the user-pill dropdown (Settings / Sign Out).
         initUserMenu();
-
-        // Initialize the GIS section map on the landing page. Anonymous mode
-        // keeps tagged households private (no names/classification) and hides
-        // reporter names on community-concern pins.
-        setTimeout(() => initGisMap("gis-map-section", { anonymous: true }), 200);
-
-        // Reporting a concern is now filed through the unified "File an
-        // Incident / Concern" service modal (with its own embedded pin-picker
-        // map), so the on-map "Report a Concern" button was removed here.
+        initChromeToggles();
+        initReveals();
+        initScrollChrome();
+        initMobileNav();
+        paintOfficeStatus();
+        // The hall opens and closes while the tab is left open.
+        setInterval(paintOfficeStatus, 60000);
+        watchGisSection();
 
         const accessBtn = document.getElementById("access-system-btn");
         if (accessBtn) {
@@ -996,44 +1656,6 @@
           });
         }
       });
-      // Scroll reveal
-      const reveals = document.querySelectorAll(".reveal");
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry, i) => {
-            if (entry.isIntersecting) {
-              entry.target.style.transitionDelay = i * 0.08 + "s";
-              entry.target.classList.add("visible");
-            }
-          });
-        },
-        { threshold: 0.1 },
-      );
-      reveals.forEach((el) => observer.observe(el));
-
-      // Active nav highlight on scroll
-      const sections = document.querySelectorAll("section[id]");
-      const navLinks = document.querySelectorAll(".nav-links a");
-      window.addEventListener("scroll", () => {
-        let current = "";
-        sections.forEach((sec) => {
-          if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
-        });
-        navLinks.forEach((link) => {
-          link.style.color =
-            link.getAttribute("href") === "#" + current ? "var(--yellow)" : "";
-        });
-      });
-
-      // Mobile nav toggle
-      const toggle = document.getElementById("nav-toggle");
-      const links = document.getElementById("nav-links");
-      toggle.addEventListener("click", () => links.classList.toggle("open"));
-      links
-        .querySelectorAll("a")
-        .forEach((a) =>
-          a.addEventListener("click", () => links.classList.remove("open")),
-        );
 
       const SESSION_KEY = "ibmdss.session";
 
@@ -1053,31 +1675,69 @@
         const signin = document.getElementById("nav-signin");
         const userPill = document.getElementById("nav-user-pill");
         const misLi = document.getElementById("nav-mis-li");
+        const notifBtn = document.getElementById("nav-notif-btn");
 
         if (!session) {
           signin.style.display = "inline-flex";
           userPill.classList.add("is-hidden");
           misLi.classList.add("is-hidden");
+          // Nothing to notify a signed-out visitor about.
+          if (notifBtn) notifBtn.classList.add("is-hidden");
           return;
         }
 
         signin.style.display = "none";
         userPill.classList.remove("is-hidden");
+        if (notifBtn) notifBtn.classList.remove("is-hidden");
         document.getElementById("nav-user-name").textContent =
           session.shortName || session.displayName || "User";
         document.getElementById("nav-avatar").textContent =
           session.initials || "U";
+        // Initials first; the resident's profile photo replaces them once it
+        // is in hand. Same helper and same cache the MIS chrome uses.
+        if (typeof loadSessionAvatar === "function") loadSessionAvatar(session);
 
-        const isStaff = session.role === "Admin" || session.role === "Officer";
-        if (isStaff) {
-          misLi.classList.remove("is-hidden");
-        } else {
-          misLi.classList.add("is-hidden");
-        }
-
-        // MIS shortcut inside the user dropdown — staff only.
+        // Who sees the MIS link is no longer hard-coded to "staff": it is the
+        // "MIS Access" row of the Role Access Matrix (User Management), so an
+        // Admin can take the MIS away from Officers — or hand it to a custom
+        // role — without a code change. Hidden until the answer arrives, since
+        // showing a door and then removing it is worse than a beat's delay.
+        misLi.classList.add("is-hidden");
         const misMenuItem = document.getElementById("nav-user-mis");
-        if (misMenuItem) misMenuItem.classList.toggle("is-hidden", !isStaff);
+        if (misMenuItem) misMenuItem.classList.add("is-hidden");
+        applyMisNavAccess(session);
+      }
+
+      // Reveals (or leaves hidden) the two MIS entry points once the matrix
+      // has been read. Guarded on the session that was current when it started
+      // so a sign-out mid-flight cannot un-hide the link.
+      async function applyMisNavAccess(session) {
+        if (typeof canAccessMis !== "function") {
+          // js/mis-access.js is deferred, and the navbar is painted while the
+          // page is still parsing — so the first call can land before the
+          // helper exists. Ask again once the deferred scripts have run.
+          if (document.readyState === "loading")
+            document.addEventListener(
+              "DOMContentLoaded",
+              () => applyMisNavAccess(session),
+              { once: true }
+            );
+          return;
+        }
+        let allowed = false;
+        try {
+          allowed = await canAccessMis(session.role);
+        } catch (e) {
+          return;
+        }
+        const now = getSession();
+        if (!now || now.user !== session.user || !allowed) return;
+        document.getElementById("nav-mis-li")?.classList.remove("is-hidden");
+        // MIS shortcut inside the user dropdown. Site Content used to sit
+        // beside it, but it is one module among twelve and the MIS sidebar
+        // already lists it; a second door to a single module does not earn a
+        // slot in a seven-item menu.
+        document.getElementById("nav-user-mis")?.classList.remove("is-hidden");
       }
 
       function signOut() {
@@ -1086,6 +1746,10 @@
         if (typeof logAudit === "function")
           logAudit("LOGOUT", `${session?.displayName || "User"} signed out`, "info", "auth");
         clearSession();
+        // The cached avatar is another person's face on a shared machine —
+        // it goes with the session, not with the browser.
+        if (typeof clearSessionAvatarCache === "function")
+          clearSessionAvatarCache();
         applySessionToNav(null);
       }
 
@@ -1113,7 +1777,11 @@
       applySessionToNav(getSession());
 
       let selectedCert = "Barangay Clearance";
-      let feedbackRating = 4;
+      // 0 = nothing chosen. The modal used to open with four stars lit, so
+      // every submission from someone who never touched the control was
+      // recorded as "Good" — and the Feedback page's average rating was partly
+      // built out of opinions nobody gave.
+      let feedbackRating = 0;
 
       function showToast(msg, icon = "<i data-icon=check></i>") {
         const t = document.getElementById("toast");
@@ -1129,13 +1797,28 @@
 
       function openServicePopup(service) {
         // Blotter/incident filing uses the unified modal (incident-report.js),
-        // which builds its own body and embedded pin-picker map.
-        if (service === "incidents" && typeof openIncidentModal === "function") {
-          openIncidentModal();
+        // which builds its own body and embedded pin-picker map. That map — and
+        // the store a filed report is saved into — is the GIS engine, which is
+        // no longer on the page by default, so make sure it has arrived before
+        // the modal opens. incident-report.js gives up silently on a missing
+        // initGisMap and would leave the resident with no way to pin a
+        // location.
+        if (service === "incidents") {
+          loadGisEngine()
+            .catch((err) => console.error("[landing]", err))
+            .then(() => {
+              if (typeof openIncidentModal === "function") openIncidentModal();
+            });
           return;
         }
-        document.getElementById("modal-" + service).classList.add("open");
-        if (service === "residency") renderResidentResults("");
+        const modal = document.getElementById("modal-" + service);
+        modal.classList.add("open");
+        if (service === "feedback") {
+          // Last time's refusal must not be the first thing this visitor sees,
+          // and the stars start blank however the last submission ended.
+          if (window.Motion) Motion.clearErrors(modal);
+          resetRating();
+        }
       }
 
       function closeServiceModal(service, e) {
@@ -1144,126 +1827,11 @@
         document.getElementById("modal-" + service).classList.remove("open");
       }
 
-      const RESIDENTS_DATA = [
-        {
-          name: "Santos, Pedro J.",
-          age: 34,
-          purok: "Purok 1",
-          cat: "",
-          status: "Active",
-        },
-        {
-          name: "dela Cruz, Maria L.",
-          age: 67,
-          purok: "Purok 2",
-          cat: "Senior Citizen",
-          status: "Active",
-        },
-        {
-          name: "Reyes, Jose B.",
-          age: 45,
-          purok: "Purok 3",
-          cat: "Indigent Family",
-          status: "Active",
-        },
-        {
-          name: "Aquino, Ana M.",
-          age: 29,
-          purok: "Purok 1",
-          cat: "Solo Parent",
-          status: "Active",
-        },
-        {
-          name: "Bautista, Carlos F.",
-          age: 52,
-          purok: "Purok 4",
-          cat: "PWD",
-          status: "Active",
-        },
-        {
-          name: "Villanueva, Rosa T.",
-          age: 78,
-          purok: "Purok 5",
-          cat: "Senior Citizen",
-          status: "Active",
-        },
-        {
-          name: "Garcia, Luis N.",
-          age: 38,
-          purok: "Purok 2",
-          cat: "",
-          status: "Active",
-        },
-        {
-          name: "Mendoza, Elena P.",
-          age: 44,
-          purok: "Purok 3",
-          cat: "Indigent Family",
-          status: "Inactive",
-        },
-        {
-          name: "Santos, Juan R.",
-          age: 22,
-          purok: "Purok 1",
-          cat: "",
-          status: "Active",
-        },
-        {
-          name: "Cruz, Nora T.",
-          age: 61,
-          purok: "Purok 5",
-          cat: "Senior Citizen",
-          status: "Active",
-        },
-      ];
-
-      function filterResidents() {
-        const nameQ =
-          document.getElementById("res-search-name")?.value.toLowerCase() || "";
-        const purokQ = document.getElementById("res-search-purok")?.value || "";
-        const catQ = document.getElementById("res-search-cat")?.value || "";
-        const statusQ =
-          document.getElementById("res-search-status")?.value || "";
-        const filtered = RESIDENTS_DATA.filter((r) => {
-          return (
-            (!nameQ || r.name.toLowerCase().includes(nameQ)) &&
-            (!purokQ || r.purok === purokQ.split(" – ")[0] || purokQ === "") &&
-            (!catQ || r.cat === catQ) &&
-            (!statusQ || r.status === statusQ)
-          );
-        });
-        renderResidentResults(filtered);
-      }
-
-      function renderResidentResults(filtered) {
-        const list = Array.isArray(filtered) ? filtered : RESIDENTS_DATA;
-        const container = document.getElementById("resident-results");
-        if (!container) return;
-        if (list.length === 0) {
-          container.innerHTML =
-            '<div class="resident-empty">No residents found matching your search criteria.</div>';
-          return;
-        }
-        container.innerHTML =
-          `<div class="resident-summary">Showing ${list.length} result${list.length !== 1 ? "s" : ""}</div>` +
-          list
-            .map(
-              (r) => `
-      <div class="resident-card">
-        <div class="resident-avatar-sm">${r.name.split(",")[1]?.trim()[0] || "?"}${r.name.split(",")[0][0]}</div>
-        <div class="resident-info">
-          <h4>${r.name}</h4>
-          <p>${r.age} yrs – ${r.purok}${r.cat ? " – " + r.cat : ""}</p>
-        </div>
-        <span class="badge ${r.status === "Active" ? "badge-success" : "badge-gray"} badge-align-right">${r.status}</span>
-      </div>`,
-            )
-            .join("");
-      }
-
-      function exportResidents() {
-        showToast("Exporting results as CSV...", "<i data-icon=download></i>");
-      }
+      // The resident-search data and its filter/render/export helpers used to
+      // live here, backing the Barangay Residency service modal. Both the
+      // modal and its entry points were removed on data-privacy grounds, so
+      // this is dead code — deleted rather than left for the next reader to
+      // wonder whether something still calls it.
 
       function selectCert(el, certName) {
         document
@@ -1324,20 +1892,57 @@
         "Good",
         "Excellent",
       ];
+      // The star row is a <div>, not an input, so it gets nothing from the
+      // validation helpers on its own. Giving it a `.value` is what lets
+      // Motion.require treat it as the required field it is — same shake, same
+      // message under it — with no special case in the submit path.
+      function setStarValue(n) {
+        const box = document.getElementById("star-rating");
+        if (!box) return;
+        box.value = n ? String(n) : "";
+        // Motion clears a field's error on its `input`/`change` event; a div
+        // fires neither, so choosing a star takes the mark off itself.
+        if (n && window.Motion) Motion.clearField(box);
+      }
+
       function setRating(n) {
         feedbackRating = n;
         document.querySelectorAll(".star").forEach((s, i) => {
           s.classList.toggle("active", i < n);
         });
-        document.getElementById("rating-label").textContent =
-          `${n} out of 5 – ${ratingLabels[n]}`;
+        document.getElementById("rating-label").textContent = n
+          ? `${n} out of 5 – ${ratingLabels[n]}`
+          : "Select a rating";
+        setStarValue(n);
+      }
+
+      function resetRating() {
+        setRating(0);
       }
 
       function submitFeedback() {
+        // Both are checked together, so a submission missing both is not sent
+        // back twice for one omission at a time.
+        const stars = document.getElementById("star-rating");
         const comment = document.getElementById("fb-comment").value.trim();
-        if (!comment) {
-          alert("Please enter a comment or suggestion.");
-          return;
+        if (window.Motion) {
+          if (
+            !Motion.require([
+              { id: "star-rating", message: "Choose a star rating — one to five." },
+              { id: "fb-comment", message: "Tell us what you would like to say." },
+            ])
+          )
+            return;
+        } else {
+          if (!feedbackRating) {
+            if (stars) stars.classList.add("m-shake");
+            alert("Please choose a star rating.");
+            return;
+          }
+          if (!comment) {
+            alert("Please enter a comment or suggestion.");
+            return;
+          }
         }
         const category =
           document.getElementById("fb-category")?.value || "Other";
@@ -1365,10 +1970,26 @@
           "Feedback submitted! Thank you for your input.",
           "<i data-icon=check></i>",
         );
+        // Next time the modal opens it asks again rather than offering the last
+        // visitor's rating — on a shared terminal that is somebody else's
+        // opinion entirely.
+        resetRating();
       }
     </script>
     <!-- Loaded last on purpose: upgrades the demo handlers above to the real
          API-backed versions and adds the account panels + notifications. -->
-    <script src="js/portal-account.js"></script>
+    <!-- Certificates: the shared type list, then the export machinery,
+         then the printable forms (each reads the one before it). All three
+         must precede portal-account.js. -->
+    <!-- Escape closes the topmost modal. -->
+    <script defer src="js/ui-modals.js"></script>
+    <script defer src="js/certificate-types.js"></script>
+    <script defer src="js/certificate-export.js"></script>
+    <script defer src="js/certificate-templates.js"></script>
+    <script defer src="js/certificate-attachments.js"></script>
+    <script defer src="js/portal-account.js"></script>
+    <!-- Motion runtime: collapse/validation/exit animations. Last, so it
+         observes a DOM every other script has already set up. -->
+    <script src="js/motion.js"></script>
   </body>
 </html>

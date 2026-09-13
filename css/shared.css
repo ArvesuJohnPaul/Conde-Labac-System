@@ -1,71 +1,28 @@
 /* ═══════════════════════════════════════════════════
-   shared.css — IBM-DSS · Barangay Conde Labac
-   Common design tokens, navbar, modal, utilities
+   shared.css — components used by BOTH halves of the
+   system: the public portal (index.html) and the MIS.
+   Barangay Conde Labac, Batangas City
+
+   Rebuilt 2026-07. Three things changed:
+
+     · Design tokens moved out to tokens.css. This file
+       used to carry its own :root and [data-theme="dark"]
+       blocks; every page must now load tokens.css first.
+
+     · The "MODERN REFRESH" appendix is gone. It sat at
+       the bottom re-declaring .btn, .modal-*, .form-*
+       and .alert to beat the versions above it, so the
+       real value of any property was whichever of the
+       two declarations came last. Each component is now
+       declared once, with the refreshed values.
+
+     · The MIS shell (sidebar toggle, module launcher,
+       staff user menu) moved to system.css. It was only
+       ever used by pages/*.html, and keeping it here
+       meant every landing-page visitor downloaded it.
+
+   Load order: tokens.css → shared.css → {landing,system}.css
 ═══════════════════════════════════════════════════ */
-
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
-
-/* ─── DESIGN TOKENS ───────────────────────────── */
-:root {
-  /* Brand colors */
-  --yellow: #f5c518;
-  --yellow-dark: #d4a017;
-  --yellow-light: #fff0a0;
-  --blue: #1a3a7c;
-  --blue-mid: #2563eb;
-  --blue-light: #dbeafe;
-  --red: #c41e2a;
-  --red-mid: #dc2626;
-  --red-light: #fee2e2;
-  --navy: #0d1b3e;
-  --navy-deep: #091228;
-  --navy-mid: #162550;
-  --navy-light: #1e3260;
-  --gold: #c9a227;
-  --gold-light: #e8c55a;
-  --gold-pale: #faf5e6;
-  --gold-dim: #8c711a;
-  --white: #ffffff;
-  --cream: #f6f7fb;
-  --gray: #667085;
-  --gray-light: #f2f4f7;
-  --text: #101828;
-
-  /* System palette — modern neutral scale */
-  --surface: #f6f7fb;
-  --surface-2: #eef0f5;
-  --border: #e4e7ec;
-  --border-dark: #cdd5e0;
-  --text-primary: #101828;
-  --text-secondary: #475467;
-  --text-muted: #98a2b3;
-  --success: #166534;
-  --success-bg: #dcfce7;
-  --success-border: #86efac;
-  --warning: #92400e;
-  --warning-bg: #fef3c7;
-  --warning-border: #fcd34d;
-  --danger: #7f1d1d;
-  --danger-bg: #fee2e2;
-  --danger-border: #fca5a5;
-  --info: #1e3a8a;
-  --info-bg: #dbeafe;
-  --info-border: #93c5fd;
-
-  /* Layout */
-  --navbar-h: 64px;
-  --sidebar-w: 260px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --shadow:
-    0 1px 2px rgba(16, 24, 40, 0.05),
-    0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-lg:
-    0 12px 32px -8px rgba(16, 24, 40, 0.16),
-    0 4px 12px -4px rgba(16, 24, 40, 0.08);
-  --transition: 0.2s ease;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
-}
 
 /* ─── RESET ────────────────────────────────────── */
 *,
@@ -78,83 +35,100 @@
 
 html {
   scroll-behavior: smooth;
+  /* Anchor targets clear the fixed navbar instead of hiding beneath it. */
+  scroll-padding-top: calc(var(--navbar-h) + var(--space-4));
 }
 
-/* ─── SHARED NAVBAR ────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════
+   PUBLIC NAVBAR
+   index.html only — the MIS carries its brand in the
+   sidebar and has no second bar.
+═══════════════════════════════════════════════════ */
+
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 900;
-  background: rgba(13, 27, 62, 0.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 3px solid var(--yellow);
-  height: var(--navbar-h);
-  padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-4);
+  height: var(--navbar-h);
+  padding: 0 var(--space-8);
+  background: rgba(9, 18, 40, 0.88);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(245, 197, 24, 0.28);
 }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  text-decoration: none;
+  gap: var(--space-3);
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .nav-logo img {
-  height: 40px;
   width: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--yellow);
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--gold-400);
   object-fit: cover;
 }
 
 .nav-brand {
-  font-family: "Space Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: var(--yellow);
+  line-height: var(--leading-snug);
   letter-spacing: 0.08em;
-  line-height: 1.4;
+  color: var(--gold-400);
 }
 
 .nav-links {
   display: flex;
-  gap: 2rem;
-  list-style: none;
   align-items: center;
+  gap: var(--space-8);
+  list-style: none;
 }
 
 .nav-links a {
-  color: rgba(255, 255, 255, 0.75);
-  text-decoration: none;
-  font-family: "Plus Jakarta Sans", sans-serif;
+  position: relative;
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  transition: color 0.2s;
-  position: relative;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+  transition: color var(--duration-base) var(--ease-out);
 }
 
 .nav-links a::after {
   content: "";
   position: absolute;
-  bottom: -4px;
   left: 0;
+  bottom: -4px;
   width: 0;
   height: 2px;
-  background: var(--yellow);
-  transition: width 0.3s;
+  background: var(--gold-400);
+  transition: width var(--duration-slow) var(--ease-out);
 }
 
 .nav-links a:hover {
-  color: var(--yellow);
+  color: var(--gold-400);
 }
 
 .nav-links a:hover::after {
@@ -164,361 +138,131 @@ html {
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
 }
 
-/* Sign In button in nav */
 .btn-nav-signin {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--yellow);
-  color: var(--navy);
-  padding: 9px 20px;
-  border-radius: 6px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-weight: 700;
+  padding: 9px var(--space-5);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--gold-400);
+  color: var(--navy-800);
+  font-family: inherit;
   font-size: 0.82rem;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.04em;
   text-decoration: none;
-  border: none;
   cursor: pointer;
-  transition: all 0.3s;
+  transition:
+    background var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .btn-nav-signin:hover {
-  background: var(--yellow-dark);
+  background: var(--gold-500);
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(245, 197, 24, 0.4);
 }
 
-/* User pill in nav (when logged in) */
-.nav-user-pill {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 14px 6px 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(201, 162, 39, 0.25);
-  border-radius: 100px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.nav-user-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
+/* Avatar chips — shared because both the portal header and the MIS user menu
+   render the same initials disc. */
+.nav-user-avatar,
+.nav-user-avatar-lg {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--gold-400);
+  color: var(--navy-800);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
 }
 
 .nav-user-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: var(--yellow);
-  color: var(--navy);
   font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Space Mono", monospace;
+}
+
+.nav-user-avatar-lg {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
 }
 
 .nav-user-name {
-  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 0.78rem;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: rgba(255, 255, 255, 0.85);
 }
 
-.nav-logout-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  transition: color 0.2s;
-}
-
-.nav-logout-btn:hover {
-  color: var(--yellow);
-}
-
-/* Mobile hamburger */
+/* Mobile hamburger (public navbar) */
 .nav-toggle {
   display: none;
   flex-direction: column;
   gap: 5px;
-  cursor: pointer;
-  background: none;
+  padding: var(--space-1);
   border: none;
-  padding: 4px;
+  background: none;
+  cursor: pointer;
 }
 
 .nav-toggle span {
   display: block;
   width: 22px;
   height: 2px;
-  background: var(--yellow);
   border-radius: 2px;
-  transition: all 0.3s;
+  background: var(--gold-400);
+  transition: all var(--duration-slow) var(--ease-out);
 }
 
-/* Sidebar toggle button for app shell */
-.sidebar-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 6px;
-  z-index: 910;
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 var(--space-4);
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.open {
+    position: fixed;
+    top: var(--navbar-h);
+    left: 0;
+    right: 0;
+    z-index: 899;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.5rem 2rem;
+    background: rgba(9, 18, 40, 0.98);
+    border-bottom: 3px solid var(--gold-400);
+  }
+
+  .nav-toggle {
+    display: flex;
+  }
 }
 
-.sidebar-toggle span {
-  display: block;
-  width: 22px;
-  height: 2.5px;
-  background: var(--yellow);
-  border-radius: 2px;
-  transition: all 0.3s ease;
-}
+/* ═══════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════ */
 
-/* Topbar modules menu (mobile navigation) */
-.topbar-modules-menu {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbar-modules-trigger {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  justify-content: center;
-  align-items: center;
-}
-
-.topbar-modules-trigger span {
-  display: block;
-  width: 20px;
-  height: 2.5px;
-  background: var(--navy);
-  border-radius: 2px;
-  transition: all 0.3s ease;
-}
-
-.topbar-modules-trigger:hover span {
-  background: var(--gold);
-}
-
-.topbar-modules-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 8px;
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 8px 0;
-  min-width: 220px;
-  max-height: 60vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  z-index: 920;
-  display: none;
-  flex-direction: column;
-}
-
-.topbar-modules-dropdown.open {
-  display: flex;
-}
-
-.topbar-modules-section {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: 8px 16px;
-  margin-top: 4px;
-}
-
-.topbar-modules-section:first-child {
-  margin-top: 0;
-}
-
-.topbar-module-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  color: var(--text-primary);
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  text-align: left;
-  width: 100%;
-  transition: all var(--transition);
-}
-
-.topbar-module-item:hover {
-  background: var(--surface);
-  color: var(--navy);
-  padding-left: 20px;
-}
-
-.topbar-module-icon {
-  width: 18px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* User menu (mobile dropdown) */
-.nav-user-menu {
-  position: relative;
-}
-
-.nav-user-menu-trigger {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background 0.2s;
-}
-
-.nav-user-menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--yellow);
-  color: var(--navy);
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Space Mono", monospace;
-}
-
-.nav-user-avatar-lg {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--yellow);
-  color: var(--navy);
-  font-size: 14px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Space Mono", monospace;
-}
-
-.nav-user-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 8px;
-  background: rgba(13, 27, 62, 0.98);
-  border: 1px solid rgba(201, 162, 39, 0.25);
-  border-radius: 12px;
-  padding: 16px;
-  min-width: 240px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(13, 27, 62, 0.3);
-  z-index: 920;
-  display: none;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.nav-user-menu-dropdown.open {
-  display: flex;
-}
-
-.nav-user-menu-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(201, 162, 39, 0.15);
-}
-
-.nav-user-menu-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-user-name-full {
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.nav-user-role {
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.nav-user-menu-logout {
-  background: rgba(201, 162, 39, 0.12);
-  border: 1px solid rgba(201, 162, 39, 0.25);
-  color: var(--yellow);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.nav-user-menu-logout:hover {
-  background: rgba(201, 162, 39, 0.2);
-  border-color: rgba(201, 162, 39, 0.4);
-}
-
-/* ─── SHARED MODAL ─────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(13, 27, 62, 0.55);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--space-5);
+  background: rgba(6, 14, 27, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal-backdrop.open {
@@ -526,15 +270,17 @@ html {
 }
 
 .modal-box {
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  position: relative;
   width: 560px;
-  max-width: 96vw;
+  max-width: 100%;
   max-height: 92vh;
   overflow-y: auto;
-  animation: modalIn 0.22s ease;
-  position: relative;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-xl);
+  animation: modalIn var(--duration-slow) var(--ease-out);
 }
 
 .modal-box.modal-lg {
@@ -542,212 +288,558 @@ html {
 }
 
 .modal-box.modal-xl {
-  width: 900px;
+  width: 920px;
 }
 
 @keyframes modalIn {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(12px);
+    transform: scale(0.97) translateY(10px);
   }
-
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: none;
   }
 }
 
+/* The header used to be a navy bar with white text — a heavy lid on every
+   dialog, and a second brand colour competing with the content. It is now the
+   same surface as the body, separated by a hairline. */
 .modal-header {
-  padding: 22px 26px 16px;
-  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--navy);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .modal-title {
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 1.15rem;
-  color: var(--white);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
+  font-size: 1.05rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-brand);
 }
 
 .modal-title-icon {
+  display: grid;
+  place-items: center;
   width: 34px;
   height: 34px;
-  background: rgba(245, 197, 24, 0.2);
-  border: 1px solid rgba(245, 197, 24, 0.4);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  background: var(--accent-bg);
+  color: var(--accent-fg);
   font-size: 1rem;
 }
 
 .modal-close {
-  background: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   border: none;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1.2rem;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
   line-height: 1;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .modal-close:hover {
-  color: var(--yellow);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .modal-body {
-  padding: 26px;
+  padding: var(--space-6);
 }
 
 .modal-footer {
-  padding: 16px 26px;
-  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
-/* ─── SHARED FORM ELEMENTS ─────────────────────── */
+/* ═══════════════════════════════════════════════════
+   CONFIRM / PROMPT DIALOG
+   Built by uiConfirm()/uiPrompt() in js/shell.js for the
+   actions that used to raise window.confirm() and
+   window.prompt() — deleting a record, adding a role,
+   clearing the audit trail.
+
+   Deliberately narrower and quieter than a full modal:
+   no header bar, no close X. It is one question, and the
+   only ways out are the two buttons or Escape. The
+   layout answers three things in order — what is being
+   done (icon + title), to what (the target chip), and
+   what happens next (the notes list).
+═══════════════════════════════════════════════════ */
+
+.confirm-box {
+  width: 460px;
+  padding: var(--space-6);
+}
+
+.confirm-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/* Big enough to register as a warning before the title is read. */
+.confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  font-size: 1.25rem;
+}
+
+.confirm-icon-danger {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.confirm-icon-accent {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-fg);
+}
+
+.confirm-heading {
+  min-width: 0;
+}
+
+.confirm-title {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+.confirm-message {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* The record itself, quoted back so there is no doubt which row was clicked. */
+.confirm-target {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger-solid);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.confirm-target i {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.confirm-target-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* An accent-tone dialog is additive (Add Role), not destructive — its target
+   chip should not wear a red edge. */
+.confirm-box-accent .confirm-target {
+  border-left-color: var(--accent);
+}
+
+.confirm-field {
+  margin-top: var(--space-5);
+}
+
+.confirm-field .form-label {
+  margin-bottom: var(--space-2);
+}
+
+.confirm-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+/* What the action will actually do, one consequence per line. */
+.confirm-notes {
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirm-notes li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.confirm-notes i {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-muted);
+}
+
+.confirm-error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--danger);
+}
+
+.confirm-error[hidden] {
+  display: none;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+/* On a phone the two buttons stack full-width, destructive one last. */
+@media (max-width: 480px) {
+  .confirm-box {
+    padding: var(--space-5);
+  }
+
+  .confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   FORMS
+═══════════════════════════════════════════════════ */
+
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .form-label {
   display: block;
-  font-family: "Plus Jakarta Sans", sans-serif;
+  margin-bottom: var(--space-2);
   font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
 .form-control {
   width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 13.5px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
   color: var(--text-primary);
-  background: var(--white);
+  font-family: inherit;
+  font-size: var(--text-sm);
   outline: none;
   transition:
-    border-color var(--transition),
-    box-shadow var(--transition);
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-strong);
 }
 
 .form-control:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.12);
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 16%, transparent);
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+.form-control:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Native selects render an OS-coloured arrow that clashes in dark mode; a
+   drawn caret keeps the control on-theme. */
+select.form-control {
+  appearance: none;
+  padding-right: var(--space-8);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 2px),
+    calc(100% - 13px) calc(50% + 2px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text-primary);
+  cursor: pointer;
 }
 
 textarea.form-control {
   resize: vertical;
   min-height: 90px;
+  line-height: var(--leading-normal);
 }
 
-/* ─── SHARED BUTTONS ───────────────────────────── */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.form-error {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+.form-control[aria-invalid="true"],
+.form-control.error {
+  border-color: var(--danger-solid);
+}
+
+.form-control[aria-invalid="true"]:focus,
+.form-control.error:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-solid) 18%, transparent);
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════ */
+
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  padding: 10px 20px;
-  border-radius: var(--radius);
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
   white-space: nowrap;
-  border: 1.5px solid transparent;
+  /* .btn is worn by <a> as well as <button> (Cancel on claim-account, Preview
+     in Site Content). Without this the anchors alone came out underlined. */
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
-.btn-primary {
-  background: var(--navy);
-  color: var(--white);
-  border-color: var(--navy);
-}
-
-.btn-primary:hover {
-  background: var(--navy-mid);
-}
-
-.btn-gold {
-  background: var(--yellow);
-  color: var(--navy);
-  border-color: var(--yellow);
-}
-
-.btn-gold:hover {
-  background: var(--yellow-dark);
+.btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
-.btn-outline {
-  background: transparent;
-  color: var(--text-secondary);
-  border-color: var(--border);
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
 }
 
-.btn-outline:hover {
-  background: var(--surface);
-  border-color: var(--border-dark);
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: var(--on-brand);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--navy-700);
+  box-shadow: 0 6px 16px -6px rgba(13, 27, 62, 0.45);
+}
+
+.btn-gold {
+  background: var(--gold-400);
+  border-color: var(--gold-400);
+  color: var(--navy-800);
+}
+
+.btn-gold:hover:not(:disabled) {
+  background: var(--gold-500);
+  box-shadow: 0 6px 16px -6px rgba(212, 160, 23, 0.55);
+}
+
+.btn-outline {
+  background: var(--surface-raised);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .btn-danger {
   background: var(--danger-bg);
-  color: var(--danger);
   border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger-solid) 18%, var(--danger-bg));
+}
+
+/* Solid destructive — for the confirm step, never the trigger. */
+.btn-danger-strong {
+  background: var(--danger-solid);
+  border-color: var(--danger-solid);
+  color: #fff;
+}
+
+.btn-danger-strong:hover:not(:disabled) {
+  background: var(--red-600);
+  box-shadow: 0 6px 16px -6px rgba(220, 38, 38, 0.5);
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.btn-ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .btn-sm {
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 6px var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-base);
+}
+
+/* Square icon-only button. */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
 }
 
 .btn-group {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-/* ─── SHARED ALERTS ────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+   ALERTS
+═══════════════════════════════════════════════════ */
+
 .alert {
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 13px;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 12px;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
 }
 
 .alert-icon {
-  font-size: 16px;
+  display: inline-flex;
   flex-shrink: 0;
-  margin-top: 1px;
+  font-size: 1rem;
+}
+
+.alert-close {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: var(--space-1);
+  border: none;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.alert-close:hover {
+  opacity: 1;
 }
 
 .alert-warning {
@@ -774,285 +866,748 @@ textarea.form-control {
   color: var(--info);
 }
 
-/* ─── SHARED BADGE ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════════════ */
+
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 3px 10px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 700;
   border: 1px solid;
+  border-radius: var(--radius-full);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .badge-success {
   background: var(--success-bg);
-  color: var(--success);
   border-color: var(--success-border);
+  color: var(--success);
 }
 
 .badge-warning {
   background: var(--warning-bg);
-  color: var(--warning);
   border-color: var(--warning-border);
+  color: var(--warning);
 }
 
 .badge-danger {
   background: var(--danger-bg);
-  color: var(--danger);
   border-color: var(--danger-border);
+  color: var(--danger);
 }
 
 .badge-info {
   background: var(--info-bg);
-  color: var(--info);
   border-color: var(--info-border);
+  color: var(--info);
 }
 
 .badge-gold {
-  background: var(--gold-pale);
-  color: var(--gold-dim);
-  border-color: rgba(201, 162, 39, 0.3);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent-fg);
 }
 
 .badge-gray {
   background: var(--surface);
-  color: var(--text-secondary);
   border-color: var(--border);
+  color: var(--text-secondary);
 }
 
-/* ─── PROGRESS BAR ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+   PROGRESS
+═══════════════════════════════════════════════════ */
+
 .progress-bar {
-  height: 6px;
-  background: var(--surface-2);
-  border-radius: 100px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 100px;
-  background: var(--gold);
-  transition: width 1s ease;
+  border-radius: var(--radius-full);
+  background: var(--gold-600);
+  transition: width 1s var(--ease-out);
 }
 
-/* ─── RESPONSIVE NAVBAR ────────────────────────── */
-@media (max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-
-  .nav-links.open {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: var(--navbar-h);
-    left: 0;
-    right: 0;
-    background: rgba(9, 18, 40, 0.98);
-    padding: 1.5rem 2rem;
-    gap: 1.2rem;
-    border-bottom: 3px solid var(--yellow);
-    z-index: 899;
-  }
-
-  .nav-toggle {
-    display: flex;
-  }
-
-  .sidebar-toggle {
-    display: flex;
-  }
-
-  .nav-user-pill {
-    display: none !important;
-  }
-
-  .nav-user-menu {
-    display: flex !important;
-  }
-
-  .topbar {
-    padding: 0 12px;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .topbar-modules-menu {
-    position: static;
-  }
-
-  .topbar-modules-trigger {
-    padding: 8px 6px;
-  }
-
-  .topbar-modules-dropdown {
-    position: fixed;
-    left: 8px;
-    right: 8px;
-    top: calc(var(--navbar-h) + 8px);
-    min-width: 0;
-    width: auto;
-    max-height: calc(100vh - var(--navbar-h) - 16px);
-    padding: 10px;
-    border-radius: 18px;
-    display: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    align-content: start;
-    overflow: auto;
-  }
-
-  .topbar-modules-dropdown.open {
-    display: grid;
-  }
-
-  .topbar-modules-section {
-    grid-column: 1 / -1;
-    padding: 4px 6px 2px;
-    margin-top: 4px;
-  }
-
-  .topbar-module-item {
-    min-height: 44px;
-    padding: 10px 10px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface);
-    font-size: 12px;
-    line-height: 1.2;
-  }
-
-  .topbar-module-item:hover {
-    padding-left: 10px;
-  }
-
-  .topbar-module-icon {
-    width: 16px;
-  }
-}
 /* ═══════════════════════════════════════════════════
-   MODERN REFRESH — shared component polish
-   (loaded last in this file; same-specificity wins)
+   PREFERENCES MODAL  (js/preferences.js)
+   Grouped settings rows matching the app's Settings
+   screen: an uppercase group label, a bordered card of
+   rows separated by hairlines, an optional caption.
 ═══════════════════════════════════════════════════ */
 
-body {
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+.pref-group {
+  margin-bottom: var(--space-6);
 }
 
-/* Navbar: hairline border, deeper blur */
-.navbar {
-  background: rgba(9, 18, 40, 0.88);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border-bottom: 1px solid rgba(245, 197, 24, 0.28);
+.pref-group:last-child {
+  margin-bottom: 0;
 }
 
-.btn-nav-signin {
-  border-radius: 10px;
+.pref-group-title {
+  margin: 0 0 var(--space-2) var(--space-1);
+  font-size: 0.72rem;
+  font-weight: var(--weight-extrabold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-/* Buttons: modern radius, motion + focus states */
-.btn {
-  border-radius: 10px;
-  transition:
-    background var(--transition),
-    border-color var(--transition),
-    color var(--transition),
-    box-shadow var(--transition),
-    transform 0.12s ease;
+.pref-group-body {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
 }
-.btn:hover {
-  transform: translateY(-1px);
+
+.pref-group-caption {
+  margin: var(--space-2) var(--space-1) 0;
+  font-size: 0.82rem;
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
 }
-.btn:active {
-  transform: translateY(0) scale(0.98);
+
+/* One row. Buttons are reset to look like the non-interactive rows. */
+.pref-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4);
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  color: var(--text-primary);
 }
-.btn:focus-visible,
-.form-control:focus-visible,
-.gis-filter-btn:focus-visible {
-  outline: 2px solid var(--blue-mid);
+
+.pref-row + .pref-row {
+  border-top: 1px solid var(--border);
+}
+
+.pref-row-btn {
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.pref-row-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.pref-row-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* A <label> wrapping a switch: the whole row is the hit target, so it should
+   say so rather than showing a text caret over the title. */
+.pref-row-switch {
+  cursor: pointer;
+}
+
+.pref-row-switch:hover {
+  background: var(--surface-hover);
+}
+
+.pref-row-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--navy-800) 8%, transparent);
+  color: var(--navy-800);
+}
+
+/* On dark the navy tint disappears into the card — gold reads instead, the
+   same swap the app makes in _NavRow/_InfoRow. */
+[data-theme="dark"] .pref-row-icon {
+  background: color-mix(in srgb, var(--gold-600) 14%, transparent);
+  color: var(--gold-300);
+}
+
+.pref-row-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.pref-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pref-row-title {
+  font-size: 0.92rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.pref-row-sub {
+  font-size: 0.8rem;
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.pref-row-value {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.pref-row-check {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--border-strong);
+}
+
+.pref-row-check svg {
+  width: 21px;
+  height: 21px;
+}
+
+.pref-row.is-selected .pref-row-check {
+  color: var(--gold-600);
+}
+
+.pref-row.is-selected .pref-row-icon {
+  background: color-mix(in srgb, var(--gold-600) 18%, transparent);
+  color: var(--gold-800);
+}
+
+[data-theme="dark"] .pref-row.is-selected .pref-row-icon {
+  color: var(--gold-300);
+}
+
+/* Switch — a styled checkbox, so the row stays a <label> and keeps keyboard
+   and assistive-tech behaviour for free. */
+.pref-switch {
+  flex-shrink: 0;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.pref-switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pref-switch-track {
+  display: block;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.pref-switch-thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 3px;
+  border-radius: var(--radius-full);
+  background: #f4f6fb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.pref-switch input:checked + .pref-switch-track {
+  background: var(--gold-600);
+}
+
+.pref-switch input:checked + .pref-switch-track .pref-switch-thumb {
+  transform: translateX(18px);
+}
+
+.pref-switch input:focus-visible + .pref-switch-track {
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
-.btn-primary:hover {
-  box-shadow: 0 6px 16px -6px rgba(13, 27, 62, 0.45);
-}
-.btn-gold:hover {
-  box-shadow: 0 6px 16px -6px rgba(212, 160, 23, 0.55);
+
+/* ═══════════════════════════════════════════════════
+   CHANGE-PASSWORD MODAL  (js/change-password.js)
+   Reveal toggles, three-segment strength meter, and the
+   confirm-match line — matching the app's screen.
+═══════════════════════════════════════════════════ */
+
+.cp-field {
+  position: relative;
 }
 
-/* Modal: light header, softer shell */
-.modal-box {
-  border-radius: 20px;
-  border: 1px solid var(--border);
+/* Leave room for the reveal button so long values don't run under it. */
+.cp-field .form-control {
+  padding-right: 44px;
 }
-.modal-header {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  border-radius: 20px 20px 0 0;
-  padding: 20px 26px 16px;
-}
-.modal-title {
-  color: var(--navy);
-  font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: -0.01em;
-}
-.modal-title-icon {
-  background: var(--gold-pale);
-  border: 1px solid rgba(201, 162, 39, 0.35);
-  color: var(--gold-dim);
-  border-radius: 10px;
-}
-.modal-close {
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+
+.cp-eye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
-.modal-close:hover {
-  color: var(--navy);
+
+.cp-eye:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+
+.cp-eye svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cp-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--space-5) 0;
+}
+
+.cp-strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0 2px;
+}
+
+.cp-strength-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.cp-strength-label {
+  flex-shrink: 0;
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: var(--weight-bold);
+}
+
+/* Weak / fair / strong — red, gold, green, as in the app. */
+.cp-weak .cp-strength-seg.is-on {
+  background: var(--danger-solid);
+}
+.cp-weak .cp-strength-label {
+  color: var(--danger-solid);
+}
+
+.cp-fair .cp-strength-seg.is-on {
+  background: var(--gold-600);
+}
+.cp-fair .cp-strength-label {
+  color: var(--accent-fg);
+}
+
+.cp-strong .cp-strength-seg.is-on {
+  background: var(--success-solid);
+}
+.cp-strong .cp-strength-label {
+  color: var(--success);
+}
+
+.cp-match {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0 2px;
+  font-size: 0.8rem;
+}
+
+.cp-match svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cp-match.is-ok {
+  color: var(--success);
+}
+
+.cp-match.is-bad {
+  color: var(--danger-solid);
+}
+
+/* ═══════════════════════════════════════════════════
+   AI LOADING + FALLBACK  (dashboard briefing, GIS briefing)
+   Shared because both panels show the same two states: a regeneration in
+   flight (several seconds — the model thinks before it writes), and
+   figures-only mode when the quota is spent.
+   ═══════════════════════════════════════════════════ */
+.ai-loading-note {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.ai-spinner {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--border);
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: ai-spin 0.7s linear infinite;
+}
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Skeleton lines in the final layout, so nothing jumps when the text lands. */
+.ai-skel {
+  height: 9px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(127, 127, 127, 0.13) 25%,
+    rgba(127, 127, 127, 0.22) 37%,
+    rgba(127, 127, 127, 0.13) 63%
+  );
+  background-size: 400% 100%;
+  animation: ai-shimmer 1.3s ease-in-out infinite;
+}
+.ai-skel-head {
+  width: 55%;
+  height: 8px;
+  margin-bottom: 8px;
+}
+.ai-skel-short {
+  width: 70%;
+}
+@keyframes ai-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Figures-only banner. The numbers below it are real SQL results; only the
+   phrasing and the recommendations are missing, so this must be unmistakable
+   without looking like an error. */
+.ai-fallback-note {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-spinner,
+  .ai-skel {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   EDIT MY DETAILS  (Settings → My Account, js/account-edit.js)
+   The resident-facing half of the profile-change flow. The staff half
+   (review / approve) lives on the Residency page and uses .er-* below.
+═══════════════════════════════════════════════════ */
+
+.acct-edit-loading {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.acct-edit-error {
+  min-height: 16px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+/* Shown instead of the form while a request is still awaiting review. It
+   replaces the form rather than disabling it: filling in ten fields only to be
+   told at submit that the API refuses a second open request is a worse
+   experience than being told first. */
+.acct-edit-pending {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.acct-edit-pending-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: #a16207;
+}
+
+.acct-edit-pending p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.acct-edit-pending-reason {
+  font-style: italic;
+}
+
+.acct-edit-history {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.acct-edit-history-title {
+  margin-bottom: 8px;
+  font-size: 0.72rem;
+  font-weight: var(--weight-extrabold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.acct-edit-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.acct-edit-history-item:last-child {
+  border-bottom: 0;
+}
+
+.acct-edit-history-fields {
+  flex: 1;
+  min-width: 120px;
+  color: var(--text-secondary);
+}
+
+.acct-edit-history-date {
+  color: var(--text-muted);
+}
+
+.acct-edit-history-remarks {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Profile photo picker (Settings → Edit my details). Preview on the left,
+   the controls and the "proper pictures only" note on the right. */
+.acct-edit-photo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.acct-edit-photo {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+}
+
+.acct-edit-photo-empty {
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  color: var(--text-muted);
+}
+
+.acct-edit-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The note is the rule staff will reject against, so it takes the full row
+   under the buttons rather than being squeezed beside them. */
+.acct-edit-photo-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.acct-edit-photo-note i {
+  color: var(--gold-600);
+}
+
+/* ── Household picker (Edit My Details) ───────────────────────────────────
+   A search, not a dropdown: the staff household list carries member counts
+   and classifications, which a resident must not be handed about their
+   neighbours. See GET /api/households/lookup. */
+.acct-edit-household {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+}
+
+/* A picked household differs from the record — say so before it is submitted,
+   since this is the one field whose "before" is not visible in an input. */
+.acct-edit-household.is-changed {
+  border-color: var(--gold-600);
+}
+
+.acct-edit-household-now {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 600;
+}
+
+.acct-edit-household-now > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-edit-household-now i {
+  color: var(--gold-600);
+}
+
+.acct-edit-household-none {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.acct-edit-household-results:empty {
+  display: none;
+}
+
+.acct-edit-household-results {
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
-.modal-footer {
-  border-radius: 0 0 20px 20px;
+
+.acct-edit-household-hit {
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-/* Forms: calmer borders, brand focus ring */
-.form-control {
-  border-width: 1px;
-  border-radius: 10px;
-  padding: 10px 14px;
-}
-.form-control:focus {
-  border-color: var(--blue-mid);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+.acct-edit-household-hit:last-child {
+  border-bottom: 0;
 }
 
-/* Alerts: rounder, calmer */
-.alert {
-  border-radius: 12px;
-  align-items: center;
-}
-.alert-icon {
-  display: inline-flex;
-  font-size: 15px;
-  margin-top: 0;
+.acct-edit-household-hit:hover,
+.acct-edit-household-hit:focus-visible {
+  background: var(--surface-hover);
 }
 
-/* Badges: subtle weight */
-.badge {
-  font-weight: 600;
-  letter-spacing: 0.01em;
+.acct-edit-household-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
-/* Progress */
-.progress-bar {
-  height: 7px;
+.acct-edit-household-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.acct-edit-household-note i {
+  color: var(--gold-600);
+}
+
+@media (max-width: 520px) {
+  .acct-edit-photo-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .acct-edit-photo-actions {
+    justify-content: center;
+  }
+}
+
+/* ── Session avatar photo ──────────────────────────────────────────────────
+   The sidebar pill, the topbar trigger and the dropdown header all render the
+   signed-in user's initials by default. When that user has a profile photo,
+   loadSessionAvatar() (js/account-edit.js) sets it as a background image and
+   adds .has-photo, which hides the initials underneath rather than swapping
+   the element — several places query these ids and they have to survive.
+
+   In shared.css, not system.css: the landing page paints the same avatar and
+   only loads this stylesheet. */
+.user-avatar.has-photo,
+.nav-user-avatar.has-photo,
+.nav-user-avatar-lg.has-photo {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* The gold/navy fill is the initials backdrop; behind a photo it would show
+     as a rim on a source that isn't perfectly square. */
+  background-color: var(--surface-hover);
+  color: transparent;
+  /* A hairline keeps a light photo from bleeding into a light bar. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
