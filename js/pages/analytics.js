@@ -16,14 +16,9 @@ const INCIDENT_TYPE_LABELS = {
   other: "Other",
 };
 
-const CERT_TYPE_LABELS = {
-  "barangay-clearance": "Brgy Clearance",
-  indigency: "Indigency",
-  residency: "Residency",
-  "solo-parent": "Solo Parent",
-  "good-moral": "Good Moral",
-  "business-clearance": "Business Clearance",
-};
+// Certificate names come from js/certificate-types.js (certTypeShort) — the
+// barangay adds and renames certificates from the MIS, so a list here would go
+// stale.
 
 const CHART_PALETTE = [
   "#1d4ed8", "#22c55e", "#ef4444", "#f59e0b", "#8b5cf6",
@@ -380,6 +375,8 @@ async function loadAnalytics() {
   let d;
   try {
     d = await apiGet("/api/stats/analytics");
+    // The chart labels certificates by their short names.
+    if (window.certTypesReady) await window.certTypesReady;
   } catch (e) {
     if (typeof showToast === "function")
       showToast("Could not load analytics: " + e.message, "<i data-icon=triangle-alert></i>");
@@ -460,7 +457,7 @@ function buildAnalyticsCharts(d) {
     charts.a3 = new Chart(c3, {
       type: "bar",
       data: {
-        labels: cert.map((r) => CERT_TYPE_LABELS[r.type] || r.type),
+        labels: cert.map((r) => (typeof certTypeShort === "function" ? certTypeShort(r.type) : r.type)),
         datasets: [{ label: "Requests", data: cert.map((r) => r.n), backgroundColor: cert.map((_, i) => CHART_PALETTE[i % CHART_PALETTE.length]) }],
       },
       options: {

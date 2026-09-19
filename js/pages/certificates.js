@@ -9,7 +9,9 @@ window.CURRENT_PAGE = "certificates";
 let CERT_REQUESTS = [];
 
 // CERT_TYPE_LABELS (slug → display name) comes from js/certificate-types.js,
-// the list this page, the request picker and the printable forms all share.
+// which loads the barangay's certificate definitions — the list this page, the
+// request picker and the printable forms all share. Those definitions are
+// edited on this page's second tab (js/certificate-forms.js).
 
 const CERT_STATUS_BADGES = {
   pending: "badge-warning",
@@ -39,10 +41,11 @@ function renderPage() {
 }
 
 // Options for the certificate-type filter, built from the shared list in
-// js/certificate-types.js so a new certificate shows up here on its own. The
+// js/certificate-types.js so a new certificate shows up here on its own —
+// hidden ones included, since their old requests are still in the queue. The
 // short names keep the closed pill readable — .gis-filter-select caps at 240px.
 function certTypeFilterOptions() {
-  return (window.CERT_TYPE_OPTIONS || [])
+  return (window.CERT_TYPE_ALL || [])
     .map(
       (t) =>
         `<option value="${escapeHtml(t.slug)}">${escapeHtml(t.short || t.label)}</option>`
@@ -56,6 +59,18 @@ function renderCertificatesPage() {
       <h2 class="page-title">Certificate Processing</h2>
       <p class="page-desc">Manage, approve, and issue barangay certificates</p>
     </div>
+    <!-- Two jobs on one page: working the queue, and keeping the certificates
+         themselves (names, requirements, the printed wording) up to date. -->
+    <div class="sc-tabs cert-page-tabs" role="tablist" aria-label="Certificate Processing sections">
+      <button type="button" class="sc-tab is-active" id="cert-tab-requests" role="tab" aria-selected="true" onclick="certShowTab('requests')">
+        <i data-icon=inbox></i><span>Requests</span>
+      </button>
+      <button type="button" class="sc-tab" id="cert-tab-forms" role="tab" aria-selected="false" onclick="certShowTab('forms')">
+        <i data-icon=pencil></i><span>Certificate Forms</span>
+      </button>
+    </div>
+    <div id="cert-panel-forms" hidden></div>
+    <div id="cert-panel-requests">
     <div class="kpi-grid">
       <div class="kpi-card warning"><div class="kpi-label">Pending Review</div><div class="kpi-value" id="kpi-cert-pending">—</div></div>
       <div class="kpi-card info"><div class="kpi-label">Approved</div><div class="kpi-value" id="kpi-cert-approved">—</div></div>
@@ -99,6 +114,7 @@ function renderCertificatesPage() {
         </table>
       </div>
       <div id="cert-pagination"></div>
+    </div>
     </div>
 
     <!-- "View" opens the Certificate Request modal from certificate-export.js:
@@ -151,14 +167,52 @@ function renderCertificatesPage() {
     </div>
   `);
   loadCertRequests();
+  // #forms reopens the forms tab — a reload mid-edit lands back where it was.
+  if (location.hash === "#forms") certShowTab("forms");
 }
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function certShowTab(tab) {
+  const forms = tab === "forms";
+  const set = (id, on) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("is-active", on);
+    el.setAttribute("aria-selected", on ? "true" : "false");
+  };
+  set("cert-tab-requests", !forms);
+  set("cert-tab-forms", forms);
+  const reqPanel = document.getElementById("cert-panel-requests");
+  const formPanel = document.getElementById("cert-panel-forms");
+  if (reqPanel) reqPanel.hidden = forms;
+  if (formPanel) formPanel.hidden = !forms;
+  history.replaceState(null, "", forms ? "#forms" : location.pathname + location.search);
+  if (forms && formPanel && typeof CertForms !== "undefined") CertForms.mount(formPanel);
+}
+
+// A certificate renamed, added or hidden on the forms tab shows up in the
+// filter and the queue's labels straight away.
+document.addEventListener("cert-types-loaded", () => {
+  const sel = document.getElementById("cert-type");
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = `<option value="">All Certificate Types</option>${certTypeFilterOptions()}`;
+  sel.value = current;
+  if (CERT_REQUESTS.length) filterCertRequests();
+});
 
 async function loadCertRequests() {
   const tbody = document.getElementById("cert-tbody");
   if (tbody)
     tbody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:24px">Loading requests…</td></tr>`;
   try {
-    CERT_REQUESTS = await apiGet("/api/certificates");
+    // The rows are labelled and filtered by certificate name, and whether
+    // Export is offered depends on the type having a printable form.
+    const [rows] = await Promise.all([
+      apiGet("/api/certificates"),
+      window.certTypesReady || Promise.resolve(),
+    ]);
+    CERT_REQUESTS = rows;
     updateCertKpis();
     filterCertRequests();
   } catch (err) {
@@ -219,21 +273,14 @@ function renderCertRows(list) {
   tbody.innerHTML = page.items
     .map((r) => {
       const badge = CERT_STATUS_BADGES[r.status] || "badge-gray";
+      // Two clusters. The left one is the review workflow and changes with the
+      // status. The right one is fixed — Message, Delete, Export, with Export at
+      // the far edge — and a slot a row doesn't have is held by an invisible
+      // stand-in, so those three line up down the column and stay put when a
+      // request moves from one status to the next.
       const actions = [
         `<button class="btn btn-sm btn-outline" onclick="openViewCert(${r.id})">View/Edit</button>`,
       ];
-      // Export goes straight to the print dialog with whatever is on file — no
-      // modal in the way. Use View to check or change it first. Only offered
-      // once a request is past review; a pending one has nothing to hand out.
-      if (
-        (r.status === "approved" || r.status === "issued") &&
-        typeof certHasTemplate === "function" &&
-        certHasTemplate(r.type)
-      ) {
-        actions.push(
-          `<button class="btn btn-sm btn-outline" onclick="exportCertificate(${r.id})"><i data-icon=download></i> Export</button>`
-        );
-      }
       if (r.status === "pending") {
         actions.push(
           `<button class="btn btn-sm btn-gold" onclick="setCertStatus(${r.id}, 'approved')">Approve</button>`,
@@ -249,23 +296,51 @@ function renderCertRows(list) {
           `<button class="btn btn-sm btn-outline" onclick="setCertStatus(${r.id}, 'pending')">Undo</button>`
         );
       }
-      if (r.resident_id) {
-        actions.push(
-          `<button class="btn btn-sm btn-outline" onclick="openCertMessage(${r.id})">Message</button>`
-        );
-      }
-      actions.push(deleteButtonHtml(`deleteCertRequest(${r.id})`, ""));
+      // Export goes straight to the print dialog with whatever is on file — no
+      // modal in the way. Use View to check or change it first. Only offered
+      // once a request is past review; a pending one has nothing to hand out.
+      const canExport =
+        (r.status === "approved" || r.status === "issued") &&
+        typeof certHasTemplate === "function" &&
+        certHasTemplate(r.type);
+      // Delete needs no stand-in: it depends on the role, not the row, so it is
+      // either on every row or on none.
+      const fixed = [
+        certSlotButton(!!r.resident_id, `openCertMessage(${r.id})`, "Message"),
+        deleteButtonHtml(`deleteCertRequest(${r.id})`, ""),
+        certSlotButton(
+          canExport,
+          `exportCertificate(${r.id})`,
+          "<i data-icon=download></i>",
+          'title="Export — print or save as PDF" aria-label="Export"'
+        ),
+      ];
       return `<tr>
         <td class="table-mono">${escapeHtml(r.request_no)}</td>
         <td class="table-name">${escapeHtml(r.applicant_name)}</td>
         <td class="table-text-sm">${escapeHtml(CERT_TYPE_LABELS[r.type] || r.type)}</td>
         <td class="table-muted">${certFmtDate(r.created_at)}</td>
         <td><span class="badge ${badge}">${escapeHtml(r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span></td>
-        <td><div class="btn-group">${actions.join("")}</div></td>
+        <td>
+          <div class="cert-actions">
+            <div class="btn-group">${actions.join("")}</div>
+            <div class="btn-group cert-actions-fixed">${fixed.join("")}</div>
+          </div>
+        </td>
       </tr>`;
     })
     .join("");
   if (typeof hydrateIcons === "function") hydrateIcons(tbody);
+}
+
+// A button that keeps its place in the row whether or not it applies. When it
+// doesn't, the same button is drawn invisible and inert — identical markup, so
+// an identical width, and the buttons beside it don't shift.
+function certSlotButton(show, handler, inner, attrs) {
+  const extra = attrs ? " " + attrs : "";
+  return show
+    ? `<button class="btn btn-sm btn-outline" onclick="${handler}"${extra}>${inner}</button>`
+    : `<button class="btn btn-sm btn-outline cert-action-placeholder" disabled tabindex="-1" aria-hidden="true">${inner}</button>`;
 }
 
 // ── status changes (approve / reject / issue / undo) ──────────────────────

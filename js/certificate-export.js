@@ -7,7 +7,8 @@
 //                              printed form, and a live A4 preview of the sheet
 //                              that updates as you type. This is what "View"
 //                              opens on the queue, and what the requester sees
-//                              after filing so they can fill it in themselves.
+//                              after filing so they can fill it in themselves
+//                              (and again from View in My Activity).
 //   certPrintRequest(request)  straight to the browser's print dialog with
 //                              whatever is on file — what "Export" does.
 //   certPrintCurrent()         prints the sheet currently open in the modal.
@@ -18,8 +19,13 @@
 // what the requester types is what staff print; localStorage is kept as an
 // offline fallback only.
 //
-// The forms themselves live in js/certificate-templates.js — a type with no
-// template can still be requested, it just can't be printed yet.
+// Every certificate is the same page: the barangay's heading (city seal on the
+// left, barangay seal on the right), the form's own document below it, and the
+// request number in the bottom-left corner. The heading and the number are
+// fixed here and are not part of any form. The document is written in
+// Certificate Processing → Certificate Forms and turned into a template by
+// js/certificate-templates.js; a type without one can still be requested, it
+// just can't be printed yet.
 //
 // Load order: this file, then js/certificate-templates.js.
 
@@ -31,25 +37,25 @@ const CERT_IMG_BASE = (function () {
   return src ? new URL("../img/", src).href : "../img/";
 })();
 
-// ── The barangay's letterhead ──────────────────────────────────────────────
-const CERT_LETTERHEAD = {
+// ── The heading ────────────────────────────────────────────────────────────
+// The barangay's letterhead. The same on every certificate, and deliberately
+// not editable from Certificate Forms.
+const CERT_HEADING = {
   lines: [
     "Republic of the Philippines",
     "Province of Batangas",
     "Barangay Conde Labak, Batangas City",
   ],
   office: "OFFICE OF THE PUNONG BARANGAY",
-  // Which side each seal goes on varies by form — see each template's `seals`.
-  // A missing file hides itself instead of showing a broken image.
-  sealBrgy: CERT_IMG_BASE + "seal-256.png",
-  sealCity: CERT_IMG_BASE + "batangas-city-seal.png",
+  sealLeft: CERT_IMG_BASE + "batangas-city-seal.png",
+  sealRight: CERT_IMG_BASE + "seal-256.png",
   watermark: CERT_IMG_BASE + "seal-256.png",
 };
 
 // Names printed on the blank form — used when /api/officials has no match.
 const CERT_FALLBACK_SIGNATORIES = {
-  secretary: { name: "LOPE A. LOPEZ", title: "Barangay Secretary" },
-  punong: { name: "HON. VILMA F. ASI", title: "Punong Barangay" },
+  secretary: { name: "LOPE A. LOPEZ" },
+  punong: { name: "HON. VILMA F. ASI" },
 };
 
 const CERT_MONTHS = [
@@ -71,31 +77,6 @@ function certOrdinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-// A fill-in blank on the sheet, wired to a form field by `key` so typing can
-// update it in place. `w` is the printed underline width when it's empty.
-function certBlank(key, value, w) {
-  return (
-    `<span class="cert-fill" data-field="${certEsc(key)}" style="min-width:${w}">` +
-    certEsc(String(value == null ? "" : value).trim()) +
-    `</span>`
-  );
-}
-
-// A blank with trailing punctuation glued to it, so the two can't be split
-// across lines.
-function certBlankThen(key, value, w, tail) {
-  return `<span class="cert-nobreak">${certBlank(key, value, w)}${certEsc(tail)}</span>`;
-}
-
-// Inline text that is part of the sentence rather than a blank (the He/She
-// pronoun, the pre-printed year) — no underline, but still form-driven.
-function certText(key, value) {
-  return `<span data-text="${certEsc(key)}">${certEsc(value)}</span>`;
-}
-
-// The templates themselves — one entry per certificate type — live in
-// js/certificate-templates.js, which is loaded straight after this file.
-
 // "Dela Cruz, Juan P." (list shape) and the resident record both end up as
 // "Juan P. Dela Cruz" — the form prints given name first.
 function certFullName(res) {
@@ -108,27 +89,30 @@ function certFullName(res) {
 }
 
 // ── Signatories ────────────────────────────────────────────────────────────
+// Who signs, from Barangay Officials (Site Content), matched by role. A form
+// prints the names through its "Punong Barangay's name" / "Barangay
+// Secretary's name" fields, so a new Punong Barangay entered there reaches
+// every certificate; the titles under the names are ordinary text on the form.
+function certResolveSignatories(officials) {
+  const pick = (re) => (officials || []).find((o) => re.test(o.role || ""));
+  const person = (re, fallback, withHonorific) => {
+    const o = pick(re);
+    return o
+      ? { name: ((withHonorific && o.honorific ? o.honorific + " " : "") + o.name).toUpperCase() }
+      : fallback;
+  };
+  return {
+    secretary: person(/secretary/i, CERT_FALLBACK_SIGNATORIES.secretary, false),
+    punong: person(/punong\s*barangay|captain/i, CERT_FALLBACK_SIGNATORIES.punong, true),
+  };
+}
+
 let CERT_SIGNATORIES = null;
 
 async function certLoadSignatories() {
   if (CERT_SIGNATORIES) return CERT_SIGNATORIES;
-  const pick = (rows, re) => rows.find((o) => re.test(o.role || ""));
-  let secretary = CERT_FALLBACK_SIGNATORIES.secretary;
-  let punong = CERT_FALLBACK_SIGNATORIES.punong;
-  try {
-    const rows = await apiGet("/api/officials");
-    const sec = pick(rows, /secretary/i);
-    const pb = pick(rows, /punong\s*barangay|captain/i);
-    if (sec) secretary = { name: sec.name.toUpperCase(), title: sec.role };
-    if (pb)
-      punong = {
-        name: ((pb.honorific ? pb.honorific + " " : "") + pb.name).toUpperCase(),
-        title: pb.role,
-      };
-  } catch (_) {
-    /* the printed names are a fine fallback */
-  }
-  CERT_SIGNATORIES = { secretary, punong };
+  const officials = await apiGet("/api/officials").catch(() => []);
+  CERT_SIGNATORIES = certResolveSignatories(officials);
   return CERT_SIGNATORIES;
 }
 
@@ -209,158 +193,42 @@ function certFlushPending() {
 }
 
 // ── The document ───────────────────────────────────────────────────────────
-// The barangay's forms share a letterhead but differ in title, salutation,
-// where the two signatures sit and what is printed under them, so each of
-// those is a template option rather than fixed markup.
-
-// Which seal is printed on which side — it is not consistent across the forms.
-function certSeals(which) {
-  const hd = CERT_LETTERHEAD;
-  return which === "brgy-left"
-    ? [hd.sealBrgy, hd.sealCity]
-    : [hd.sealCity, hd.sealBrgy];
-}
-
-// A signature block. `sig` is one of ctx.signatories' entries.
-function certSignBlock(sig, opts) {
-  const o = opts || {};
+function certHeadingHtml() {
+  const hd = CERT_HEADING;
+  const hide = 'onerror="this.style.visibility=\'hidden\'"';
   return `
-    <div class="cert-sign${o.cls ? " " + o.cls : ""}">
-      ${o.rule ? '<div class="cert-sign-rule"></div>' : ""}
-      <div class="cert-sign-name">${certEsc(sig.name)}</div>
-      <div class="cert-sign-title">${certEsc(sig.title)}</div>
-    </div>`;
+    <div class="cert-head">
+      <img class="cert-seal" src="${hd.sealLeft}" alt="" ${hide} />
+      <div class="cert-head-text">
+        ${hd.lines.map((l) => `<div>${certEsc(l)}</div>`).join("")}
+        <div class="cert-office">${certEsc(hd.office)}</div>
+      </div>
+      <img class="cert-seal" src="${hd.sealRight}" alt="" ${hide} />
+    </div>
+    <div class="cert-head-rule"></div>`;
 }
 
-// The four arrangements used across the forms.
-function certSignaturesHtml(layout, s) {
-  switch (layout) {
-    // Secretary at the left margin, Punong Barangay below and indented — the
-    // most common one (residency, clearance, indigency, solo parent, …).
-    case "stacked":
-      return `<div class="cert-signatures cert-signatures-stacked">
-                ${certSignBlock(s.secretary)}
-                ${certSignBlock(s.punong, { cls: "cert-sign-indent" })}
-              </div>`;
-    // Punong Barangay alone, over on the right.
-    case "punong-right":
-      return `<div class="cert-signatures cert-signatures-right">
-                ${certSignBlock(s.punong)}
-              </div>`;
-    // Punong Barangay alone, left of centre (the RA 11261 form).
-    case "punong-left":
-      return `<div class="cert-signatures cert-signatures-left">
-                ${certSignBlock(s.punong)}
-              </div>`;
-    // Secretary left, Punong Barangay right, on one line.
-    default:
-      return `<div class="cert-signatures">
-                ${certSignBlock(s.secretary)}
-                ${certSignBlock(s.punong)}
-              </div>`;
-  }
-}
-
-// Everything printed below the signatures. Templates list the pieces they use.
-// `values` is passed so the Purpose line can be a real fill-in blank rather than
-// an empty rule — it is the one footer line that gets typed rather than signed.
-function certFooterHtml(parts, values) {
-  const v = values || {};
-  const line = (label, w) =>
-    `<div class="cert-footer-line">
-       <span>${certEsc(label)}</span><span class="cert-rule" style="min-width:${w}"></span>
-     </div>`;
-  return (parts || [])
-    .map((part) => {
-      switch (part) {
-        case "purpose":
-          return `<div class="cert-purpose">
-                    <div class="cert-footer-line">
-                      <span>Purpose:</span>${certBlank("purpose", v.purpose, "300px")}
-                    </div>
-                  </div>`;
-        // The bordered box of release details.
-        case "applicant-box":
-          return `<div class="cert-box">
-                    ${line("Signature of Applicant:", "240px")}
-                    ${line("Community Tax Certificate No:", "240px")}
-                    ${line("Issued On:", "240px")}
-                    ${line("Issued At:", "240px")}
-                  </div>`;
-        case "applicant-signature":
-          return `<div class="cert-caption-line">
-                    <div class="cert-rule cert-rule-block"></div>
-                    <div>Name and Signature of Applicant</div>
-                  </div>`;
-        case "patient-signature":
-          return `<div class="cert-caption-line">
-                    <div class="cert-rule cert-rule-block"></div>
-                    <div>Name and Signature of Patient/Deceased</div>
-                  </div>`;
-        case "date-line":
-          return `<div class="cert-caption-line cert-caption-indent">
-                    <div class="cert-rule cert-rule-block"></div>
-                    <div>Date</div>
-                  </div>`;
-        case "witness":
-          return `<div class="cert-witness">
-                    <div>Witnessed by:</div>
-                    <div class="cert-caption-line cert-caption-right">
-                      <div class="cert-rule cert-rule-block"></div>
-                      <div>Barangay Official/Designation/Position</div>
-                    </div>
-                  </div>`;
-        case "dry-seal":
-          return `<div class="cert-dry-seal">*Not Valid Without Dry Seal</div>`;
-        default:
-          return "";
-      }
-    })
-    .join("");
-}
-
+// ctx.template, when given, is printed instead of the saved one for the type —
+// the forms editor previews a draft that way.
 function certDocHtml(ctx, values) {
-  const tpl = CERT_TEMPLATES[ctx.request.type];
-  const hd = CERT_LETTERHEAD;
-  const [sealLeft, sealRight] = certSeals(tpl.seals);
+  const tpl = ctx.template || CERT_TEMPLATES[ctx.request.type];
   const hide = 'onerror="this.style.visibility=\'hidden\'"';
   return `
     <div class="cert-page" id="cert-page">
-      <img class="cert-watermark" src="${hd.watermark}" alt="" ${hide} />
+      <img class="cert-watermark" src="${CERT_HEADING.watermark}" alt="" ${hide} />
       <div class="cert-content">
-        <div class="cert-head">
-          <img class="cert-seal" src="${sealLeft}" alt="" ${hide} />
-          <div class="cert-head-text">
-            ${hd.lines.map((l) => `<div>${certEsc(l)}</div>`).join("")}
-            <div class="cert-office">${certEsc(hd.office)}</div>
-          </div>
-          <img class="cert-seal" src="${sealRight}" alt="" ${hide} />
-        </div>
-        <div class="cert-head-rule"></div>
-
-        <h1 class="cert-title${tpl.spacedTitle ? " cert-title-spaced" : ""}">${certEsc(tpl.title)}</h1>
-        ${tpl.subtitle ? `<div class="cert-subtitle">${certEsc(tpl.subtitle)}</div>` : ""}
-
-        <div class="cert-body">
-          ${tpl.salutation ? `<p class="cert-salutation">${certEsc(tpl.salutation)}</p>` : ""}
-          ${tpl.render(values)}
-        </div>
-
-        <!-- A couple of forms print the applicant's signature lines above the
-             Punong Barangay's block rather than below it. -->
-        ${
-          tpl.footerFirst
-            ? certFooterHtml(tpl.footer, values) + certSignaturesHtml(tpl.signatures, ctx.signatories)
-            : certSignaturesHtml(tpl.signatures, ctx.signatories) + certFooterHtml(tpl.footer, values)
-        }
-
-        <div class="cert-footnote">${certEsc(ctx.request.request_no)}</div>
+        ${certHeadingHtml()}
+        <div class="cert-body">${tpl.render(values)}</div>
       </div>
+      <!-- Outside .cert-content: when an over-long sheet is shrunk to fit, the
+           number stays in its corner. -->
+      <div class="cert-footnote">${certEsc(ctx.request.request_no || "")}</div>
     </div>`;
 }
 
-// Styles for the sheet itself — shared verbatim by the preview and the print
-// window, so what staff see is what comes out of the printer.
+// Styles for the sheet itself — shared verbatim by the preview, the forms
+// editor and the print window, so what staff see is what comes out of the
+// printer.
 const CERT_DOC_CSS = `
   .cert-page {
     position: relative;
@@ -373,6 +241,7 @@ const CERT_DOC_CSS = `
     font-family: "Times New Roman", Times, serif;
     font-size: 12.5pt;
     line-height: 1.95;
+    text-align: left;
   }
   .cert-watermark {
     position: absolute;
@@ -393,137 +262,54 @@ const CERT_DOC_CSS = `
   .cert-head-text { text-align: center; line-height: 1.35; font-size: 12pt; }
   .cert-office { font-weight: bold; letter-spacing: .3px; margin-top: 2px; }
   .cert-head-rule { border-bottom: 1.5px solid #000; margin-top: 3mm; }
-  .cert-title {
-    text-align: center;
-    font-size: 14.5pt;
-    font-weight: bold;
-    margin: 9mm 0 8mm;
-  }
-  /* The forms whose title is set as "C E R T I F I C A T I O N". */
-  .cert-title-spaced { letter-spacing: 3px; font-size: 15pt; }
-  .cert-subtitle {
-    text-align: center;
-    font-size: 10.5pt;
-    font-style: italic;
-    margin: -6mm 0 8mm;
-  }
-  .cert-salutation { margin: 0 0 6mm; font-weight: bold; }
-  .cert-para { margin: 0 0 7mm; text-align: justify; text-indent: 14mm; }
+
+  /* ── The form's document ──
+     Alignment, indents, spacing and fonts come from the document itself, as
+     it was written in the editor. These are only what a new paragraph or
+     table starts from. */
+  .cert-body p { margin: 0; }
+  .cert-body table { border-collapse: collapse; }
+  .cert-body td { padding: 0; vertical-align: top; }
+
+  /* A fill-in field. With a width it is a blank of that size; underlined
+     unless the form says otherwise. */
   .cert-fill {
     display: inline-block;
     border-bottom: 1px solid #000;
     padding: 0 4px;
     text-align: center;
-    /* An inline-block is a block container, so it inherits .cert-para's
-       text-indent and shunts its own text ~53px right of centre. */
+    /* An inline-block is a block container, so it inherits the paragraph's
+       first-line indent and shunts its own text right of centre. */
     text-indent: 0;
-    font-weight: bold;
     line-height: 1.2;
+  }
+  .cert-fill-plain { border-bottom-color: transparent; }
+  /* No width and no underline: the value is simply part of the sentence. */
+  .cert-fill-fit {
+    display: inline;
+    padding: 0;
+    border-bottom: 0;
+    text-align: inherit;
+    line-height: inherit;
   }
   /* An empty inline-block would collapse to no height and drag its underline
      onto the baseline — a space keeps unfilled blanks the right size. */
-  .cert-fill:empty::after { content: "\\00a0"; }
+  .cert-fill:not(.cert-fill-fit):empty::after { content: "\\00a0"; }
   /* A blank is an inline-block, so the line can break between it and the
      punctuation that follows — leaving a lone "." on the next line. */
   .cert-nobreak { white-space: nowrap; }
-  /* ── Signature blocks ── */
-  .cert-signatures {
-    display: flex;
-    justify-content: space-between;
-    gap: 10mm;
-    margin-top: 18mm;
-    padding: 0 4mm;
-    line-height: 1.3;
-  }
-  .cert-signatures-stacked {
-    display: block;
-    padding: 0;
-  }
-  .cert-signatures-stacked .cert-sign { text-align: left; }
-  /* The Punong Barangay sits below the Secretary, both starting at the same
-     left edge — an indent on only one of them reads as a mistake. */
-  .cert-signatures-stacked .cert-sign-indent { margin: 12mm 0 0 0; }
-  .cert-signatures-right { justify-content: flex-end; padding-right: 12mm; }
-  .cert-signatures-left { justify-content: flex-start; padding-left: 24mm; }
-  .cert-sign { text-align: center; }
-  .cert-sign-name { font-weight: bold; }
-  .cert-sign-title { font-size: 11pt; }
 
-  /* ── Footers ── */
-  .cert-rule {
-    display: inline-block;
-    border-bottom: 1px solid #000;
-    min-width: 200px;
-  }
-  .cert-rule-block { display: block; width: 68mm; }
-  .cert-footer-line {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    line-height: 2.1;
-  }
-  .cert-purpose { margin-top: 14mm; font-size: 11.5pt; }
-  /* The label-and-blank lists ("NAME OF CHILD: ______"). */
-  .cert-labels { margin: 5mm 0 6mm 14mm; }
-  .cert-label-row {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    line-height: 2.15;
-  }
-  .cert-label-row > span:first-child { min-width: 42mm; }
-  .cert-box {
-    margin-top: 6mm;
-    margin-left: 12mm;
-    border: 1px solid #000;
-    padding: 3mm 5mm;
-    font-size: 11pt;
-    width: fit-content;
-  }
-  .cert-caption-line { margin-top: 12mm; font-size: 10.5pt; }
-  .cert-caption-indent { margin-left: 24mm; }
-  .cert-caption-right { margin-left: auto; }
-  .cert-witness { margin-top: 14mm; font-size: 11pt; }
-  .cert-dry-seal {
-    margin-top: 8mm;
-    text-align: right;
-    font-size: 8pt;
-    font-style: italic;
-  }
+  /* The request number: bottom-left corner, on the same left edge as the
+     text above it. */
   .cert-footnote {
-    margin-top: 10mm;
+    position: absolute;
+    left: 20mm;
+    bottom: 9mm;
     font-size: 8.5pt;
+    line-height: 1;
     color: #555;
     font-family: "Courier New", monospace;
   }
-  /* ── Fitting a sheet onto one page ──
-     A certificate that runs a few millimetres long spills onto a second sheet
-     with three lines on it, which is not a document the barangay would hand
-     over. certFitToPage() tries these in order — tighten the setting, tighten
-     it further, and only then scale — so the usual small overflow is absorbed
-     by a slightly closer setting rather than by shrinking the whole page. */
-  .cert-fit-1 { line-height: 1.75; }
-  .cert-fit-1 .cert-para { margin-bottom: 5mm; }
-  .cert-fit-1 .cert-title { margin: 7mm 0 6mm; }
-  .cert-fit-1 .cert-signatures { margin-top: 12mm; }
-  .cert-fit-1 .cert-signatures-stacked .cert-sign-indent { margin-top: 9mm; }
-  .cert-fit-1 .cert-purpose { margin-top: 9mm; }
-  .cert-fit-1 .cert-caption-line, .cert-fit-1 .cert-witness { margin-top: 9mm; }
-  .cert-fit-1 .cert-footnote { margin-top: 6mm; }
-  .cert-fit-1 .cert-labels { margin-top: 3mm; margin-bottom: 4mm; }
-  .cert-fit-1 .cert-label-row { line-height: 1.95; }
-
-  .cert-fit-2 { line-height: 1.55; font-size: 11.5pt; padding-top: 12mm; }
-  .cert-fit-2 .cert-para { margin-bottom: 3.5mm; }
-  .cert-fit-2 .cert-title { margin: 5mm 0 4mm; font-size: 13.5pt; }
-  .cert-fit-2 .cert-signatures { margin-top: 8mm; }
-  .cert-fit-2 .cert-signatures-stacked .cert-sign-indent { margin-top: 6mm; }
-  .cert-fit-2 .cert-purpose { margin-top: 6mm; }
-  .cert-fit-2 .cert-caption-line, .cert-fit-2 .cert-witness { margin-top: 7mm; }
-  .cert-fit-2 .cert-footnote { margin-top: 4mm; }
-  .cert-fit-2 .cert-seal { width: 20mm; height: 20mm; }
-  .cert-fit-2 .cert-labels { margin-top: 2mm; margin-bottom: 3mm; }
-  .cert-fit-2 .cert-label-row { line-height: 1.7; }
 
   @media print {
     @page { size: A4; margin: 0; }
@@ -610,6 +396,17 @@ const CERT_UI_CSS = `
      the scaled size, and the two only line up from the same corner. */
   .cert-export-scaler { transform-origin: top left; flex: none; }
   .cert-export-scaler .cert-page { box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+  /* The blank the focused field fills. Shadows rather than a thicker border:
+     they take no room, so lighting a blank up can't rewrap the paragraph or
+     tip the sheet over its one-page fit. Sized for the scaled-down preview. */
+  .cert-export-scaler .cert-fill {
+    transition: background-color .12s ease, box-shadow .12s ease;
+  }
+  .cert-export-scaler .cert-fill-active {
+    background: rgba(245, 197, 24, .38);
+    box-shadow: 0 3px 0 0 #d4a017;
+    border-radius: 2px 2px 0 0;
+  }
   /* The field list scrolls on its own — otherwise reaching the last field
      scrolls the sheet out of sight, which defeats a live preview. */
   @media (min-width: 1001px) {
@@ -684,38 +481,28 @@ function certPageHeightPx() {
   return CERT_PAGE_PX;
 }
 
-// Tighten, tighten harder, then scale. Returns the step it settled on, mostly
-// so tests and callers can see whether anything had to give.
+// A certificate that runs long would spill onto a second sheet with a few
+// lines on it, which is not a document the barangay would hand over. The
+// layout is the form's own — exactly as written in the editor — so the only
+// thing done to an over-long sheet is to shrink its content until it fits.
+// The editor warns about a form that is too long before it ever gets here.
+// Returns "none" or "scaled".
 function certFitToPage(pageEl) {
   if (!pageEl) return "none";
   const content = pageEl.querySelector(".cert-content");
-  pageEl.classList.remove("cert-fit-1", "cert-fit-2");
   if (content) {
     content.style.transform = "";
     content.style.transformOrigin = "";
   }
   // 1px of slack: a sub-pixel rounding difference is not an overflow worth
-  // reformatting a document over.
-  const limit = certPageHeightPx() + 1;
-  if (pageEl.scrollHeight <= limit) return "none";
-
-  pageEl.classList.add("cert-fit-1");
-  if (pageEl.scrollHeight <= limit) return "fit-1";
-
-  pageEl.classList.remove("cert-fit-1");
-  pageEl.classList.add("cert-fit-2");
-  if (pageEl.scrollHeight <= limit) return "fit-2";
-
-  // Still long — something unusually verbose was typed into the blanks. Scale
-  // the content as a last resort so it is one page whatever happens.
-  if (content) {
-    const cs = getComputedStyle(pageEl);
-    const avail =
-      certPageHeightPx() - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-    const f = Math.max(0.5, avail / content.scrollHeight);
-    content.style.transformOrigin = "top left";
-    content.style.transform = `scale(${f})`;
-  }
+  // shrinking a document over.
+  if (pageEl.scrollHeight <= certPageHeightPx() + 1 || !content) return "none";
+  const cs = getComputedStyle(pageEl);
+  const avail =
+    certPageHeightPx() - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const f = Math.max(0.5, avail / content.scrollHeight);
+  content.style.transformOrigin = "top left";
+  content.style.transform = `scale(${f})`;
   return "scaled";
 }
 
@@ -814,26 +601,41 @@ function certEnsureExportModal() {
       </div>
     </div>`;
   document.body.appendChild(modal);
+  certEnsureDocStyles();
+  return modal;
+}
 
+// The sheet's styles, injected once — by the request modal, or by the forms
+// editor (js/certificate-forms.js), whichever comes first.
+function certEnsureDocStyles() {
+  if (document.getElementById("cert-doc-style")) return;
   const style = document.createElement("style");
   style.id = "cert-doc-style";
   style.textContent = CERT_DOC_CSS + CERT_UI_CSS;
   document.head.appendChild(style);
-  return modal;
 }
 
 // The Certificate Request modal: details, blanks and preview in one place.
-// opts.mode "staff" (from the queue) or "requester" (just after filing).
+//   opts.mode         "staff" (from the queue) or "requester" (just after
+//                     filing, or reopened from My Activity).
+//   opts.openDetails  start with the request's details unfolded — for when
+//                     looking the request up is the reason it was opened.
+//   opts.onClose      called once, after the modal closes.
 async function certOpenSheet(request, opts) {
   const o = opts || {};
   const modal = certEnsureExportModal();
   const printable = certHasTemplate(request.type);
+  const mode = o.mode || "staff";
 
   const ctx = await certBuildContext(request);
   CERT_EXPORT_STATE = {
     ctx,
     values: printable ? certValuesFor(ctx) : {},
-    mode: o.mode || "staff",
+    mode,
+    // Once staff have acted on a request, the requester can still see the
+    // sheet but no longer change it: what was approved is what gets printed.
+    locked: mode === "requester" && (request.status || "pending") !== "pending",
+    onClose: typeof o.onClose === "function" ? o.onClose : null,
   };
 
   const set = (id, fn) => {
@@ -844,11 +646,12 @@ async function certOpenSheet(request, opts) {
     el.textContent = `${certTypeLabel(request.type)} · ${request.request_no}`;
   });
   set("cert-export-details", (el) => {
-    el.innerHTML = certDetailsHtml(request);
+    el.innerHTML = certDetailsHtml(request, !!o.openDetails);
   });
   set("cert-export-help", (el) => {
-    el.textContent =
-      CERT_EXPORT_STATE.mode === "requester"
+    el.textContent = CERT_EXPORT_STATE.locked
+      ? `This request has been ${request.status}, so the form can no longer be changed. This is how the barangay will print it.`
+      : mode === "requester"
         ? "This is the form the barangay will print. Fill in anything you want on it — what you enter is saved with your request."
         : "Fill in the blanks on the barangay's form. The preview updates as you type and is saved with this request.";
   });
@@ -865,7 +668,8 @@ async function certOpenSheet(request, opts) {
   const released = request.status === "approved" || request.status === "issued";
   set("cert-print-btn", (el) => (el.style.display = printable && released ? "" : "none"));
   const resetBtn = document.querySelector("#cert-export-grid .btn-group .btn");
-  if (resetBtn) resetBtn.style.display = printable ? "" : "none";
+  if (resetBtn)
+    resetBtn.style.display = printable && !CERT_EXPORT_STATE.locked ? "" : "none";
 
   if (printable) {
     certRenderFields();
@@ -891,14 +695,14 @@ async function certRefreshAttachments() {
     wrap.innerHTML = "";
     return;
   }
-  wrap.innerHTML = await certAttachmentsPanelHtml(r);
+  wrap.innerHTML = await certAttachmentsPanelHtml(r, { canHold: st.mode === "staff" });
   if (typeof hydrateIcons === "function") hydrateIcons(wrap);
 }
 
 // The request's own record — what the old separate "View" modal showed. Folded
 // away by default: filling in the certificate is the job here, and the details
 // are reference material you occasionally want to check.
-function certDetailsHtml(r) {
+function certDetailsHtml(r, open) {
   const dash = '<span class="table-muted">—</span>';
   const row = (label, value) => `
     <div class="cert-detail-row">
@@ -921,7 +725,7 @@ function certDetailsHtml(r) {
   return (
     // <details> rather than a hand-rolled toggle: it opens and closes on its
     // own, and keyboard/screen-reader behaviour comes for free.
-    '<details class="cert-details">' +
+    `<details class="cert-details"${open ? " open" : ""}>` +
     '<summary class="cert-field-group-title">Request details</summary>' +
     row("Request No.", `<span class="table-mono">${certEsc(r.request_no)}</span>`) +
     row("Applicant", certEsc(r.applicant_name)) +
@@ -944,45 +748,51 @@ function certRenderFields() {
   const wrap = document.getElementById("cert-export-fields");
   const st = CERT_EXPORT_STATE;
   if (!wrap || !st) return;
-  const fields = CERT_TEMPLATES[st.ctx.request.type].fields;
-  let lastGroup = null;
-  wrap.innerHTML = fields
-    .map((f) => {
-      const v = st.values[f.key] == null ? "" : st.values[f.key];
-      let html = "";
-      if (f.group && f.group !== lastGroup) {
-        lastGroup = f.group;
-        html += `<div class="cert-field-group-title">${certEsc(f.group)}</div>`;
-      }
-      const input =
-        f.type === "select"
-          ? `<select class="form-control" oninput="certFieldInput('${f.key}', this.value)">
-               ${f.options
-                 .map(
-                   (o) =>
-                     `<option value="${certEsc(o)}"${o === v ? " selected" : ""}>${certEsc(o)}</option>`
-                 )
-                 .join("")}
-             </select>`
-          : `<input class="form-control" value="${certEsc(v)}"
-                    placeholder="${certEsc(f.placeholder || "")}"
-                    oninput="certFieldInput('${f.key}', this.value)" />`;
-      return (
-        html +
-        `<div class="form-group">
-           <label class="form-label">${certEsc(f.label)}</label>
-           ${input}
-         </div>`
-      );
-    })
-    .join("");
+  // Blanks left to be written by hand (a signature) have nothing to type.
+  const fields = CERT_TEMPLATES[st.ctx.request.type].fields.filter((f) => !f.manual);
+  // readonly rather than disabled on the text boxes: a disabled input takes no
+  // focus, and focus is what lights up its blank on the sheet. A <select> has no
+  // readonly, so it is disabled.
+  const lockText = st.locked ? " readonly" : "";
+  const lockSelect = st.locked ? " disabled" : "";
+  wrap.innerHTML = fields.length
+    ? fields
+        .map((f) => {
+          const v = st.values[f.key] == null ? "" : st.values[f.key];
+          const options = f.options || [];
+          // A saved value that isn't one of the choices is still offered, so
+          // opening a request never silently changes what it says.
+          const choices = options.length && v && !options.includes(v) ? [v].concat(options) : options;
+          const input = choices.length
+            ? `<select class="form-control"${lockSelect} oninput="certFieldInput('${f.key}', this.value)"
+                       onfocus="certFieldFocus('${f.key}', true)"
+                       onblur="certFieldFocus('${f.key}', false)">
+                 ${choices
+                   .map(
+                     (o) =>
+                       `<option value="${certEsc(o)}"${o === v ? " selected" : ""}>${certEsc(o)}</option>`
+                   )
+                   .join("")}
+               </select>`
+            : `<input class="form-control"${lockText} value="${certEsc(v)}"
+                      placeholder="${certEsc(f.value || "")}"
+                      oninput="certFieldInput('${f.key}', this.value)"
+                      onfocus="certFieldFocus('${f.key}', true)"
+                      onblur="certFieldFocus('${f.key}', false)" />`;
+          return `<div class="form-group">
+                   <label class="form-label">${certEsc(f.label || f.key)}</label>
+                   ${input}
+                 </div>`;
+        })
+        .join("")
+    : '<p class="modal-help-text">This form has no blanks to fill in.</p>';
 }
 
 // Typing patches the matching spots on the sheet in place — re-rendering the
 // whole page on every keystroke would fight the caret and flicker.
 function certFieldInput(key, value) {
   const st = CERT_EXPORT_STATE;
-  if (!st) return;
+  if (!st || st.locked) return;
   st.values[key] = value;
   certSaveFields(st.ctx.request, st.values);
   document
@@ -990,15 +800,20 @@ function certFieldInput(key, value) {
     .forEach((el) => {
       el.textContent = value.trim();
     });
-  document
-    .querySelectorAll(`#cert-export-scaler [data-text="${key}"]`)
-    .forEach((el) => {
-      el.textContent = value;
-    });
   // A longer value can rewrap a paragraph — which changes the sheet's height,
   // so re-check the one-page fit, then re-fit the preview to the stage.
   certFitToPage(document.querySelector("#cert-export-scaler .cert-page"));
   certFitPreview();
+}
+
+// Marks where the focused field lands on the sheet. At preview scale a 1px
+// underline is hard to pick out of a paragraph, so the one being typed into is
+// lit up. A preview-only class: printing rebuilds the sheet from the values, so
+// it never reaches paper.
+function certFieldFocus(key, on) {
+  document
+    .querySelectorAll(`#cert-export-scaler .cert-fill[data-field="${key}"]`)
+    .forEach((el) => el.classList.toggle("cert-fill-active", on));
 }
 
 function certRenderPreview() {
@@ -1006,8 +821,8 @@ function certRenderPreview() {
   const st = CERT_EXPORT_STATE;
   if (!scaler || !st) return;
   scaler.innerHTML = certDocHtml(st.ctx, st.values);
-  // The preview is fitted the same way the printed sheet is, so the tighter
-  // setting is visible on screen rather than a surprise at the printer.
+  // Fitted the same way the printed sheet is, so a shrunk sheet is visible on
+  // screen rather than a surprise at the printer.
   certFitToPage(scaler.querySelector(".cert-page"));
 }
 
@@ -1070,6 +885,12 @@ function closeCertExport(e) {
   if (e && e.target !== document.getElementById("modal-cert-export")) return;
   certFlushPending(); // don't lose a save that was still being coalesced
   document.getElementById("modal-cert-export")?.classList.remove("open");
+  // Taken off the state before it runs, so a second close can't fire it again.
+  const after = CERT_EXPORT_STATE && CERT_EXPORT_STATE.onClose;
+  if (after) {
+    CERT_EXPORT_STATE.onClose = null;
+    after();
+  }
 }
 
 // Print the sheet currently open in the modal, rebuilt from the values rather

@@ -126,7 +126,7 @@ function renderResidencyPage() {
                  placeholder="Search by name…" oninput="residentFilterChanged()"/>
         </div>
         <select class="gis-filter-select" id="res-purok" onchange="residentFilterChanged()">
-          <option>All Puroks</option><option>Purok 1</option><option>Purok 2</option><option>Purok 3</option><option>Purok 4</option><option>Purok 5</option>
+          <option>All Puroks</option><option>Purok 1</option><option>Purok 2</option><option>Purok 3</option><option>Purok 4</option><option>Purok 5</option><option>Purok 6</option><option>Purok 7</option><option>Purok 8</option>
         </select>
         <select class="gis-filter-select" id="res-cat" onchange="residentFilterChanged()">
           <option value="">All Categories</option>

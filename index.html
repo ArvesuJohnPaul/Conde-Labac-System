@@ -203,10 +203,7 @@
           title="Notifications"
         >
           <i data-icon="bell"></i>
-          <span
-            class="nav-notif-badge"
-            id="nav-notif-badge"
-          ></span>
+          <span class="nav-notif-badge" id="nav-notif-badge"></span>
         </button>
 
         <div class="nav-user is-hidden" id="nav-user-pill">
@@ -245,7 +242,10 @@
             <button
               type="button"
               class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyInfo()"
+              onclick="
+                this.closest('.nav-user-menu-drop').classList.remove('open');
+                openMyInfo();
+              "
             >
               <i data-icon="user"></i>
               <span data-i18n="myInformation">My Information</span>
@@ -257,7 +257,10 @@
             <button
               type="button"
               class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openMyActivity()"
+              onclick="
+                this.closest('.nav-user-menu-drop').classList.remove('open');
+                openMyActivity();
+              "
             >
               <i data-icon="inbox"></i>
               <span data-i18n="myActivity">My Activity</span>
@@ -265,7 +268,10 @@
             <button
               type="button"
               class="nav-user-menu-item"
-              onclick="this.closest('.nav-user-menu-drop').classList.remove('open'); openPreferences()"
+              onclick="
+                this.closest('.nav-user-menu-drop').classList.remove('open');
+                openPreferences();
+              "
             >
               <i data-icon="settings"></i>
               <span data-i18n="settings">Settings</span>
@@ -340,7 +346,7 @@
                       Barangay Hotline
                     </dt>
                     <dd class="hero-meta-value">
-                      <a href="tel:+63437024011">(043) 702-4011</a>
+                      <a href="tel:+63437028875">043-702-8875</a>
                     </dd>
                   </div>
                 </div>
@@ -387,7 +393,11 @@
                     fetchpriority="high"
                     decoding="async"
                     alt="The two-storey Barangay Conde Labac hall, seen from the street"
-                    onerror="this.closest('.hero-visual').classList.add('hero-visual-noimg')"
+                    onerror="
+                      this.closest('.hero-visual').classList.add(
+                        'hero-visual-noimg',
+                      )
+                    "
                   />
                 </picture>
                 <figcaption>
@@ -576,9 +586,7 @@
             </li>
             <li class="how-step">
               <span class="how-num" aria-hidden="true">3</span>
-              <h3 class="how-step-title" data-i18n="how3Title">
-                Get notified
-              </h3>
+              <h3 class="how-step-title" data-i18n="how3Title">Get notified</h3>
               <p class="how-step-desc" data-i18n="how3Desc">
                 Barangay staff review your request and notify you when it is
                 ready or acted upon.
@@ -716,7 +724,7 @@
                 </li>
                 <li>
                   <i data-icon="phone" aria-hidden="true"></i>
-                  <a href="tel:+63437024011">(043) 702-4011</a>
+                  <a href="tel:+63437028875">043-702-8875</a>
                 </li>
                 <li>
                   <i data-icon="mail" aria-hidden="true"></i>
@@ -748,8 +756,8 @@
                   >National Emergency Hotline</span
                 >
               </a>
-              <a class="visit-emergency-num" href="tel:+63437024011">
-                <strong>(043) 702-4011</strong>
+              <a class="visit-emergency-num" href="tel:+63437028875">
+                <strong>043-702-8875</strong>
                 <span data-i18n="infoHotline">Barangay Hotline</span>
               </a>
             </aside>
@@ -852,7 +860,7 @@
 
           <label class="form-label">Select Certificate Type</label>
           <div class="cert-type-grid" id="cert-type-grid">
-              <!-- Cards are rendered by renderCertTypeGrid() in
+            <!-- Cards are rendered by renderCertTypeGrid() in
                    js/portal-account.js, the one list of certificate types. -->
           </div>
 
@@ -863,14 +871,20 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">First Name</label>
-              <input class="form-control" placeholder="Juan" id="cert-fname" required />
+              <input
+                class="form-control"
+                placeholder="Juan"
+                id="cert-fname"
+                required
+              />
             </div>
             <div class="form-group">
               <label class="form-label">Last Name</label>
               <input
                 class="form-control"
                 placeholder="Santos"
-                id="cert-lname" required
+                id="cert-lname"
+                required
               />
             </div>
           </div>
@@ -887,6 +901,9 @@
                 <option>Purok 3 – Sitio Malinis</option>
                 <option>Purok 4 – Sitio Mapayapa</option>
                 <option>Purok 5 – Sitio Bagong Pag-Asa</option>
+                <option>Purok 6</option>
+                <option>Purok 7</option>
+                <option>Purok 8</option>
               </select>
             </div>
           </div>
@@ -953,7 +970,7 @@
           <div class="alert alert-warning">
             <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
             For life-threatening emergencies, call <strong>911</strong> or the
-            local police at <strong>(043) 702-4011</strong> immediately.
+            barangay hotline at <strong>043-702-8875</strong> immediately.
           </div>
 
           <div class="form-row">
@@ -1025,7 +1042,8 @@
             <label class="form-label">Detailed Narration of Incident</label>
             <textarea
               class="form-control textarea-tall"
-              id="inc-narration" required
+              id="inc-narration"
+              required
               placeholder="Describe what happened in detail – include sequence of events, persons involved, and any witnesses..."
             ></textarea>
           </div>
@@ -1136,7 +1154,8 @@
             <label class="form-label">Your Comment or Suggestion</label>
             <textarea
               class="form-control textarea-medium"
-              id="fb-comment" required
+              id="fb-comment"
+              required
               placeholder="Share your experience, suggestions, or concerns about barangay services..."
             ></textarea>
           </div>
@@ -1214,8 +1233,8 @@
             <p class="footer-privacy">
               <i data-icon="lock" aria-hidden="true"></i>
               <span data-i18n="footerPrivacy"
-                >Resident data is handled under the Data Privacy Act of 2012
-                (RA 10173). Record lookups are logged.</span
+                >Resident data is handled under the Data Privacy Act of 2012 (RA
+                10173). Record lookups are logged.</span
               >
             </p>
           </div>
@@ -1287,7 +1306,7 @@
               </li>
               <li>
                 <i data-icon="phone"></i>
-                <a href="tel:+63437024011">(043) 702-4011</a>
+                <a href="tel:+63437028875">043-702-8875</a>
               </li>
               <li>
                 <i data-icon="mail"></i>
@@ -1484,8 +1503,7 @@
         const themeBtn = document.getElementById("theme-toggle");
         if (themeBtn && window.Theme) {
           themeBtn.addEventListener("click", () => {
-            const next =
-              THEME_CYCLE[(THEME_CYCLE.indexOf(Theme.mode) + 1) % 3];
+            const next = THEME_CYCLE[(THEME_CYCLE.indexOf(Theme.mode) + 1) % 3];
             Theme.setMode(next);
           });
           Theme.subscribe(paintThemeToggle);
@@ -1535,7 +1553,9 @@
       function initScrollChrome() {
         const navbar = document.getElementById("navbar");
         const toTop = document.getElementById("to-top");
-        const sections = Array.from(document.querySelectorAll("main section[id]"));
+        const sections = Array.from(
+          document.querySelectorAll("main section[id]"),
+        );
         const links = Array.from(document.querySelectorAll(".nav-links a"));
         let queued = false;
 
@@ -1720,7 +1740,7 @@
             document.addEventListener(
               "DOMContentLoaded",
               () => applyMisNavAccess(session),
-              { once: true }
+              { once: true },
             );
           return;
         }
@@ -1744,7 +1764,12 @@
         const session = getSession();
         // Log before the session is cleared so the entry still knows who left.
         if (typeof logAudit === "function")
-          logAudit("LOGOUT", `${session?.displayName || "User"} signed out`, "info", "auth");
+          logAudit(
+            "LOGOUT",
+            `${session?.displayName || "User"} signed out`,
+            "info",
+            "auth",
+          );
         clearSession();
         // The cached avatar is another person's face on a shared machine —
         // it goes with the session, not with the browser.
@@ -1928,8 +1953,14 @@
         if (window.Motion) {
           if (
             !Motion.require([
-              { id: "star-rating", message: "Choose a star rating — one to five." },
-              { id: "fb-comment", message: "Tell us what you would like to say." },
+              {
+                id: "star-rating",
+                message: "Choose a star rating — one to five.",
+              },
+              {
+                id: "fb-comment",
+                message: "Tell us what you would like to say.",
+              },
             ])
           )
             return;

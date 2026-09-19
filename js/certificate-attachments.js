@@ -9,9 +9,9 @@
 //                   thumbnail to check against what is typed on the form, and a
 //                   retention hold for a contested request.
 //
-// Which documents each type wants is declared in js/certificate-types.js. How
-// long they are kept is the server's business — see retention-service.js; this
-// file only reports it.
+// Which documents each type wants is set per certificate in Certificate Forms
+// and loaded by js/certificate-types.js. How long they are kept is the
+// server's business — see retention-service.js; this file only reports it.
 //
 // Loaded after js/certificate-types.js.
 
@@ -164,13 +164,13 @@ function certViewPendingFile(key) {
 // Looked up across all types: the requirement list on screen belongs to the
 // selected one, and keys like "valid-id" are shared.
 function certRequirementLabel(key) {
-  for (const t of window.CERT_TYPE_OPTIONS || [])
+  for (const t of window.CERT_TYPE_ALL || [])
     for (const r of t.requirements || []) if (r.key === key) return r.label;
   return key;
 }
 
 function certRequirementSensitivity(key) {
-  for (const t of window.CERT_TYPE_OPTIONS || [])
+  for (const t of window.CERT_TYPE_ALL || [])
     for (const r of t.requirements || [])
       if (r.key === key && r.sensitivity) return r.sensitivity;
   return "normal";
@@ -208,17 +208,15 @@ async function certAttachPending(certificateId, accountId) {
   return failed;
 }
 
-function certClearPendingFiles() {
-  CERT_PENDING_FILES = {};
-  document.querySelectorAll(".cert-req-input").forEach((el) => (el.value = ""));
-  document.querySelectorAll(".cert-req-status").forEach((el) => (el.textContent = ""));
-  document.querySelectorAll(".cert-req-chosen").forEach((el) => (el.innerHTML = ""));
-}
-
 // ── The staff side ─────────────────────────────────────────────────────────
 // A block for the Certificate Request modal: every declared document, whether it
 // arrived, and what has become of it.
-async function certAttachmentsPanelHtml(request) {
+//
+// The same modal opens for the requester straight after filing. They can View
+// their own documents, but the retention hold is a barangay decision about a
+// contested request, so opts.canHold is only set when staff open it in the MIS.
+async function certAttachmentsPanelHtml(request, opts) {
+  const canHold = !!(opts && opts.canHold);
   const reqs = certRequirements(request.type);
   let rows = [];
   try {
@@ -267,17 +265,7 @@ async function certAttachmentsPanelHtml(request) {
              <button type="button" class="btn btn-sm btn-outline" onclick="certViewAttachment(${request.id}, ${a.id})">
                <i data-icon=eye></i> View
              </button>
-             <!-- A pressed toggle rather than a button whose label flips: the
-                  hold is a state of the document, so the control shows whether
-                  it is on instead of naming the next action. -->
-             <button type="button" class="btn btn-sm cert-hold-btn"
-                     aria-pressed="${a.retention_hold ? "true" : "false"}"
-                     title="${a.retention_hold
-                       ? "This document is exempt from the retention schedule. Click to let it be deleted on time."
-                       : "Keep this document past its deletion date — for a contested request."}"
-                     onclick="certToggleHold(${request.id}, ${a.id}, ${!a.retention_hold})">
-               <i data-icon=lock></i> ${a.retention_hold ? "Held from deletion" : "Hold from deletion"}
-             </button>
+             ${canHold ? certHoldButtonHtml(request.id, a) : ""}
            </div>`
         : "";
     return (
@@ -308,6 +296,20 @@ async function certAttachmentsPanelHtml(request) {
     extra.map((a) => item(a.label, false, a.sensitivity, a)).join("") +
     "</div></details>"
   );
+}
+
+// A pressed toggle rather than a button whose label flips: the hold is a state
+// of the document, so the control shows whether it is on instead of naming the
+// next action.
+function certHoldButtonHtml(certificateId, a) {
+  return `<button type="button" class="btn btn-sm cert-hold-btn"
+                  aria-pressed="${a.retention_hold ? "true" : "false"}"
+                  title="${a.retention_hold
+                    ? "This document is exempt from the retention schedule. Click to let it be deleted on time."
+                    : "Keep this document past its deletion date — for a contested request."}"
+                  onclick="certToggleHold(${certificateId}, ${a.id}, ${!a.retention_hold})">
+            <i data-icon=lock></i> ${a.retention_hold ? "Held from deletion" : "Hold from deletion"}
+          </button>`;
 }
 
 function certAttDate(d) {
@@ -478,7 +480,7 @@ const CERT_ATT_CSS = `
 
   /* The retention hold: a two-state button, so whether a document is exempt
      from the purge is readable at a glance. Styled here rather than borrowing
-     the GIS toggle pill, because this panel also renders on the landing page,
+     the GIS toggle pill, because this stylesheet also loads on the landing page,
      which does not load css/gis.css. */
   .cert-hold-btn {
     border: 1px solid var(--border, rgba(0, 0, 0, .14));

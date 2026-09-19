@@ -2353,6 +2353,683 @@ body.drawer-open {
   margin-bottom: var(--space-5);
 }
 
+/* ── Certificate queue actions ─────────────────────── */
+/* Workflow buttons on the left, the fixed Message / Delete / Export cluster
+   pushed to the right edge. Neither side wraps: a wrapped row would drop the
+   fixed cluster onto a second line and out of line with the rows around it —
+   the table scrolls sideways instead. */
+.cert-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cert-actions > .btn-group {
+  flex-wrap: nowrap;
+}
+
+.cert-actions-fixed {
+  margin-left: auto;
+}
+
+/* Holds the width of a Message or Export a row doesn't have. */
+.cert-action-placeholder {
+  visibility: hidden;
+}
+
+/* ── Certificate Processing tabs ───────────────────── */
+.cert-page-tabs {
+  display: inline-flex;
+  margin-bottom: var(--space-5);
+}
+
+/* ── Certificate forms editor (js/certificate-forms.js) ─
+   A word-processor page: a bar with the certificate picker and Save, a
+   toolbar that stays in view, the A4 sheet itself, and a side panel for the
+   fill-in fields and the certificate's details. */
+.cfw-readonly {
+  margin-bottom: var(--space-4);
+}
+
+.cfw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cfw-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.cfw-bar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cfw-bar-label {
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cfw-select {
+  width: auto;
+  min-width: 240px;
+  max-width: 420px;
+}
+
+.cfw-state {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cfw-state[data-state="dirty"] {
+  font-weight: var(--weight-semibold);
+  color: var(--warning);
+}
+
+.cfw-overflow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  color: var(--danger);
+}
+
+.cfw-overflow[hidden] {
+  display: none;
+}
+
+.cfw-overflow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cfw .btn.is-on {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* ── Toolbar ── */
+.cfw-ribbon {
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--space-2));
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2);
+}
+
+.cfw-ribbon-set {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cfw-ribbon-set:disabled {
+  opacity: 0.5;
+}
+
+.cfw-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-right: 1px solid var(--border);
+}
+
+.cfw-ribbon-set > .cfw-group:last-child,
+.cfw-zoom-group {
+  border-right: 0;
+}
+
+.cfw-table-tools[hidden] {
+  display: none;
+}
+
+.cfw-rbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cfw-rbtn span {
+  font-size: 12.5px;
+  font-weight: var(--weight-semibold);
+}
+
+.cfw-rbtn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.cfw-rbtn[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text-primary);
+}
+
+/* The one button this page is about. Gold, like the rest of the MIS's
+   "do the thing" buttons. */
+.cfw-rbtn-field,
+.cfw-rbtn-field:hover:not(:disabled) {
+  background: var(--gold-400);
+  color: var(--navy-800);
+}
+
+.cfw-rbtn-field:hover:not(:disabled) {
+  background: var(--gold-500);
+}
+
+.cfw-svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.cfw-rsel {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cfw-rsel-style {
+  width: 124px;
+}
+
+.cfw-rsel-font {
+  width: 140px;
+}
+
+.cfw-rsel-size {
+  width: 62px;
+}
+
+.cfw-rsel-letter {
+  width: 96px;
+}
+
+.cfw-rsel-num {
+  width: 78px;
+}
+
+.cfw-rsel-zoom {
+  width: 70px;
+}
+
+.cfw-colw {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cfw-colw input {
+  width: 56px;
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font: inherit;
+  color: var(--text-primary);
+}
+
+/* ── The page ── */
+.cfw-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.cfw-canvas {
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #8a8a8a;
+}
+
+.cfw-zoom {
+  flex: none;
+}
+
+.cfw-page {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cfw-heading {
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.cfw-body {
+  min-height: 40mm;
+  outline: none;
+  cursor: text;
+}
+
+.cfw-body[hidden],
+.cfw-preview-body[hidden] {
+  display: none;
+}
+
+/* Table cells get faint guides while editing, so a borderless table can be
+   found and clicked into. They never print — the print window has no
+   .cfw-body. */
+.cfw-body td {
+  min-width: 6mm;
+  outline: 1px dashed rgba(0, 0, 0, 0.2);
+  outline-offset: -1px;
+}
+
+/* A fill-in field on the page: tinted, labelled with what it holds, and as
+   wide as the blank it prints. */
+.cfw-field {
+  display: inline-block;
+  min-height: 1.2em;
+  padding: 0 4px;
+  border-bottom: 1px dashed #b38600;
+  border-radius: 2px 2px 0 0;
+  background: rgba(245, 197, 24, 0.22);
+  line-height: 1.2;
+  text-align: center;
+  text-indent: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cfw-field-line {
+  border-bottom: 1px solid #000;
+}
+
+.cfw-field:hover {
+  background: rgba(245, 197, 24, 0.45);
+}
+
+.cfw-field-label {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: 0;
+  color: #7a5a00;
+}
+
+.cfw-field-flash {
+  animation: cfw-flash 1.2s ease;
+}
+
+@keyframes cfw-flash {
+  0%,
+  60% {
+    background: rgba(245, 197, 24, 0.9);
+    box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.55);
+  }
+}
+
+/* Where the printable area ends — 297mm less the bottom margin. Red when the
+   wording runs past it. */
+.cfw-page-end {
+  position: absolute;
+  top: calc(297mm - 18mm);
+  right: 0;
+  left: 0;
+  border-top: 1px dashed rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.cfw-page-end span {
+  position: absolute;
+  top: -15px;
+  right: 4mm;
+  font: 9px Arial, Helvetica, sans-serif;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.cfw-page-end.is-over {
+  border-top: 2px solid #dc2626;
+}
+
+.cfw-page-end.is-over span {
+  color: #dc2626;
+}
+
+/* ── Side panel ── */
+.cfw-side {
+  position: sticky;
+  top: calc(var(--topbar-h) + 64px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: calc(100vh - var(--topbar-h) - 80px);
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.cfw-side-tabs .sc-tab {
+  flex: 1;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+.cfw-side-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cfw-side .form-group {
+  margin-bottom: 0;
+}
+
+.cfw-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.cfw-hint[hidden] {
+  display: none;
+}
+
+.cfw-side-insert {
+  justify-content: center;
+}
+
+.cfw-side-insert .cfw-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cfw-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cfw-field-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cfw-field-item:hover {
+  border-color: var(--accent);
+}
+
+.cfw-field-item-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.cfw-field-item-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.cfw-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.cfw-check input {
+  margin-top: 3px;
+}
+
+.cfw-side-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.cfw-req {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cfw-req-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cfw-req-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.cfw-icon-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.cfw-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cfw-icon-btn:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.cfw-more .btn {
+  justify-content: flex-start;
+}
+
+.cfw-slug code {
+  font-family: var(--font-mono);
+}
+
+/* ── Fill-in field dialog ── */
+.cfw-dialog {
+  width: min(560px, 94vw);
+}
+
+.cfw-dialog .modal-title-icon .cfw-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cfw-fd-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.cfw-fd-body .form-group {
+  margin-bottom: 0;
+}
+
+.cfw-fd-body .form-group .cfw-hint {
+  margin-top: 4px;
+}
+
+.cfw-fd-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.cfw-fd-section.is-off {
+  opacity: 0.5;
+}
+
+.cfw-fd-width {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cfw-fd-width input {
+  width: 90px;
+}
+
+.cfw-fd-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cfw-chip {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cfw-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+/* The width the field is set to. Gold like the other chosen controls, so it
+   reads from across the dialog — including "Fit to text". */
+.cfw-chip[aria-pressed="true"],
+.cfw-chip[aria-pressed="true"]:hover {
+  border-color: var(--gold-500);
+  background: var(--gold-400);
+  font-weight: var(--weight-bold);
+  color: var(--navy-800);
+}
+
+/* A 170mm line of text, and the part of it the blank will take. */
+.cfw-fd-ruler {
+  position: relative;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, var(--border) 0 1px, transparent 1px 10%);
+}
+
+.cfw-fd-bar {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  border-bottom: 3px solid var(--gold-500);
+  transition: width 0.12s ease;
+}
+
+.cfw-fd-bar.is-fit {
+  width: 18px;
+  border-bottom-style: dashed;
+}
+
+.cfw-fd-shared[hidden],
+.cfw-fd-error[hidden],
+#cfw-fd-remove[hidden] {
+  display: none;
+}
+
+.cfw-fd-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.cfw-fd-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cfw-fd-spacer {
+  flex: 1;
+}
+
+/* Not enough room beside the page: the panel moves underneath it. */
+@media (max-width: 1200px) {
+  .cfw-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cfw-side {
+    position: static;
+    max-height: none;
+  }
+}
+
 /* ── Star rating ───────────────────────────────────── */
 .star-rating {
   display: flex;

@@ -83,36 +83,49 @@
     indigent: "Indigent Family",
   };
 
-  // The certificate list lives in js/certificate-types.js (loaded before this
-  // file) so the queue page and the printable forms share the same one.
+  // The certificate list is loaded by js/certificate-types.js (before this
+  // file) from the barangay's own definitions. These are the same array and
+  // object it fills in place, so they are current whenever they are read.
   const CERT_TYPE_OPTIONS = window.CERT_TYPE_OPTIONS || [];
   const CERT_LABELS = window.CERT_TYPE_LABELS || {};
 
   // label -> slug, including the short labels the older hardcoded type cards
   // used, so a stale page still resolves to the right type.
-  const CERT_SLUGS = { "Certificate of Residency": "residency" };
-  CERT_TYPE_OPTIONS.forEach(function (t) {
-    CERT_SLUGS[t.label] = t.slug;
-    CERT_SLUGS[t.short] = t.slug;
-  });
+  function certSlugForName(name) {
+    if (name === "Certificate of Residency") return "residency";
+    const t = CERT_TYPE_OPTIONS.find((x) => x.label === name || x.short === name);
+    return t ? t.slug : "";
+  }
 
   // Fill in the picker wherever the service modal exists. Called on load, so
   // the pages themselves only need the empty <div id="cert-type-grid">.
   //
   // A dropdown rather than a card per type: fifteen cards is a wall to read
   // through, and the list only grows as the barangay adds forms.
+  //
+  // Runs again whenever the list (re)loads. The choice already made is kept if
+  // that certificate is still offered, so a reload never swaps the type out
+  // from under someone mid-request.
   function renderCertTypeGrid() {
     const grid = document.getElementById("cert-type-grid");
     if (!grid) return;
+    const previous = document.getElementById("cert-type-select")?.value || "";
     // The container is a CSS grid meant for cards; one full-width control.
     grid.style.display = "block";
-    grid.innerHTML =
-      '<select class="form-control" id="cert-type-select"' +
-      ' onchange="certTypeChanged(this)">' +
-      CERT_TYPE_OPTIONS.map(function (t) {
-        return `<option value="${t.slug}">${esc(t.label)}</option>`;
-      }).join("") +
-      "</select>";
+    grid.innerHTML = CERT_TYPE_OPTIONS.length
+      ? '<select class="form-control" id="cert-type-select"' +
+        ' onchange="certTypeChanged(this)">' +
+        CERT_TYPE_OPTIONS.map(function (t) {
+          return `<option value="${esc(t.slug)}">${esc(t.label)}</option>`;
+        }).join("") +
+        "</select>"
+      : '<select class="form-control" id="cert-type-select" disabled><option value="">' +
+        (window.certTypesLoadError
+          ? "Could not load the list of certificates — check your connection and reopen this form."
+          : "Loading certificates…") +
+        "</option></select>";
+    const sel = document.getElementById("cert-type-select");
+    if (previous && CERT_TYPE_OPTIONS.some((t) => t.slug === previous)) sel.value = previous;
     // The "Selected: …" badge only existed because the cards were hard to read
     // at a glance; the dropdown states the choice itself. Reuse its slot for the
     // requirement list, which does change with the selection.
@@ -126,7 +139,10 @@
         badge.parentNode.insertBefore(reqs, badge.nextSibling);
       }
     }
-    certTypeChanged(document.getElementById("cert-type-select"));
+    // Redrawing the requirement list drops any files already chosen, so while
+    // the form is open it is only redrawn if the selection itself changed.
+    const open = document.getElementById("modal-certificates")?.classList.contains("open");
+    if (!open || sel.value !== previous) certTypeChanged(sel);
   }
 
   // Keeps the legacy `selectedCert` global in step with the dropdown. The real
@@ -159,7 +175,7 @@
   // it works with both index.html's and shell.js's copies of the modal.
   function selectedCertName() {
     const el = document.querySelector(".cert-type-card.selected .cert-name");
-    return (el && el.textContent.trim()) || CERT_TYPE_OPTIONS[0].short;
+    return (el && el.textContent.trim()) || (CERT_TYPE_OPTIONS[0] || {}).short || "";
   }
 
   // The dropdown's value *is* the slug. The card lookups behind it are there
@@ -170,8 +186,9 @@
     const card = document.querySelector(".cert-type-card.selected");
     return (
       (card && card.dataset.slug) ||
-      CERT_SLUGS[selectedCertName()] ||
-      CERT_TYPE_OPTIONS[0].slug
+      certSlugForName(selectedCertName()) ||
+      (CERT_TYPE_OPTIONS[0] || {}).slug ||
+      ""
     );
   }
 
@@ -187,6 +204,13 @@
     const fname = val("cert-fname");
     const lname = val("cert-lname");
     const type = selectedCertSlug();
+    if (!type) {
+      toast(
+        "The list of certificates has not loaded — check your connection and try again.",
+        "<i data-icon=triangle-alert></i>"
+      );
+      return;
+    }
     const certName = CERT_LABELS[type] || selectedCertName();
     // Extra details ride along in `purpose` — the certificate table keeps a
     // single free-text purpose column (same convention as the mobile app).
@@ -208,21 +232,33 @@
     // system stopped using them: it cannot carry the barangay's styling, it
     // cannot show the list as a list, and it names the page's origin in the
     // title bar as though the request were coming from somewhere else.
+    //
+    // uiConfirm() lives in js/ui-modals.js. It used to be in js/shell.js, which
+    // the landing page does not load, so this question was silently skipped
+    // there — and a resident filing from the front page was never asked. The
+    // plain confirm() fallback is there so that can't happen quietly again.
     if (typeof certMissingRequirements === "function") {
       const missing = certMissingRequirements(type);
-      if (missing.length && typeof uiConfirm === "function") {
-        const go = await uiConfirm({
-          icon: "triangle-alert",
-          accent: true,
-          title: "Submit without these documents?",
-          message:
-            "You can still file the request now and bring the missing documents " +
-            "to the barangay hall — processing is just faster with them attached.",
-          notes: missing.map((m) => ({ icon: "file-text", text: m })),
-          confirmLabel: "Submit anyway",
-          confirmIcon: "check",
-          cancelLabel: "Attach them first",
-        });
+      if (missing.length) {
+        const go =
+          typeof uiConfirm === "function"
+            ? await uiConfirm({
+                icon: "triangle-alert",
+                tone: "accent",
+                title: "Submit without these documents?",
+                message:
+                  "You can still file the request now and bring the missing documents " +
+                  "to the barangay hall — processing is just faster with them attached.",
+                notes: missing.map((m) => ({ icon: "file-text", text: m })),
+                confirmLabel: "Submit anyway",
+                confirmIcon: "check",
+                cancelLabel: "Attach them first",
+              })
+            : window.confirm(
+                "These required documents are not attached:\n\n• " +
+                  missing.join("\n• ") +
+                  "\n\nSubmit the request anyway?"
+              );
         if (!go) return;
       }
     }
@@ -264,6 +300,10 @@
         );
     }
 
+    // Filed — so the form goes back to blank. Otherwise the next time it is
+    // opened it still holds this request, and pressing Submit again would file
+    // it a second time.
+    resetCertificateForm();
     if (typeof closeServiceModal === "function") closeServiceModal("certificates");
     if (typeof logAudit === "function")
       logAudit(
@@ -279,6 +319,11 @@
     // certificate.form_fields, so the barangay prints their words rather than
     // guessing. Skipped when the export machinery isn't on the page, or when
     // this certificate type has no printable form yet.
+    //
+    // Either way the requester ends on a note saying where the request lives
+    // from here on — after they close the sheet, or straight away when there
+    // is no sheet to show.
+    const pointToActivity = () => showSubmittedNotice(certName, res.request_no);
     if (
       typeof certOpenSheet === "function" &&
       typeof certHasTemplate === "function" &&
@@ -304,10 +349,45 @@
           },
           res
         ),
-        { mode: "requester" }
+        { mode: "requester", onClose: pointToActivity }
       );
+    } else {
+      pointToActivity();
     }
   };
+
+  // Back to a blank form: every field emptied, the type back to the first in
+  // the list (which redraws its requirement list and drops any chosen files),
+  // and last time's validation marks cleared. The resident's own details come
+  // back on the next open — openServicePopup() refills them from their record.
+  function resetCertificateForm() {
+    const modal = document.getElementById("modal-certificates");
+    if (!modal) return;
+    modal.querySelectorAll("input, textarea").forEach((el) => (el.value = ""));
+    modal.querySelectorAll("select").forEach((el) => (el.selectedIndex = 0));
+    window.certTypeChanged(document.getElementById("cert-type-select"));
+    if (window.Motion) Motion.clearErrors(modal);
+  }
+
+  // The last word after filing: the request is in, and My Activity is where to
+  // find it again. Offers to go straight there.
+  function showSubmittedNotice(certName, requestNo) {
+    if (typeof uiConfirm !== "function") return;
+    uiConfirm({
+      tone: "accent",
+      icon: "inbox",
+      title: "Your request has been submitted",
+      message:
+        "To view the certificate request you submitted — its status, details and " +
+        "documents — go to My Activity in your account menu.",
+      target: { icon: "file-text", label: certName + " · " + requestNo },
+      confirmLabel: "Open My Activity",
+      confirmIcon: "inbox",
+      cancelLabel: "Close",
+    }).then((go) => {
+      if (go) window.openMyActivity();
+    });
+  }
 
   // Auto-fill the request form from the signed-in resident's record.
   async function prefillCertificateForm() {
@@ -415,14 +495,20 @@
   function ensurePanels() {
     if (document.getElementById("modal-acct-info")) return;
     const wrap = document.createElement("div");
-    wrap.innerHTML = ["acct-info", "acct-activity", "acct-notifs"]
+    // acct-detail comes last so it stacks above My Activity, which opens it.
+    wrap.innerHTML = ["acct-info", "acct-activity", "acct-notifs", "acct-detail"]
       .map(
         (key) => `
       <div class="modal-backdrop" id="modal-${key}" onclick="closeServiceModal('${key}', event)">
         <div class="modal-box">
           <div class="modal-header">
-            <div class="modal-title"><div class="modal-title-icon"><i data-icon="${
-              { "acct-info": "user", "acct-activity": "inbox", "acct-notifs": "bell" }[key]
+            <div class="modal-title"><div class="modal-title-icon" id="${key}-icon"><i data-icon="${
+              {
+                "acct-info": "user",
+                "acct-activity": "inbox",
+                "acct-notifs": "bell",
+                "acct-detail": "file-text",
+              }[key]
             }"></i></div> <span id="${key}-title"></span></div>
             <button class="modal-close" onclick="closeServiceModal('${key}')"><i data-icon=x></i></button>
           </div>
@@ -577,6 +663,7 @@
                 .join(" · "),
               badge: r.status.charAt(0).toUpperCase() + r.status.slice(1),
               badgeClass: CERT_BADGES[r.status] || "badge-gray",
+              view: () => viewCertificateRequest(r),
             });
           });
         }),
@@ -607,15 +694,16 @@
         pull("incident reports", async () => {
           const rows = await get("/api/incidents?complainant_id=" + s.resident_id);
           rows.forEach((i) => {
-            const closed = i.status === "resolved" || i.status === "dismissed";
+            const st = incidentStatus(i.status);
             items.push({
               ts: new Date(i.created_at).getTime(),
               icon: "siren",
               title: "Reported: " + (i.title || i.report_type),
               ref: i.case_no,
               sub: i.narration || "",
-              badge: closed ? "Resolved" : "Open",
-              badgeClass: closed ? "badge-success" : "badge-warning",
+              badge: st.label,
+              badgeClass: st.badge,
+              view: () => viewIncidentReport(i),
             });
           });
         }),
@@ -632,6 +720,7 @@
                 sub: f.comment || "(no comment)",
                 badge: (f.rating || 0) + "★",
                 badgeClass: "badge-gold",
+                view: () => viewFeedback(f),
               });
             });
         }),
@@ -640,6 +729,119 @@
     items.sort((a, b) => b.ts - a.ts);
     return { items, failed };
   }
+
+  // ── My Activity: View ───────────────────────────────────────────────────
+  // What the resident actually sent, in full — the list only has room for one
+  // line of it.
+  const INCIDENT_STATUSES = {
+    open: { label: "Open", badge: "badge-warning" },
+    "under-review": { label: "Under review", badge: "badge-info" },
+    resolved: { label: "Resolved", badge: "badge-success" },
+    dismissed: { label: "Dismissed", badge: "badge-gray" },
+  };
+
+  function incidentStatus(status) {
+    return INCIDENT_STATUSES[status] || { label: status || "Open", badge: "badge-gray" };
+  }
+
+  // Only the resident-facing states. The AI triage columns on a feedback row
+  // (sentiment, urgency, alerts) are staff working notes, not part of what the
+  // resident submitted, so they are never shown here.
+  const FEEDBACK_STATUSES = {
+    new: { label: "Received", badge: "badge-info" },
+    reviewed: { label: "Reviewed", badge: "badge-success" },
+    archived: { label: "Archived", badge: "badge-gray" },
+  };
+
+  // row() right-aligns its value, which suits a date and not a paragraph.
+  const detailHeading = (text) =>
+    `<div style="margin:16px 0 6px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted,#6b7280)">${esc(text)}</div>`;
+  const detailText = (text) =>
+    `<p style="margin:0;white-space:pre-wrap;line-height:1.6">${text ? esc(text) : dash}</p>`;
+  const badgeHtml = (st) => `<span class="badge ${st.badge}">${esc(st.label)}</span>`;
+
+  function openActivityDetail(title, icon, html) {
+    ensurePanels();
+    document.getElementById("acct-detail-title").textContent = title;
+    document.getElementById("acct-detail-icon").innerHTML = `<i data-icon="${icon}"></i>`;
+    document.getElementById("acct-detail-body").innerHTML = html;
+    const modal = document.getElementById("modal-acct-detail");
+    modal.classList.add("open");
+    hydrate(modal);
+  }
+
+  // A certificate request opens the same Certificate Request window the
+  // resident saw after filing — details (unfolded, since they are why it was
+  // opened), the documents they attached, and the form as it will print.
+  function viewCertificateRequest(r) {
+    if (typeof certOpenSheet === "function") {
+      certOpenSheet(r, { mode: "requester", openDetails: true });
+      return;
+    }
+    const st = { label: r.status, badge: CERT_BADGES[r.status] || "badge-gray" };
+    openActivityDetail(
+      CERT_LABELS[r.type] || r.type,
+      "file-text",
+      row("Request No.", `<span class="table-mono">${esc(r.request_no)}</span>`) +
+        row("Status", badgeHtml(st)) +
+        row("Applicant", v(r.applicant_name)) +
+        row("Filed", v(fmtDate(r.created_at))) +
+        row("Remarks", v(r.remarks)) +
+        detailHeading("Purpose / Details") +
+        detailText(r.purpose)
+    );
+  }
+
+  function viewIncidentReport(i) {
+    const hasPin = i.lat != null && i.lng != null;
+    openActivityDetail(
+      i.title || "Incident Report",
+      "siren",
+      row("Case No.", i.case_no ? `<span class="table-mono">${esc(i.case_no)}</span>` : dash) +
+        row("Status", badgeHtml(incidentStatus(i.status))) +
+        row("Filed", v(fmtDate(i.created_at))) +
+        (i.resolved_at ? row("Closed", v(fmtDate(i.resolved_at))) : "") +
+        row("Complainant", v(i.complainant_name)) +
+        row("Contact No.", v(i.contact)) +
+        row("Respondent", v(i.respondent)) +
+        row("Witnesses", v(i.witnesses)) +
+        row(
+          "Location pinned",
+          hasPin
+            ? `<span class="table-mono">${Number(i.lat).toFixed(5)}, ${Number(i.lng).toFixed(5)}</span>`
+            : dash
+        ) +
+        detailHeading("What happened") +
+        detailText(i.narration)
+    );
+  }
+
+  function viewFeedback(f) {
+    const rating = Math.max(0, Math.min(5, Number(f.rating) || 0));
+    openActivityDetail(
+      "Feedback: " + (f.category || "Other"),
+      "message-square",
+      row(
+        "Rating",
+        `<span style="color:var(--gold-500,#d4a017);letter-spacing:1px">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</span> ${rating}/5`
+      ) +
+        row("Category", v(f.category)) +
+        row("Status", badgeHtml(FEEDBACK_STATUSES[f.status] || { label: f.status || "Received", badge: "badge-gray" })) +
+        row("Submitted", v(fmtDate(f.created_at))) +
+        row("Name", v(f.name || "Anonymous")) +
+        row("Contact", v(f.contact)) +
+        detailHeading("Comment") +
+        detailText(f.comment)
+    );
+  }
+
+  // The rows of the panel currently on screen, so a View button can find the
+  // record behind it by index.
+  let ACTIVITY_ITEMS = [];
+  window.acctViewActivity = function (index) {
+    const a = ACTIVITY_ITEMS[index];
+    if (a && a.view) a.view();
+  };
 
   window.openMyActivity = function () {
     openPanel("acct-activity", "My Activity", async (body, s) => {
@@ -650,6 +852,7 @@
         return;
       }
       const { items, failed } = await collectMyActivity(s);
+      ACTIVITY_ITEMS = items;
       const note = failed.length
         ? `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> Could not load your ${esc(failed.join(" or "))}.</div>`
         : "";
@@ -664,7 +867,7 @@
         note +
         items
           .map(
-            (a) => `
+            (a, idx) => `
         <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)">
           <div style="flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(11,29,58,.08);display:flex;align-items:center;justify-content:center"><i data-icon=${a.icon}></i></div>
           <div style="min-width:0;flex:1">
@@ -676,6 +879,11 @@
               <span class="table-muted" style="font-size:11px">${fmtDate(a.ts)}</span>
             </div>
           </div>
+          ${
+            a.view
+              ? `<button type="button" class="btn btn-sm btn-outline" style="align-self:center;flex-shrink:0" onclick="acctViewActivity(${idx})"><i data-icon=eye></i> View</button>`
+              : ""
+          }
         </div>`
           )
           .join("");
@@ -773,6 +981,7 @@
   function boot() {
     ensurePanels();
     renderCertTypeGrid();
+    document.addEventListener("cert-types-loaded", renderCertTypeGrid);
     refreshUnread();
     setInterval(refreshUnread, 60000);
   }

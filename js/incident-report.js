@@ -93,8 +93,8 @@ function ensureIncidentModalShell() {
     <div class="modal-body">
       <div class="alert alert-warning">
         <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
-        For life-threatening emergencies, call <strong>911</strong> or the local
-        police at <strong>(043) 702-4011</strong> immediately.
+        For life-threatening emergencies, call <strong>911</strong> or the barangay
+        hotline at <strong>043-702-8875</strong> immediately.
       </div>
       <div class="form-row">
         <div class="form-group">
