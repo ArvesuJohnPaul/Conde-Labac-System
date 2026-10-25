@@ -4,7 +4,7 @@
 //   Then GitHub Pages "just works" with no ?api= parameter, forever.
 //   Leave "" if you only run locally. Example:
 //     var PERMANENT_API_BASE = "https://conde-labac-8842.ngrok-free.app";
-var PERMANENT_API_BASE = "https://graffiti-grunge-doorway.ngrok-free.dev";
+var PERMANENT_API_BASE = "https://conde-labak.onrender.com";
 
 // Resolution priority — on a HOSTED page (GitHub Pages, the tunnel, Railway):
 //   1. PERMANENT_API_BASE above, and nothing else.
