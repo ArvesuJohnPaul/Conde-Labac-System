@@ -2,13 +2,12 @@
 let currentRole = "Admin";
 let currentModule = "dashboard";
 let charts = {};
-let accStep = 1;
 let selectedCert = "Barangay Clearance";
 // 0 = nothing chosen. The modal used to open with four stars lit, which meant
 // every submission from someone who never touched the control was recorded as
-// "Good" — and the Feedback page's average rating, and the sentiment split
-// beside it, were partly built out of opinions nobody gave. A rating is now
-// something the resident hands over, and submitting without one is refused.
+// "Good" — and the Feedback page's average rating was partly built out of
+// opinions nobody gave. A rating is now something the resident hands over, and
+// submitting without one is refused.
 let feedbackRating = 0;
 const SESSION_KEY = "ibmdss.session";
 
@@ -251,7 +250,7 @@ const moduleConfig = {
     title: "Blotter / Incidents",
     sub: "Emergency logging & tracking",
   },
-  feedback: { title: "Feedback", sub: "Resident sentiment & trends" },
+  feedback: { title: "Feedback", sub: "Resident ratings & concerns" },
   gis: { title: "GIS Mapping", sub: "Interactive zone & hazard view" },
   accounts: {
     title: "Account Claiming",
@@ -263,10 +262,11 @@ const moduleConfig = {
   },
   content: {
     title: "Site Content",
-    sub: "Announcements & barangay officials",
+    sub: "Announcements, history, officials & hotlines",
   },
   users: { title: "User Management", sub: "Roles & access control" },
   audit: { title: "Audit Logs", sub: "System activity & compliance" },
+  sms: { title: "SMS Log", sub: "Text messages sent by the system" },
   archive: { title: "Archive", sub: "Records retention & backup" },
 };
 
@@ -283,6 +283,7 @@ const PAGE_MAP = {
   content: "content.html",
   users: "users.html",
   audit: "audit.html",
+  sms: "sms.html",
   archive: "archive.html",
 };
 
@@ -300,6 +301,9 @@ const modulePermissions = {
   users: ["Admin"],
   audit: ["Admin"],
   archive: ["Admin"],
+  // The log holds residents' numbers; the server checks the same matrix row
+  // (conde-labak-server/permissions.js, "view_sms_log").
+  sms: ["Admin", "Officer"],
 };
 
 // Officer module-access overrides (settings key 'module-access'), set from
@@ -582,21 +586,17 @@ function showToast(msg, icon = "<i data-icon=check></i>") {
   }, 3500);
 }
 
-// Simulated incident alert sender (UI hook)
-function sendIncidentAlert(incidentNo) {
-  // UI feedback for now; backend integration (Semaphore/Twilio) to be wired later
-  showToast(`Incident ${incidentNo} — alert sent to on-duty officers`, "<i data-icon=megaphone></i>");
-  console.log(
-    "[sendIncidentAlert]",
-    incidentNo,
-    "-> simulated SMS/Voice dispatched",
-  );
-}
+// sendIncidentAlert() used to live here: a toast and a console.log saying
+// "simulated SMS/Voice dispatched", called by nothing. It is gone as of
+// 2026-10-03 — reports are now really texted to the officials who switched
+// them on, by the server, the moment the report is filed
+// (conde-labak-server/incident-alerts.js, SMS-HOTLINE-PLAN.md §4.3). The
+// Incidents page shows what went out and offers Re-send.
 
 // Dashboard AI briefing — POST /api/ai/dashboard/summary. The digest behind it
 // carries WORKLOAD, not totals: pending certificates and how old the oldest is,
 // unresolved and neglected incidents, unreviewed feedback, anything the
-// sentiment pass flagged urgent. An official already knows the population; what
+// feedback pass flagged urgent. An official already knows the population; what
 // they need on walking in is what is waiting and what is ageing badly.
 // All arithmetic happens in PostgreSQL — the model is handed finished figures
 // and only writes about them, so it cannot miscount.
@@ -780,7 +780,7 @@ if (window.L && L.subscribe) {
 }
 
 // ════════════════════ AI URGENT ALERTS ════════════════════
-// The notice board above the briefing: comments the sentiment pass judged to
+// The notice board above the briefing: comments the feedback pass judged to
 // need an official TODAY — a safety risk, or a service failure that has dragged
 // on (GET /api/ai/alerts, raised in ai-feedback-service.js).
 //
@@ -875,8 +875,8 @@ function renderAiAlerts() {
 // line — the resident's actual words are behind a tooltip. Closing an alert
 // from there means acting on the AI's summary without having read what was
 // said, which is exactly the habit this feature should not build. The Feedback
-// page shows the full comment, the stars, the category and the sentiment beside
-// each other, and that is where Resolve and Dismiss live.
+// page shows the full comment, the stars and the category beside each other,
+// and that is where Resolve and Dismiss live.
 //
 // The feedback id travels in the URL hash: the page is a separate document, so
 // a variable would not survive the navigation.
@@ -1034,7 +1034,7 @@ async function closeAiAlert(id, btn, mode) {
   // gets a hook rather than this function knowing about every page that might
   // be showing the row.
   if (typeof onAiAlertResolved === "function") onAiAlertResolved(id);
-  // The briefing's "Resident Sentiment" column counts open alerts, so it is now
+  // The briefing's "Resident Feedback" column counts open alerts, so it is now
   // one behind. Cheap to refresh — the server returns the stored copy unless
   // the figures moved.
   if (typeof loadAiSummary === "function") loadAiSummary();
@@ -1168,10 +1168,10 @@ function renderResidentPortal() {
           <div class="service-card sc-teal" onclick="openServicePopup('accounts')">
             <div class="service-icon-wrap"><i data-icon=key></i></div>
             <div>
-              <div class="service-title">Account Claiming</div>
-              <div class="service-desc">Already registered in the barangay system? Claim your account to access personalized services and track your requests.</div>
+              <div class="service-title">Apply for an Account</div>
+              <div class="service-desc">Get a resident account to request certificates and track your requests online. Apply with a valid ID — a barangay official reviews it.</div>
             </div>
-            <div class="service-arrow">Claim account <i data-icon=arrow-right></i></div>
+            <div class="service-arrow">Apply <i data-icon=arrow-right></i></div>
           </div>
         </div>
       </div>
@@ -1335,179 +1335,20 @@ function submitFeedback() {
   showToast("Feedback submitted! Thank you for your input.", "<i data-icon=message-square></i>");
 }
 
-// ════════════════════ ACCOUNT CLAIMING STEPS ════════════════════
-// Real two-phase claiming against the DB:
-//   Step 1 "Verify Identity" → POST /api/residents/claim/verify — matches
-//     name + birthdate, shows the found record (or the rejection) inline.
-//   Step 2 "Set Credentials"  → POST /api/residents/claim — flips
-//     account_claimed = true, so the resident's status becomes "Active".
-let accVerifiedResident = null;
-let accFooterOriginal = null; // captured on first open so reset can restore it
-
-// Put the wizard back to step 1 every time the modal opens (previously a
-// finished/half-done wizard stayed stuck where it left off).
+// ════════════════════ APPLY FOR AN ACCOUNT ════════════════════
+// The portal's Account Claiming card opens the application wizard
+// (js/account-application.js): details, a valid ID and a selfie, reviewed by
+// an official on the MIS Account Claiming page. It replaced the old instant
+// claim, which needed only a name and a birthdate. Mounted fresh on every
+// open, so a finished or half-done application never greets the next person
+// at a shared barangay-hall terminal.
 function resetAccountClaiming() {
-  accStep = 1;
-  accVerifiedResident = null;
-  const s1 = document.getElementById("acc-step-1");
-  if (!s1) return;
-  s1.style.display = "";
-  s1.classList.remove("is-hidden");
-  document.getElementById("acc-step-2")?.classList.add("is-hidden");
-  document.getElementById("acc-step-3")?.classList.add("is-hidden");
-  ["step-1-dot", "step-2-dot", "step-3-dot"].forEach((id, i) => {
-    const d = document.getElementById(id);
-    if (!d) return;
-    d.style.background = "";
-    d.style.color = "";
-    d.textContent = String(i + 1);
+  const root = document.getElementById("acc-app-root");
+  if (!root || typeof AccountApplication === "undefined") return;
+  AccountApplication.mount(root, {
+    mode: "modal",
+    onDone: () => closeServiceModal("accounts"),
   });
-  ["step-line-1", "step-line-2"].forEach((id) => {
-    const l = document.getElementById(id);
-    if (l) l.style.background = "";
-  });
-  const resultEl = document.getElementById("acc-verify-result");
-  if (resultEl) {
-    resultEl.classList.add("is-hidden");
-    resultEl.innerHTML = "";
-  }
-  const footer = document.getElementById("acc-footer");
-  if (footer) {
-    if (accFooterOriginal === null) accFooterOriginal = footer.innerHTML;
-    else footer.innerHTML = accFooterOriginal;
-  }
-  const btn = document.getElementById("acc-next-btn");
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = "Verify Identity <i data-icon=arrow-right></i>";
-  }
-}
-
-async function accNextStep() {
-  if (accStep === 1) {
-    if (!requireFields(["acc-fname", "acc-lname"], "Please fill in your name to continue."))
-      return;
-    const fname = document.getElementById("acc-fname").value.trim();
-    const lname = document.getElementById("acc-lname").value.trim();
-    const dob = document.getElementById("acc-dob")?.value || "";
-    // Verify against the resident database before allowing the next step.
-    if (typeof apiPost === "function") {
-      const resultEl = document.getElementById("acc-verify-result");
-      const btn = document.getElementById("acc-next-btn");
-      if (btn) btn.disabled = true;
-      if (resultEl) {
-        resultEl.classList.remove("is-hidden");
-        resultEl.innerHTML = `<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Verifying your record…</div>`;
-      }
-      try {
-        accVerifiedResident = await apiPost("/api/residents/claim/verify", {
-          first_name: fname,
-          last_name: lname,
-          birthdate: dob || null,
-        });
-        if (resultEl)
-          resultEl.innerHTML = `<div class="alert alert-success"><span class="alert-icon"><i data-icon=check></i></span> <strong>Record found:</strong> ${accVerifiedResident.name}${accVerifiedResident.purok ? " · " + accVerifiedResident.purok : ""}${accVerifiedResident.household_name ? " · " + accVerifiedResident.household_name : ""}</div>`;
-      } catch (err) {
-        accVerifiedResident = null;
-        if (resultEl)
-          resultEl.innerHTML = `<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> ${err.message}</div>`;
-        if (btn) btn.disabled = false;
-        return; // stay on step 1 until identity verifies
-      }
-      if (btn) btn.disabled = false;
-    }
-    document.getElementById("acc-step-1").style.display = "none";
-    document.getElementById("acc-step-2").style.display = "";
-    document.getElementById("acc-step-1").classList.add("is-hidden");
-    document.getElementById("acc-step-2").classList.remove("is-hidden");
-    document.getElementById("step-1-dot").style.background = "#22c55e";
-    document.getElementById("step-1-dot").innerHTML = "<i data-icon=check></i>";
-    document.getElementById("step-2-dot").style.background = "var(--navy)";
-    document.getElementById("step-2-dot").style.color = "#fff";
-    document.getElementById("step-line-1").style.background = "#22c55e";
-    document.getElementById("acc-next-btn").innerHTML = "Create Account <i data-icon=arrow-right></i>";
-    accStep = 2;
-  } else if (accStep === 2) {
-    if (
-      !requireFields(
-        ["acc-email", "acc-pass", "acc-pass2"],
-        "Please enter your email address and choose a password."
-      )
-    )
-      return;
-    const email = document.getElementById("acc-email").value.trim();
-    const pass = document.getElementById("acc-pass").value;
-    const pass2 = document.getElementById("acc-pass2").value;
-    // Not-empty-but-wrong: the field is marked in red rather than amber, and
-    // the one that has to change is the one that gets the caret — the
-    // confirmation for a mismatch, the password itself for a short one.
-    if (pass.length < 8)
-      return rejectField("acc-pass", "Use at least 8 characters.", "Password must be at least 8 characters.");
-    if (pass !== pass2)
-      return rejectField("acc-pass2", "This does not match the password above.", "Passwords do not match.");
-    // Claim the account for real: creates the account row (email +
-    // hashed password) linked to the resident verified in step 1. The row's
-    // existence is what makes the resident "Active". Blocks the flow if the
-    // record vanished / was claimed meanwhile / email already in use.
-    if (typeof apiPost === "function") {
-      const btn = document.getElementById("acc-next-btn");
-      if (btn) btn.disabled = true;
-      const who = accVerifiedResident
-        ? { resident_id: accVerifiedResident.id }
-        : {
-            first_name: document.getElementById("acc-fname").value.trim(),
-            last_name: document.getElementById("acc-lname").value.trim(),
-            birthdate: document.getElementById("acc-dob")?.value || null,
-          };
-      try {
-        await apiPost("/api/residents/claim", {
-          ...who,
-          email: email,
-          mobile_no: document.getElementById("acc-mobile")?.value.trim() || null,
-          password: pass,
-        });
-      } catch (err) {
-        // Almost every way this fails is about the email — already claimed,
-        // already in use — so the message goes on that field rather than in a
-        // dialog the user has to dismiss before they can act on it.
-        rejectField("acc-email", err.message, "Could not claim account: " + err.message);
-        if (btn) btn.disabled = false;
-        return;
-      }
-      if (btn) btn.disabled = false;
-    }
-    document.getElementById("acc-step-2").classList.add("is-hidden");
-    document.getElementById("acc-step-3").classList.remove("is-hidden");
-    document.getElementById("step-2-dot").style.background = "#22c55e";
-    document.getElementById("step-2-dot").innerHTML = "<i data-icon=check></i>";
-    document.getElementById("step-3-dot").style.background = "var(--navy)";
-    document.getElementById("step-3-dot").style.color = "#fff";
-    document.getElementById("step-line-2").style.background = "#22c55e";
-    document.getElementById("acc-footer").innerHTML =
-      '<button class="btn btn-gold" onclick="closeServiceModal(\'accounts\')">Done <i data-icon=check></i></button>';
-    accStep = 3;
-    // Claiming is now instant (the DB flag just flipped) — make the success
-    // step say so instead of the old "review within 12 working days" copy,
-    // and use a real reference derived from the resident id.
-    const ref = accVerifiedResident
-      ? "ACC-" + String(accVerifiedResident.id).padStart(4, "0")
-      : "ACC-" + Date.now().toString().slice(-6);
-    const refEl = document.getElementById("acc-ref-num");
-    if (refEl) refEl.textContent = ref;
-    const titleEl = document.querySelector("#acc-step-3 .acc-success-title");
-    if (titleEl) titleEl.textContent = "Account Claimed!";
-    const copyEl = document.querySelector("#acc-step-3 .acc-success-copy");
-    if (copyEl)
-      copyEl.textContent = accVerifiedResident
-        ? `The resident record for ${accVerifiedResident.name} is now linked to your account and marked Active.`
-        : "Your account has been claimed and is now marked Active.";
-    if (typeof logAudit === "function") {
-      const fname = document.getElementById("acc-fname").value.trim();
-      const lname = document.getElementById("acc-lname").value.trim();
-      logAudit("ACC_CLAIM_SUBMIT", `Account claimed by ${fname} ${lname} <${email}> (Ref: ${ref})`, "info", "auth");
-    }
-    showToast("Account claimed! Ref: " + ref, "<i data-icon=key></i>");
-  }
 }
 
 // ════════════════════ PAGINATION (shared) ════════════════════
@@ -1612,8 +1453,8 @@ function resetPage(key) {
 const NAV_BADGE_SOURCES = {
   "cert-badge": (s) => s.certificates_pending,
   "inc-badge": (s) => s.incidents_open,
-  // Account Claiming's queue is the residents who still have no account.
-  "acc-badge": (s) => s.residents_unclaimed,
+  // Account applications waiting for a reviewer — the page's actual queue.
+  "acc-badge": (s) => s.applications_pending,
   "fb-badge": (s) => s.feedback_new,
 };
 
@@ -1652,7 +1493,7 @@ async function refreshNavBadges() {
 
 // ════════════════════ NOTIFICATIONS ════════════════════
 // The topbar bell, backed by GET /api/notifications — the same per-account
-// feed the mobile app's bell reads. It used to be a button that popped a toast
+// feed the resident portal reads. It used to be a button that popped a toast
 // reading "3 new notifications", which was true of no account at any time.
 //
 // What actually arrives here for staff is the AI urgent alerts
@@ -1818,6 +1659,14 @@ async function markAllNotificationsRead() {
 document.addEventListener("DOMContentLoaded", () => {
   const session = getSession();
   if (session) {
+    // A resident on an MIS page gets the resident portal, which
+    // applySessionToApp() draws. Each page's own renderPage() draws the STAFF
+    // screen, and it used to run for everyone — so a resident who typed
+    // pages/residency.html got the portal replaced by the staff Residency
+    // page, resident list and all. The server refuses those requests now; this
+    // stops the page from making them, from every place that calls
+    // renderPage(), by leaving a resident nothing to call.
+    if (session.role === "Resident") window.renderPage = function () {};
     applySessionToApp(session);
     // Officers: pull the module-access overrides and hide anything revoked.
     // Loads for everyone (harmless) so a role change mid-session is honored.
@@ -1845,5 +1694,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loginScreen.classList.remove("hidden");
     }
     if (app) app.style.display = "none";
+    // Only system.html has a #login-screen. Every MIS page used to stop here
+    // with the app hidden and nothing in its place — a blank page. That went
+    // unnoticed while nobody arrived signed out, but js/api.js now drops a
+    // session that has no server token, so people do. Send them to sign in.
+    if (!loginScreen) window.location.href = "../system.html";
   }
 });

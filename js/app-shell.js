@@ -73,6 +73,7 @@
       items: [
         { id: "users", icon: "users", label: "User Management" },
         { id: "audit", icon: "clipboard", label: "Audit Logs" },
+        { id: "sms", icon: "message-square", label: "SMS Log" },
         { id: "archive", icon: "archive", label: "Archive" },
       ],
     },
@@ -86,13 +87,14 @@
     residency: ["Barangay Residency", "Resident records & search"],
     certificates: ["Certificate Processing", "Request management"],
     incidents: ["Blotter / Incidents", "Emergency logging & tracking"],
-    feedback: ["Feedback", "Resident sentiment & trends"],
+    feedback: ["Feedback", "Resident ratings & concerns"],
     gis: ["GIS Mapping", "Interactive zone & hazard view"],
     accounts: ["Account Claiming", "Resident registration & verification"],
     analytics: ["Analytics", "Predictive insights & trend charts"],
-    content: ["Site Content", "Announcements & barangay officials"],
+    content: ["Site Content", "Announcements, history, officials & hotlines"],
     users: ["User Management", "Roles & access control"],
     audit: ["Audit Logs", "System activity & compliance"],
+    sms: ["SMS Log", "Text messages sent by the system"],
     archive: ["Archive", "Records retention & backup"],
   };
 
@@ -564,8 +566,8 @@
 
   // ── Appearance toggle ──────────────────────────────────────────────────
   // Surfaces the light/dark/system choice that was buried three clicks deep
-  // in the Settings modal. Writes through window.Theme, so the modal, this
-  // button and the mobile app all read the same stored preference.
+  // in the Settings modal. Writes through window.Theme, so the modal and this
+  // button both read the same stored preference.
   function initThemeToggle() {
     var btn = document.getElementById("themeToggle");
     if (!btn || !window.Theme) {

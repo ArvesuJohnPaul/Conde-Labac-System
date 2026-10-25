@@ -172,7 +172,7 @@
 
   /* Sidebar has its own scale because it stays dark in
      both themes — a light-mode sidebar would break the
-     government identity the app and landing share. */
+     government identity the MIS and landing page share. */
   --sidebar-bg: var(--navy-800);
   --sidebar-bg-deep: var(--navy-900);
   --sidebar-border: rgba(255, 255, 255, 0.08);
@@ -349,13 +349,12 @@
 
 /* ═══════════════════════════════════════════════════
    DARK THEME
-   Applied by js/theme.js as data-theme="dark" on <html>,
-   mirroring the mobile app's Settings → Appearance.
+   Applied by js/theme.js as data-theme="dark" on <html>
+   from Settings → Appearance.
 
    Dark mode reuses the navy family rather than a neutral
    grey scale, so the system still reads as the same
-   government brand with the lights off — the same call
-   the Flutter app makes in AppColors.
+   government brand with the lights off.
 
    Only semantic roles are re-pointed. Primitives, the
    sidebar scale and --on-brand stay exactly as they are.

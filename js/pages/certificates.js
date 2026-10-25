@@ -152,7 +152,7 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertMessage()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The message is delivered to the requester's C.A.R.E.S. account — it shows up in their notifications (and as a push on their phone).</p>
+          <p class="modal-help-text">The message is delivered to the requester's C.A.R.E.S. account — it shows up in their notifications.</p>
           <div class="form-group">
             <label class="form-label">Message</label>
             <textarea class="form-control" id="cert-message-text" rows="4" placeholder="e.g. Please bring a valid ID when picking up your certificate."></textarea>
@@ -261,7 +261,7 @@ function renderCertRows(list) {
   if (!tbody) return;
   const pager = document.getElementById("cert-pagination");
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:24px">No requests match. Requests filed from the app or web portal appear here.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:24px">No requests match. Requests filed from the web portal appear here.</td></tr>`;
     if (pager) pager.innerHTML = "";
     return;
   }
@@ -380,8 +380,9 @@ async function setCertStatus(id, status, remarks) {
     if (!ok) return;
   }
   const session = typeof getSession === "function" ? getSession() : null;
+  let result = null;
   try {
-    await apiPatch(`/api/certificates/${id}`, {
+    result = await apiPatch(`/api/certificates/${id}`, {
       status: status,
       remarks: remarks || null,
       account_id: session?.account_id || null,
@@ -409,10 +410,31 @@ async function setCertStatus(id, status, remarks) {
       "info",
       "certificate"
     );
+  // Issuing or rejecting texts the requester (the server says what happened),
+  // so the toast says whether a text is on its way — or why not.
+  const smsNote = certSmsNote(result && result.sms);
   showToast(
     status === "pending"
       ? `${r.request_no} moved back to pending`
-      : `${r.request_no} ${status}!`
+      : `${r.request_no} ${status}!${smsNote ? " " + smsNote : ""}`
+  );
+}
+
+// The certificate text's outcome, in words for the toast. null = nothing to say.
+function certSmsNote(sms) {
+  if (!sms) return null;
+  return (
+    {
+      queued: "Requester will be texted.",
+      "dry-run": "Requester would be texted (SMS dry run).",
+      off: "No text: SMS is off.",
+      "no-number": "No text: no mobile number on file.",
+      "not-mobile": "No text: the number on file is not a mobile.",
+      "no-record": "No text: walk-in with no resident record.",
+      "setting-off": "No text: the requester turned certificate texts off.",
+      duplicate: "Requester was already texted.",
+      "no-key": "No text: SMS is not set up on the server.",
+    }[sms.outcome] || null
   );
 }
 

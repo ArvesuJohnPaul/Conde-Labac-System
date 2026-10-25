@@ -6,10 +6,11 @@ window.CURRENT_PAGE = "feedback";
 // shell.js (paginate / resetPage), the same one every other list uses.
 let FEEDBACK_ON_PAGE = [];
 
-// AI sentiment insights from GET /api/ai/feedback/insights — real sentiment
-// counts, aggregated topics, and the high-urgency queue. Null until the first
-// fetch lands (or permanently, if the server has no Gemini key), in which case
-// every AI surface on this page falls back to its pre-AI behaviour.
+// AI insights from GET /api/ai/feedback/insights — how many comments have been
+// read, the recurring concerns grouped from their topics, and the urgent queue.
+// Null until the first fetch lands (or permanently, if the server has no Gemini
+// key), in which case every AI surface on this page falls back to its pre-AI
+// behaviour.
 let FEEDBACK_INSIGHTS = null;
 let AI_STATUS = null;
 
@@ -21,8 +22,8 @@ function renderPage() {
   renderFeedbackPage();
   // Feedback lives in the shared `feedback` table; localStorage is only a
   // mirror for offline/instant display. Pull the real list, then repaint so
-  // the KPIs, the sentiment split and the Recent list all describe the same
-  // records the Delete buttons act on.
+  // the KPIs and the Recent list both describe the same records the Delete
+  // buttons act on.
   if (window.FeedbackStore && FeedbackStore.syncFromServer)
     FeedbackStore.syncFromServer().then((rows) => {
       if (rows) renderFeedbackPage();
@@ -109,7 +110,7 @@ function renderFeedbackPage() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title">Feedback Management</h2>
-      <p class="page-desc">Resident sentiment trends and submitted comments</p>
+      <p class="page-desc">Resident ratings, recurring concerns and submitted comments</p>
     </div>
     <div class="kpi-grid">
       <div class="kpi-card success"><div class="kpi-label">Avg. Rating</div><div class="kpi-value">${avg.toFixed(1)}<i data-icon=star class=ic-fill></i></div><div class="kpi-trend">${total} submission${total !== 1 ? "s" : ""} total</div></div>
@@ -117,24 +118,12 @@ function renderFeedbackPage() {
       <div class="kpi-card info"><div class="kpi-label">This Month</div><div class="kpi-value">${thisMonth}</div></div>
       <div class="kpi-card warning"><div class="kpi-label">Unreviewed</div><div class="kpi-value">${unreviewed}</div></div>
     </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Sentiment Breakdown</div>
-          ${renderSentimentSubtitle()}
-        </div>
-        <div class="chart-box chart-box-md"><canvas id="sentChart"></canvas></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Recurring Concerns</div>
+        ${renderAnalysisNote()}
       </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Top Themes</div>
-          <span class="fb-ai-note">
-            <span class="fb-ai-badge">AI</span>
-            Read from the comments and grouped by meaning
-          </span>
-        </div>
-        ${renderTopThemes()}
-      </div>
+      ${renderRecurringConcerns()}
     </div>
     ${renderNeedsAttention()}
     <div class="card">
@@ -148,83 +137,32 @@ function renderFeedbackPage() {
   // of the three loads finishes last, the entry is still lit and still scrolled
   // to. No-ops when nothing is highlighted.
   settleFeedbackHighlight();
-
-  setTimeout(() => {
-    const ctx = document.getElementById("sentChart");
-    // setContent() replaced the canvas, so the previous Chart instance is
-    // orphaned — dispose of it before building its replacement (the page
-    // re-renders whenever the server list arrives or an entry is deleted).
-    if (charts.sent) {
-      charts.sent.destroy();
-      charts.sent = null;
-    }
-    if (!ctx) return;
-
-    // ── Real sentiment, when the AI has analysed anything ──────────────────
-    // Note the 4th slice: "mixed" is a comment that praises one service and
-    // complains about another (5★ + "sana po maayos na ang ilaw"). The old
-    // rating-derived split could not represent that case at all — it painted
-    // those green.
-    const ai = FEEDBACK_INSIGHTS;
-    let labels, data, colors;
-    if (ai && ai.analyzed > 0) {
-      labels = ["Positive", "Neutral", "Negative", "Mixed"];
-      data = [ai.positive, ai.neutral, ai.negative, ai.mixed];
-      colors = ["#22c55e", "#94a3b8", "#ef4444", "#f59e0b"];
-    } else {
-      // Fallback: nothing analysed (or no Gemini key on the server), so fall
-      // back to the old rating-derived bucketing — 4-5 positive, 3 neutral,
-      // 1-2 negative. Approximate, but the page never looks broken because AI
-      // is switched off.
-      let pos = 0,
-        neu = 0,
-        neg = 0;
-      all.forEach((f) => {
-        const r = Number(f.rating) || 0;
-        if (r >= 4) pos++;
-        else if (r === 3) neu++;
-        else neg++;
-      });
-      labels = ["Positive", "Neutral", "Negative"];
-      data = total ? [pos, neu, neg] : [62, 24, 14];
-      colors = ["#22c55e", "#94a3b8", "#ef4444"];
-    }
-
-    charts.sent = new Chart(ctx, {
-      type: "pie",
-      data: {
-        labels,
-        datasets: [{ data, backgroundColor: colors, borderWidth: 2 }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: "bottom" } },
-      },
-    });
-  }, 100);
 }
 
-// Card-header subtitle for the pie: says plainly whether it is showing real
-// analysed sentiment or the rating-derived approximation, and offers the
-// Analyze button when there is a backlog and the server has AI configured.
-function renderSentimentSubtitle() {
+// Card-header note for Recurring Concerns: says how much of the feedback the AI
+// has read, and offers the Analyze button when there is a backlog and the
+// server has AI configured.
+function renderAnalysisNote() {
   const ai = FEEDBACK_INSIGHTS;
-  if (!ai) return "";
+  if (!ai)
+    return `
+    <span class="fb-ai-note">
+      <span class="fb-ai-badge">AI</span>
+      Read from the comments and grouped by meaning
+    </span>`;
   const pending = ai.total - ai.analyzed;
   const enabled = AI_STATUS && AI_STATUS.enabled;
   const canAnalyze = enabled && pending > 0;
   // Re-scan re-reads comments that were ALREADY analysed. It exists because the
-  // questions the pass asks have changed since some rows were classified — the
-  // urgent-alert judgement is newer than the sentiment one, so a comment
-  // analysed before it was added has no answer for it and never will, since
-  // "unanalysed" is the only work queue the analyzer has. It spends quota (one
-  // call per 25 comments), which is why it is a separate, plainly-labelled
-  // button rather than something that happens on its own.
+  // questions the pass asks can change after some rows were classified, and a
+  // comment analysed before a question was added has no answer for it and never
+  // will, since "unanalysed" is the only work queue the analyzer has. It spends
+  // quota (one call per 25 comments), which is why it is a separate,
+  // plainly-labelled button rather than something that happens on its own.
   const canRescan = enabled && ai.analyzed > 0;
   const note = ai.analyzed
-    ? `${ai.analyzed} of ${ai.total} analyzed`
-    : "Showing star ratings — not yet analyzed";
+    ? `${ai.analyzed} of ${ai.total} comments read and grouped by meaning`
+    : "Not yet analyzed";
   return `
     <span class="fb-ai-note">
       <span class="fb-ai-badge">AI</span> ${note}
@@ -257,8 +195,7 @@ async function rescanAllFeedback(btn) {
 
 // Themes extracted and normalised to English by the model, so a complaint
 // written as "madilim sa kanto" lands in the same bucket as one written as
-// "broken streetlight". Bar colour tracks the average sentiment of the
-// comments that raised the theme — red themes are the ones costing goodwill.
+// "broken streetlight". The bar is how many comments raised the theme.
 //
 // Nothing here is a fixed list of themes: the phrases come from the comments,
 // and the server groups them into themes named from those same phrases (see
@@ -267,20 +204,18 @@ async function rescanAllFeedback(btn) {
 // phrases and every bar was the same length. A theme built from more than one
 // phrase names them underneath, so staff can see what was merged and say when
 // the AI has put two unrelated things together.
-function renderTopThemes() {
+function renderRecurringConcerns() {
   const ai = FEEDBACK_INSIGHTS;
   if (!ai || !ai.topics || !ai.topics.length) {
     return `<div class="resident-empty">${
       AI_STATUS && !AI_STATUS.enabled
-        ? "Themes are extracted by AI, which is not configured on this server."
-        : "No themes yet — analyze the feedback comments to extract them."
+        ? "Concerns are extracted by AI, which is not configured on this server."
+        : "No concerns yet — analyze the feedback comments to extract them."
     }</div>`;
   }
   const max = ai.topics[0].n || 1;
   return ai.topics
     .map((t) => {
-      const score = t.avg_score == null ? 0 : t.avg_score;
-      const tone = score <= -0.2 ? "neg" : score >= 0.2 ? "pos" : "neu";
       const phrases = Array.isArray(t.phrases) ? t.phrases : [];
       // Only worth showing when the theme actually merged something — a theme
       // of one phrase would just repeat its own label.
@@ -293,7 +228,7 @@ function renderTopThemes() {
       return `
       <div class="stat-row fb-theme-row">
         <span class="stat-row-label">${fbEscape(t.topic)}${merged}</span>
-        <div class="stat-row-bar"><div class="progress-bar"><div class="progress-fill fb-theme-${tone}" data-width="${Math.round((t.n / max) * 100)}"></div></div></div>
+        <div class="stat-row-bar"><div class="progress-bar"><div class="progress-fill" style="width:${Math.round((t.n / max) * 100)}%"></div></div></div>
         <span class="stat-row-value">${t.n}</span>
       </div>`;
     })
@@ -302,9 +237,9 @@ function renderTopThemes() {
 
 // The operational payoff: the open urgent alerts, the same board the dashboard
 // shows. This is a work queue, not a chart — it can surface a 5-star submission
-// (the case the old rating-derived pie filed as "positive"), and it holds two
-// different kinds of emergency: an active safety risk, and a service failure
-// that has dragged on for months without hurting anyone.
+// whose comment reports a problem, and it holds two different kinds of
+// emergency: an active safety risk, and a service failure that has dragged on
+// for months without hurting anyone.
 //
 // Each row carries the Resolve button, so the queue empties as it is worked
 // through instead of accumulating for ever. Resolving here and resolving on the
@@ -340,7 +275,6 @@ function renderNeedsAttention() {
         <div class="fb-attention-item${lit ? " is-highlighted" : ""}" id="attn-${Number(f.id)}">
           <div class="fb-attention-meta">
             <span class="badge badge-danger">${safety ? "Safety risk" : "Service failure"}</span>
-            <span class="badge badge-gray">${fbEscape(f.sentiment)}</span>
             <span class="badge badge-gray">${fbEscape(f.category)}</span>
             <span class="feedback-stars">${"<i data-icon=star class=ic-fill></i>".repeat(r)}${"<i data-icon=star></i>".repeat(5 - r)}</span>
             <span class="feedback-date">${fbEscape(FeedbackStore.formatDate(f.created_at))} · ${fbEscape(age)}</span>
@@ -439,12 +373,6 @@ function renderRecentFeedback() {
       const r = Math.max(0, Math.min(5, Number(f.rating) || 0));
       const name = f.name || "Anonymous";
       const date = FeedbackStore.formatDate(f.ts);
-      // The chip shows what the AI concluded from the words, which can disagree
-      // with the stars beside it — that disagreement is the point. Hovering
-      // gives the model's one-line reading.
-      const chip = f.sentiment
-        ? `<span class="fb-chip fb-chip-${fbEscape(f.sentiment)}" title="${fbEscape(f.aiSummary || "")}">${fbEscape(f.sentiment)}</span>`
-        : "";
 
       // ── Alert state, inline ────────────────────────────────────────────
       // Three states, and each row shows exactly one of them:
@@ -466,7 +394,7 @@ function renderRecentFeedback() {
         alertChip = `<span class="fb-chip fb-chip-urgent" title="${fbEscape(f.alertReason || "Flagged as needing action")}">urgent</span>`;
       } else if (dismissed) {
         // Says the flag was wrong, not that the feedback was. The comment is
-        // still in the list and still counts in every chart.
+        // still in the list and is still counted like every other comment.
         alertChip = `<span class="fb-chip fb-chip-dismissed" title="${fbEscape(
           (f.alertReason ? "AI flagged: " + f.alertReason + " — " : "") +
             "Dismissed as a false alarm" + who + (when ? " on " + when : "") +
@@ -510,7 +438,7 @@ function renderRecentFeedback() {
       <div class="feedback-item${flagged && !closed ? " is-flagged" : ""}"${anchor}>
         <div class="feedback-meta">
           <span class="feedback-stars">${"<i data-icon=star class=ic-fill></i>".repeat(r)}${"<i data-icon=star></i>".repeat(5 - r)}</span>
-          ${chip}${alertChip}
+          ${alertChip}
           <span class="badge badge-gray">${fbEscape(f.category)}</span>
           <span class="feedback-date">${fbEscape(name)} · ${fbEscape(date)}</span>
           <span class="feedback-item-actions">${reopen}${deleteButtonHtml(`deleteFeedbackEntry(${i})`, "")}</span>

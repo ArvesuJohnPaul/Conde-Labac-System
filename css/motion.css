@@ -460,6 +460,32 @@
   transition: color var(--duration-base) var(--ease-out);
 }
 
+/* ── Controls outside the design system ───────────────
+   The map's floating pin forms use their own input class,
+   not .form-control, so they get the same red and shake
+   here — a character refused by js/input-guard.js looks
+   the same wherever it was typed. */
+.gis-pin-form-input[aria-invalid="true"] {
+  border-color: var(--danger-solid);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-solid) 12%, transparent);
+  animation: m-shake 420ms var(--ease-in-out);
+}
+
+/* ── A dropdown with nothing chosen yet ────────────────
+   Every form dropdown opens on a "Select …" line rather
+   than on its first real choice, so a value is only ever
+   one somebody picked. Shown muted, like a placeholder,
+   so an unpicked dropdown does not read as answered. The
+   options themselves keep the normal colour. */
+select.form-control:has(> option[value=""]:checked),
+select.gis-pin-form-input:has(> option[value=""]:checked) {
+  color: var(--text-muted);
+}
+select.form-control option,
+select.gis-pin-form-input option {
+  color: var(--text-primary);
+}
+
 /* ── Success ───────────────────────────────────────────
    The opposite gesture, for a field or row that has just
    been accepted. Applied by Motion.flash(). */
@@ -563,8 +589,9 @@
    cannot transition out of display:none, but it can
    animate in, and the links can arrive one after
    another — which is what makes a drawer feel like it
-   opened rather than appeared. */
-@media (max-width: 768px) {
+   opened rather than appeared. 1100px: the width shared.css
+   switches to the drawer at. */
+@media (max-width: 1100px) {
   .nav-links.open {
     animation: m-drawer-in var(--duration-base) var(--ease-out);
     transform-origin: top center;
@@ -1067,6 +1094,7 @@ body,
   .form-control[aria-invalid="true"],
   .form-control.error,
   .form-control.m-empty,
+  .gis-pin-form-input[aria-invalid="true"],
   .empty-state,
   .empty-state-icon,
   .m-stagger > *,

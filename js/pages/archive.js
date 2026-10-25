@@ -21,6 +21,7 @@ const ARCHIVE_MODULE_META = {
   feedback: { icon: "message-square", label: "Feedback" },
   announcements: { icon: "megaphone", label: "Announcement" },
   officials: { icon: "users", label: "Official" },
+  content: { icon: "phone", label: "Hotline" },
   users: { icon: "user", label: "User Account" },
   audit: { icon: "clipboard", label: "Cleared Audit Entries" },
 };

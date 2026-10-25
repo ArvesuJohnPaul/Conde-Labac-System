@@ -49,7 +49,9 @@ body {
 .claim-title {
   font-family: "DM Serif Display", serif;
   font-size: 24px;
-  color: var(--navy);
+  /* The brand text token, not raw navy: navy on the dark theme's card was
+     unreadable. */
+  color: var(--text-brand);
   margin-bottom: 4px;
 }
 .claim-subtitle {

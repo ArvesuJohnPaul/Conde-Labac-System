@@ -1,7 +1,6 @@
 // ════════════════════ CHANGE PASSWORD ════════════════════
-// Settings → Security → Change Password. The web counterpart of
-// cares_app/lib/screens/profile/change_password_screen.dart — same strength
-// scoring, same validation order, same endpoint.
+// Settings → Security → Change Password: a strength meter, validation in a
+// fixed order, then POST /api/auth/change-password.
 //
 // The current password is re-entered here and re-verified server-side by
 // POST /api/auth/change-password — being signed in is deliberately not
@@ -38,7 +37,6 @@
   }
 
   // 0–3. Length is the floor; variety lifts it from there.
-  // Kept identical to the app's _strength getter.
   function strength(p) {
     if (p.length < 8) return 0;
     var score = 1;
@@ -100,7 +98,7 @@
   }
 
   function toggleVisibility(which) {
-    // "new" flips both new + confirm together, as the app does.
+    // "new" flips both new + confirm together.
     var ids = which === "current" ? ["cp-current"] : ["cp-new", "cp-confirm"];
     var showing = false;
     ids.forEach(function (id) {
@@ -135,9 +133,7 @@
     var next = val("cp-new");
     var confirm = val("cp-confirm");
 
-    // Same order as the app, so both halves reject in the same sequence.
-    //
-    // The toast stays — it is what the mobile app shows too — but the reason
+    // The toast stays, but the reason
     // now also lands on the field it is about. A toast in the bottom corner of
     // a three-field dialog does not say WHICH of the three is wrong, and with
     // the characters masked the user cannot see it for themselves.
@@ -158,12 +154,23 @@
       btn.innerHTML = t("pwSaving");
     }
     try {
-      await apiPost("/api/auth/change-password", {
+      var res = await apiPost("/api/auth/change-password", {
         account_id: s.account_id,
         current_password: current,
         new_password: next,
         actor_name: s.displayName || null,
       });
+      // A session token is tied to the password it was issued under, so the
+      // one this browser holds stopped working with the old password. The
+      // server sends its replacement; without it the very next request would
+      // sign this user out of the account they just secured.
+      if (res && res.token) {
+        var cur = session();
+        if (cur) {
+          cur.token = res.token;
+          localStorage.setItem(SESSION_KEY, JSON.stringify(cur));
+        }
+      }
       if (typeof logAudit === "function")
         logAudit(
           "PASSWORD_CHANGE",

@@ -44,6 +44,11 @@ function certPurokNo(purok) {
   return String(purok || "").replace(/^\s*purok\s*/i, "").trim();
 }
 
+function certResidentSince(ctx) {
+  const r = ctx.resident || {};
+  return r.residency_start || r.date_registered || "";
+}
+
 function certFmtLongDate(iso) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -69,12 +74,14 @@ const CERT_FIELD_SOURCES = [
       return sex.startsWith("F") ? "She" : sex.startsWith("M") ? "He" : "";
     },
   },
-  { key: "since", label: "Resident since (full date)", get: (c) => certFmtLongDate((c.resident || {}).date_registered) },
+  // When they started living here (resident.residency_start); a record made
+  // before that was asked falls back to the day it was registered.
+  { key: "since", label: "Resident since (full date)", get: (c) => certFmtLongDate(certResidentSince(c)) },
   {
     key: "since_year",
     label: "Resident since (year only)",
     get: (c) => {
-      const d = (c.resident || {}).date_registered;
+      const d = certResidentSince(c);
       return d ? String(new Date(d).getFullYear()) : "";
     },
   },

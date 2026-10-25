@@ -75,11 +75,9 @@
       name: r.name || "Anonymous",
       contact: r.contact || "",
       status: r.status || "new",
-      // AI sentiment, filled by Gemini after submission. Absent on rows that
+      // AI reading, filled by Gemini after submission. Absent on rows that
       // have not been analysed yet (and on every row when the server has no
-      // Gemini key) — the Feedback page falls back to the star rating there.
-      sentiment: r.sentiment || "",
-      sentimentScore: r.sentiment_score == null ? null : Number(r.sentiment_score),
+      // Gemini key).
       urgency: r.urgency || "",
       topics: Array.isArray(r.topics) ? r.topics : [],
       aiSummary: r.ai_summary || "",

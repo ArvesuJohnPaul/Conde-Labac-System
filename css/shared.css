@@ -220,11 +220,17 @@ svg {
   transition: all var(--duration-slow) var(--ease-out);
 }
 
+/* The menu button takes over at 1100px, not at the phone breakpoint: the row
+   holds seven links once a staff member is signed in (six, plus MIS), and
+   below this width it wrapped onto a second line or ran off the edge of the
+   screen. */
 @media (max-width: 768px) {
   .navbar {
     padding: 0 var(--space-4);
   }
+}
 
+@media (max-width: 1100px) {
   .nav-links {
     display: none;
   }
@@ -624,6 +630,79 @@ select.form-control {
   cursor: pointer;
 }
 
+/* The certificate picker: a box to type in that narrows a list as you go
+   (renderCertTypeGrid / bindCertCombo in js/portal-account.js). It wears the
+   select's caret so it still reads as "pick one of these". */
+.cert-combo {
+  position: relative;
+}
+
+.form-control.cert-combo-input {
+  padding-right: var(--space-8);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 2px),
+    calc(100% - 13px) calc(50% + 2px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.cert-combo-list {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  max-height: 264px;
+  overflow-y: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.cert-combo-list[hidden] {
+  display: none;
+}
+
+.cert-combo-option,
+.cert-combo-empty {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.cert-combo-option {
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cert-combo-option:hover,
+.cert-combo-option.active {
+  background: var(--surface-hover);
+}
+
+.cert-combo-option[aria-selected="true"] {
+  font-weight: var(--weight-semibold);
+}
+
+.cert-combo-option mark {
+  background: none;
+  color: inherit;
+  font-weight: var(--weight-bold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cert-combo-empty {
+  color: var(--text-muted);
+}
+
 textarea.form-control {
   resize: vertical;
   min-height: 90px;
@@ -939,8 +1018,7 @@ textarea.form-control {
 
 /* ═══════════════════════════════════════════════════
    PREFERENCES MODAL  (js/preferences.js)
-   Grouped settings rows matching the app's Settings
-   screen: an uppercase group label, a bordered card of
+   Grouped settings rows: an uppercase group label, a bordered card of
    rows separated by hairlines, an optional caption.
 ═══════════════════════════════════════════════════ */
 
@@ -1018,6 +1096,62 @@ textarea.form-control {
   background: var(--surface-hover);
 }
 
+/* A switch the server will refuse: shown, not hidden, because the reason it
+   cannot be turned on is the thing the person came to find out. */
+.pref-row-switch.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.pref-row-switch.is-disabled:hover {
+  background: none;
+}
+
+/* ── "My SMS alerts" checklist (js/sms-alerts.js) ───────────────────────
+   Four conditions, all of which must hold before a report text reaches an
+   official. Printed as a list rather than a sentence so the one that is
+   missing is the one the eye lands on. */
+.sms-checklist {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.sms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.sms-check i {
+  flex: none;
+  margin-top: 1px;
+  color: var(--danger);
+}
+
+.sms-check.is-on {
+  color: var(--text-secondary);
+}
+
+.sms-check.is-on i {
+  color: var(--success-solid);
+}
+
+/* The reason a condition is not met, inline after it. */
+.sms-check-why {
+  color: var(--text-muted);
+}
+
+.sms-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
 .pref-row-icon {
   flex-shrink: 0;
   display: grid;
@@ -1029,8 +1163,7 @@ textarea.form-control {
   color: var(--navy-800);
 }
 
-/* On dark the navy tint disappears into the card — gold reads instead, the
-   same swap the app makes in _NavRow/_InfoRow. */
+/* On dark the navy tint disappears into the card — gold reads instead. */
 [data-theme="dark"] .pref-row-icon {
   background: color-mix(in srgb, var(--gold-600) 14%, transparent);
   color: var(--gold-300);
@@ -1147,7 +1280,7 @@ textarea.form-control {
 /* ═══════════════════════════════════════════════════
    CHANGE-PASSWORD MODAL  (js/change-password.js)
    Reveal toggles, three-segment strength meter, and the
-   confirm-match line — matching the app's screen.
+   confirm-match line.
 ═══════════════════════════════════════════════════ */
 
 .cp-field {
@@ -1217,7 +1350,7 @@ textarea.form-control {
   font-weight: var(--weight-bold);
 }
 
-/* Weak / fair / strong — red, gold, green, as in the app. */
+/* Weak / fair / strong — red, gold, green. */
 .cp-weak .cp-strength-seg.is-on {
   background: var(--danger-solid);
 }

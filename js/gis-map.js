@@ -29,8 +29,15 @@ const GIS_VEGETATION_URL =
 // server serves the site, so a relative /api path works in local dev).
 async function gisFetchBaseLayer(apiName, staticUrl, label) {
   try {
+    // The base layers are public, but this is the one API call that does not
+    // go through js/api.js — so it carries the session token itself, where
+    // there is one, and no request leaves a signed-in page anonymously.
+    const token = typeof apiToken === "function" ? apiToken() : "";
     const res = await fetch((window.API_BASE || "") + "/api/gis/layers/" + apiName, {
-      headers: { "ngrok-skip-browser-warning": "true" },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: "Bearer " + token } : {}),
+      },
     });
     if (res.ok) {
       const fc = await res.json();
@@ -97,7 +104,7 @@ const GIS_ICON_PATHS = {
   ruler: '<path d="M4 15.5 15.5 4l4.5 4.5L8.5 20Z"/><path d="m9.5 10.5 1.5 1.5"/><path d="m12 8 1.5 1.5"/><path d="m14.5 5.5 1.5 1.5"/>',
   square: '<rect x="4.5" y="4.5" width="15" height="15" rx="1.2"/>',
   rotate: '<path d="M4 12a8 8 0 1 1 2.3 5.6"/><path d="M4 20v-4.5h4.5"/>',
-  // Report-type glyphs matched to the mobile app's Material icons.
+  // Report-type glyphs, one per incident type.
   volume: '<path d="M11 5 6.5 9H3.5v6h3L11 19Z"/><path d="M14.5 8.5a5 5 0 0 1 0 7"/><path d="M17.5 6a9 9 0 0 1 0 12"/>',
   // Property Dispute — a land parcel split down the middle by a contested
   // boundary. It replaces a gavel, which said "court" rather than "land" and
@@ -124,10 +131,15 @@ function gisIcon(name, cls) {
 // type is a household, an optional *sub-category* records the vulnerable
 // classification it belongs to. The plural "households" key is kept so
 // existing CSS classes, filter values, and legend dots stay valid.
+// The colours are pastel on purpose: they are a FILL for a whole building on a
+// pale street map, not a badge on a white panel, and a saturated fill at that
+// size turns a street of tagged buildings into a stained-glass window. Each one
+// is mirrored by a .gis-building-cat-* fill and a .gis-dot-* swatch in
+// css/gis.css — change one, change all three.
 const GIS_BUILDING_TYPE_META = {
-  government: { label: "Government Building", icon: "landmark", color: "#92400e" },
-  business: { label: "Business", icon: "building", color: "#0891b2" },
-  households: { label: "Household", icon: "home", color: "#1d4ed8" },
+  government: { label: "Government Building", icon: "landmark", color: "#e9c6a4" },
+  business: { label: "Business", icon: "building", color: "#a8d5d8" },
+  households: { label: "Household", icon: "home", color: "#b3c6ea" },
 };
 
 // Household classification — which priority groups live in a tagged household.
@@ -141,10 +153,10 @@ const GIS_BUILDING_TYPE_META = {
 // and a solo parent under one roof reads as senior. Nothing is lost by that:
 // the building's popup names every classification the household holds.
 const GIS_HOUSEHOLD_SUBCAT_META = {
-  seniors: { label: "Senior Citizen", icon: "senior", color: "#f59e0b" },
-  pwd: { label: "PWD", icon: "wheelchair", color: "#8b5cf6" },
-  "solo-parent": { label: "Solo Parent", icon: "family", color: "#db2777" },
-  indigent: { label: "Indigent Family", icon: "heart", color: "#0d9488" },
+  seniors: { label: "Senior Citizen", icon: "senior", color: "#f3c98b" },
+  pwd: { label: "PWD", icon: "wheelchair", color: "#c6b6ec" },
+  "solo-parent": { label: "Solo Parent", icon: "family", color: "#f3b1cc" },
+  indigent: { label: "Indigent Family", icon: "heart", color: "#9ed9c8" },
 };
 
 const GIS_VEGETATION_KIND_META = {
@@ -173,9 +185,48 @@ const GIS_ACCIDENT_TYPE_META = {
   crime: { label: "Crime / Theft", icon: "siren" },
   other: { label: "Other Incident", icon: "alertCircle" },
 };
-// Icon font-size (local map units) for accident markers, divided by zoom at
-// render time so the icon stays a constant, legible size on screen.
-const GIS_ACCIDENT_ICON_SIZE = 42;
+// Width (local map units) of an accident marker, divided by zoom at render time
+// so the marker stays a constant, legible size on screen.
+const GIS_ACCIDENT_ICON_SIZE = 38;
+
+// ───────── Map pins ─────────
+// Every pin on the map — a community report, an accident marker, the
+// pick-a-location marker in the incident modal — is this one teardrop, drawn
+// in a 24-wide box with its TIP at (12, 33.5) so the pin points at the exact
+// spot it marks rather than hovering over it. The head is a circle of radius
+// 11 centred at (12, 12.6); a glyph scaled to 58% sits in it, knocked out in
+// white with nothing behind it.
+const GIS_PIN_PATH =
+  "M12 33.5s11-12.9 11-20.9a11 11 0 1 0-22 0c0 8 11 20.9 11 20.9Z";
+// Height of that box, in the same units — what the tip-anchored transform and
+// the on-screen size both work from.
+const GIS_PIN_BOX_H = 34;
+
+// The markup inside one pin group. `inner` is whatever belongs at the centre of
+// the head (a type glyph, or the pick marker's plain dot), and `placing` adds
+// the ripple that is knocked out of the ground as the pin lands.
+function gisPinInnerHtml(inner, placing) {
+  return (
+    (placing ? `<circle class="gis-pin-ripple" cx="12" cy="32" r="4"></circle>` : "") +
+    `<g class="gis-pin-anim">` +
+    `<ellipse class="gis-pin-shadow" cx="12" cy="32.8" rx="4.4" ry="1.7"></ellipse>` +
+    `<path class="gis-pin-body" d="${GIS_PIN_PATH}"></path>` +
+    inner +
+    `</g>`
+  );
+}
+
+// A type glyph, centred in the pin's head.
+function gisPinGlyphHtml(iconName) {
+  const glyph = GIS_ICON_PATHS[iconName] || GIS_ICON_PATHS.alertCircle;
+  return `<g class="gis-pin-glyph" transform="translate(12 12.6) scale(0.58) translate(-12 -12)">${glyph}</g>`;
+}
+
+// Where a pin of on-screen width `size` has to be drawn for its tip to land on
+// the map point (x, y).
+function gisPinTransform(x, y, size) {
+  return `translate(${x - size / 2} ${y - (size * GIS_PIN_BOX_H) / 24}) scale(${size / 24})`;
+}
 
 // Incident / concern reports — the single combined "blotter report" model
 // (concern reporting and blotter reporting were merged). Pins are placed from
@@ -188,8 +239,6 @@ const GIS_ACCIDENT_ICON_SIZE = 42;
 // Includes the former staff-only "accident marker" types (vehicular / fire /
 // medical) — accident pings and community reports are ONE pin type now, and
 // each pin carries its type's icon.
-// Icons mirror the mobile app's per-type Material glyphs, so a report shows
-// the same symbol on both maps.
 const GIS_REPORT_TYPE_META = {
   noise: { label: "Noise Complaint", icon: "volume", interpersonal: false },
   dispute: { label: "Property Dispute", icon: "landDispute", interpersonal: true },
@@ -203,7 +252,7 @@ const GIS_REPORT_TYPE_META = {
   medical: { label: "Medical Emergency", icon: "medical", interpersonal: false },
   other: { label: "Other", icon: "exclamation", interpersonal: false },
 };
-const GIS_REPORT_ICON_SIZE = 44;
+const GIS_REPORT_ICON_SIZE = 40;
 
 // ───────── Report-density heat map ─────────
 // Answers "where do incidents keep happening?", which a list of pins cannot:
@@ -225,16 +274,14 @@ const GIS_HEAT_BLUR = 17;
 
 // Amber → red. Sequential (not a rainbow) so "more" always reads as "hotter",
 // and it stays legible for the red-green colour blind.
-// Single-hue red ramp, matching the mobile app's heatmap
-// (cares_app/lib/screens/mis/analytics_page.dart, which paints every blob in
-// one red and lets overlap carry the density).
+// Single-hue red ramp: every blob is painted in one red and overlap carries
+// the density.
 //
 // The old ramp started at yellow and ran through orange to red. Two problems:
 // a pale yellow cell read as "safe//nothing here" rather than "one report",
 // and hue-shifting implies a change of KIND when the only thing changing is
 // COUNT. One hue getting deeper says "more of the same thing", which is what
-// the number actually means — and it keeps the web and the app speaking the
-// same visual language.
+// the number actually means.
 const GIS_HEAT_STOPS = [
   [0.0, [254, 202, 202]],
   [0.35, [248, 113, 113]],
@@ -456,7 +503,7 @@ function gisClearBuildingTag(buildingId) {
   const tags = gisLoadBuildingTags();
   delete tags[buildingId];
   gisSaveJSON(GIS_BUILDING_TAGS_KEY, tags);
-  // Mirror the removal into the shared DB so the mobile app drops it too
+  // Mirror the removal into the shared DB so other browsers drop it too
   // (temp-id buildings never reached the DB, so there's nothing to remove).
   if (typeof apiDelete === "function" && gisIsServerBuildingKey(buildingId))
     apiDelete("/api/gis/building-tags/" + encodeURIComponent(buildingId)).catch(() => {});
@@ -476,8 +523,8 @@ function gisUntagBuilding(buildingId) {
 }
 
 // ───────── Shared-DB sync layer ─────────
-// Every map store below is mirrored into the API (PostGIS) so the web system
-// (localhost + GitHub Pages) and the Flutter app all see ONE map. Writes are
+// Every map store below is mirrored into the API (PostGIS) so every copy of
+// the web system (localhost + GitHub Pages) sees ONE map. Writes are
 // optimistic: localStorage updates immediately (instant UI + offline
 // fallback), the API call rides along fire-and-forget, and a one-time sync at
 // map init reconciles both directions.
@@ -1374,7 +1421,7 @@ function gisDeleteAccident(id) {
 // Community reports — resident-submitted concern pins with reporter details.
 //
 // Single source of truth: the incident table (/api/incidents) — the same
-// records the Blotter page and the mobile app use. An in-memory cache holds
+// records the Blotter page uses. An in-memory cache holds
 // the rows in the legacy record shape every renderer already reads, and the
 // old localStorage key is kept only as a last-known snapshot for offline.
 let gisReportsCache = null;
@@ -1402,6 +1449,10 @@ function gisReportFromIncident(row) {
     contact: row.contact || "",
     respondent: row.respondent || "",
     witnesses: row.witnesses || "",
+    // How it reached the barangay: a logged call, the portal, the counter.
+    // NULL on rows filed before the column existed, which the pages show as
+    // nothing rather than guessing (SMS-HOTLINE-PLAN.md 4.2).
+    source: row.source || null,
     createdAt: Date.parse(row.created_at) || Date.now(),
     resolved: row.status === "resolved" || row.status === "dismissed",
     resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : null,
@@ -1512,7 +1563,7 @@ function gisAddCommunityReport(point, data) {
     reporterRole: sessionRole,
     // When the report was already filed to the API (the incident modal does
     // this itself), reuse the server's id + case number so the pin, the DB
-    // row, and the app all agree.
+    // row, and the Blotter page all agree.
     caseNo: data.caseNo || gisNextCaseNo(list),
     point,
     reportType: data.reportType,
@@ -1523,6 +1574,7 @@ function gisAddCommunityReport(point, data) {
     contact: data.contact || "",
     respondent: data.respondent || "",
     witnesses: data.witnesses || "",
+    source: data.source || null,
     createdAt: Date.now(),
     resolved: false,
     resolvedAt: null,
@@ -1610,7 +1662,7 @@ function gisSetCommunityReportResolved(id, resolved) {
   record.resolvedAt = resolved ? Date.now() : null;
   gisReportsCache = list;
   gisSaveReportsCache();
-  // Same status transition the MIS blotter page and the app use.
+  // Same status transition the MIS blotter page uses.
   if (gisIsServerId(id) && typeof apiPatch === "function")
     apiPatch("/api/incidents/" + id, { status: resolved ? "resolved" : "open" }).catch(() => {});
   if (typeof logAudit === "function")
@@ -2008,6 +2060,26 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     panY: 0,
   };
 
+  // ───────── Pin drop animation bookkeeping ─────────
+  // A pin animates the first time this map draws it and never again: every
+  // other redraw (a pan, a zoom, a filter, a background sync) must leave the
+  // pins already on the map sitting still. The first render after the map
+  // loads is treated as "already there" too — a freshly opened map should not
+  // rain forty pins onto the barangay.
+  const seenReportPins = new Set();
+  const seenAccidentPins = new Set();
+  let pinsFirstPass = true;
+  // The pick-a-location marker has no id — it is one marker that moves — so it
+  // is tracked by position instead.
+  let lastPickPinKey = null;
+
+  function pinIsNew(seen, id) {
+    const key = String(id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return !pinsFirstPass;
+  }
+
   const MIN_POINTS = { building: 3, road: 2, vegetation: 3, construction: 3, "vegetation-cut": 3, measure: 1, "building-move": 3 };
   // Area tools that can also be traced as a rotatable box instead of a freeform
   // polygon (the "Square" shape option). Lines (road) and points (pings) can't.
@@ -2240,8 +2312,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
           </g>
           <!-- Density cloud: over the base map so it reads, under the pins so
                an individual report can still be clicked through it. Clipped to
-               the boundary in heatmap mode, the same way the mobile app does it
-               (canvas.clipPath in analytics_page.dart) — a cloud spilling past
+               the boundary in heatmap mode — a cloud spilling past
                the border implies density outside the barangay, which is not
                something this card is measuring. -->
           <g class="gis-heat-layer"${heatmap ? ` clip-path="url(#${boundaryClipId})"` : ""}></g>
@@ -3311,22 +3382,47 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     `;
   }
 
+  // Roads are drawn in two passes, the way a street map draws them: every road
+  // is laid down once as a wider "casing" line, then all of them again in white
+  // on top. Both passes have to finish before the other starts — a casing drawn
+  // directly under its own road would still be painted over the white of the
+  // road BEFORE it, and every junction would show a seam. The casing group is
+  // inert; clicks belong to the road itself, in the pass above it.
   function renderRoads() {
     roadsLayer.innerHTML = "";
     if (!state.showRoads) return;
 
+    const casingLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    casingLayer.setAttribute("class", "gis-road-casing-layer");
+    const roadLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    roadsLayer.appendChild(casingLayer);
+    roadsLayer.appendChild(roadLayer);
+
+    const addCasing = (d, kind) => {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("class", "gis-road-casing gis-road-casing-" + kind);
+      casingLayer.appendChild(path);
+    };
+
     (roadsGeojson?.features || []).forEach((feature) => {
       if (!featureInHomeExtent(feature)) return;
+      const d = gisGeometryToPath(feature.geometry, project);
+      const kind = gisRoadTypeForHighway(feature.properties.highway);
+      addCasing(d, kind);
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", gisGeometryToPath(feature.geometry, project));
-      path.setAttribute("class", "gis-road gis-road-" + gisRoadTypeForHighway(feature.properties.highway));
-      roadsLayer.appendChild(path);
+      path.setAttribute("d", d);
+      path.setAttribute("class", "gis-road gis-road-" + kind);
+      roadLayer.appendChild(path);
     });
 
     gisCustomRoadFeatures().forEach((feature) => {
+      const d = gisGeometryToPath(feature.geometry, project);
+      const kind = feature.properties.roadType || "local";
+      addCasing(d, kind);
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", gisGeometryToPath(feature.geometry, project));
-      path.setAttribute("class", "gis-road gis-road-" + (feature.properties.roadType || "local"));
+      path.setAttribute("d", d);
+      path.setAttribute("class", "gis-road gis-road-" + kind);
       attachFeatureInteraction(path, {
         hoverHtml: () => roadInfoHtml(feature.properties),
         onOpen: (evt) => {
@@ -3334,7 +3430,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
           showRoadPopup(feature.properties, evt.clientX - svgRect.left, evt.clientY - svgRect.top);
         },
       });
-      roadsLayer.appendChild(path);
+      roadLayer.appendChild(path);
     });
   }
 
@@ -3749,10 +3845,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     });
   }
 
-  // Accident/incident markers are drawn as a small vector icon — one solid
-  // disc of a single colour with the type glyph knocked out of it in white,
-  // matching the report pins below. A flat one-colour marker holds up at map
-  // scale where the old thin-outline glyph on a pale disc did not.
+  // Accident/incident markers use the same teardrop pin the community reports
+  // do: one flat colour, the type glyph knocked out of it in white, tip on the
+  // spot. A marker the map has not drawn before drops in — see pinIsNew().
   function renderAccidents() {
     accidentsLayer.innerHTML = "";
     if (!state.showAccidents) return;
@@ -3760,17 +3855,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     gisAllAccidentFeatures().forEach((feature) => {
       const meta = GIS_ACCIDENT_TYPE_META[feature.properties.incidentType] || { icon: "alertCircle" };
       const [x, y] = project(...feature.geometry.coordinates);
-      // Divide by zoom so the icon stays a constant, legible size on screen
+      // Divide by zoom so the pin stays a constant, legible size on screen
       // regardless of zoom level (same reasoning as the draw-preview dots).
       const size = GIS_ACCIDENT_ICON_SIZE / state.zoom;
+      const placing = pinIsNew(seenAccidentPins, feature.properties.id);
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "gis-accident-icon");
-      g.setAttribute("transform", `translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`);
-      // The glyph is scaled to ~60% and re-centred so it sits inside the disc
-      // with a margin instead of running off its edge.
-      g.innerHTML =
-        `<circle cx="12" cy="12" r="11.5" class="gis-accident-icon-bg"></circle>` +
-        `<g class="gis-accident-icon-glyph" transform="translate(12 12) scale(0.6) translate(-12 -12)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
+      g.setAttribute("class", "gis-accident-icon gis-map-pin" + (placing ? " gis-pin-placing" : ""));
+      g.setAttribute("transform", gisPinTransform(x, y, size));
+      g.innerHTML = gisPinInnerHtml(gisPinGlyphHtml(meta.icon), placing);
 
       attachFeatureInteraction(g, {
         hoverHtml: () => accidentInfoHtml(feature.properties),
@@ -3823,9 +3915,13 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     hidePopup();
     // Creating (pingData set): the hazard type comes from the draw panel.
     const presetMeta = !existingId ? GIS_HAZARD_TYPE_META[state.drawSubtype] : null;
-    const severityOptions = ["low", "medium", "high"]
-      .map((s) => `<option value="${s}" ${(existing?.severity || "medium") === s ? "selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`)
-      .join("");
+    // A new hazard starts with no severity picked — "Medium" by default was a
+    // judgement nobody made. An existing one shows what it was saved as.
+    const severityOptions =
+      (existing?.severity ? "" : `<option value="">Select severity</option>`) +
+      ["low", "medium", "high"]
+        .map((s) => `<option value="${s}" ${existing?.severity === s ? "selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`)
+        .join("");
     const title = existingId ? "Edit Hazard Zone" : "Mark Hazard Area";
     const typeRowHtml = presetMeta
       ? `<div class="gis-pin-form-static">${gisIcon(presetMeta.icon)} ${escapeHtml(presetMeta.label)}</div>`
@@ -3855,8 +3951,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     formEl.querySelector("[data-gis-save]").addEventListener("click", (e) => {
       e.stopPropagation();
       const hazardType = presetMeta ? state.drawSubtype : formEl.querySelector('[data-f="type"]').value;
-      const severity = formEl.querySelector('[data-f="severity"]').value;
+      const severitySelect = formEl.querySelector('[data-f="severity"]');
+      const severity = severitySelect.value;
       const notes = formEl.querySelector('[data-f="notes"]').value.trim();
+      if (!severity) {
+        if (window.Motion) Motion.reject(severitySelect, "Choose how severe the hazard is.");
+        else severitySelect.focus();
+        return;
+      }
       if (existingId) {
         gisUpdateHazard(existingId, hazardType, severity, notes);
       } else if (pingData) {
@@ -4040,31 +4142,29 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         // Resolved concerns drop off the map — they live on only in the history.
         if (props.resolved && !focused) return;
         const [x, y] = project(...feature.geometry.coordinates);
-        // Constant on-screen size (same trick as accidents), but translated so
-        // the pin's TIP — not its center — sits on the reported location.
+        // Constant on-screen size (same trick as accidents), and anchored so
+        // the pin's TIP — not its centre — sits on the reported location.
         const size = GIS_REPORT_ICON_SIZE / state.zoom;
         const meta = GIS_REPORT_TYPE_META[props.reportType] || GIS_REPORT_TYPE_META.other;
-        // One solid disc of a single flat colour with the type glyph knocked
-        // out of it in white, centred on the reported location. The colour
-        // says who filed it (resident green / official navy); the glyph says
-        // what it was. No pin body, no outline, no second hue.
+        // A teardrop in one flat colour with the type glyph knocked out of it
+        // in white — nothing behind the glyph. The colour says who filed it
+        // (resident green / official navy); the glyph says what it was.
         const official = ["Admin", "Officer", "Staff"].includes(props.reporterRole || "");
+        const placing = pinIsNew(seenReportPins, props.id);
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute(
           "class",
-          "gis-report-pin" +
+          "gis-report-pin gis-map-pin" +
             (official ? " gis-report-pin-official" : "") +
-            (focused ? " gis-report-pin-focus" : "")
+            (focused ? " gis-report-pin-focus" : "") +
+            (placing ? " gis-pin-placing" : "")
         );
-        g.setAttribute("transform", `translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`);
-        // The glyph is scaled to ~60% and re-centred so it sits inside the
-        // disc with a margin instead of running off its edge.
+        g.setAttribute("transform", gisPinTransform(x, y, size));
+        // The fly-to halo goes in FRONT of the pin markup so it is painted
+        // first and reads as a glow behind the head, not a ring around it.
         g.innerHTML =
-          (focused
-            ? `<circle cx="12" cy="12" r="11.5" class="gis-report-pin-ring"></circle>`
-            : "") +
-          `<circle cx="12" cy="12" r="11.5" class="gis-report-pin-disc"></circle>` +
-          `<g class="gis-report-pin-glyph" transform="translate(12 12) scale(0.6) translate(-12 -12)">${GIS_ICON_PATHS[meta.icon] || GIS_ICON_PATHS.alertCircle}</g>`;
+          (focused ? `<circle class="gis-pin-halo" cx="12" cy="12.6" r="11.5"></circle>` : "") +
+          gisPinInnerHtml(gisPinGlyphHtml(meta.icon), placing);
         attachReportInteraction(g, props);
         reportsLayer.appendChild(g);
       });
@@ -4075,10 +4175,20 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     if (state.pickMode && state.pickPoint) {
       const [x, y] = project(...state.pickPoint);
       const size = GIS_REPORT_ICON_SIZE / state.zoom;
+      // Every move of the marker is a placement, so it drops in again each
+      // time the resident picks a different spot — that drop IS the feedback
+      // that the click registered — but not on a redraw that left it where it
+      // already was (a pan, a zoom, a layer toggle).
+      const key = state.pickPoint.join(",");
+      const placing = key !== lastPickPinKey;
+      lastPickPinKey = key;
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "gis-report-pin gis-pick-pin");
-      g.setAttribute("transform", `translate(${x - size / 2} ${y - size}) scale(${size / 24})`);
-      g.innerHTML = GIS_ICON_PATHS.pin;
+      g.setAttribute("class", "gis-pick-pin gis-map-pin" + (placing ? " gis-pin-placing" : ""));
+      g.setAttribute("transform", gisPinTransform(x, y, size));
+      g.innerHTML = gisPinInnerHtml(
+        `<circle class="gis-pin-dot" cx="12" cy="12.6" r="4.4"></circle>`,
+        placing,
+      );
       reportsLayer.appendChild(g);
     }
   }
@@ -4300,7 +4410,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     formEl.innerHTML = `
       <div class="gis-pin-form-title">Report a Concern</div>
       <label class="gis-pin-form-label">Concern Type
-        <select class="gis-pin-form-input" data-f="type">${optionsHtml(GIS_REPORT_TYPE_META)}</select>
+        <select class="gis-pin-form-input" data-f="type"><option value="">Select the type of concern</option>${optionsHtml(GIS_REPORT_TYPE_META)}</select>
       </label>
       <label class="gis-pin-form-label">Title
         <input type="text" class="gis-pin-form-input" data-f="title" placeholder="e.g. Blocked drainage canal" />
@@ -4322,9 +4432,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     });
     formEl.querySelector("[data-gis-save]").addEventListener("click", (e) => {
       e.stopPropagation();
-      const reportType = formEl.querySelector('[data-f="type"]').value;
+      const typeSelect = formEl.querySelector('[data-f="type"]');
+      const reportType = typeSelect.value;
       const title = formEl.querySelector('[data-f="title"]').value.trim();
       const comment = formEl.querySelector('[data-f="comment"]').value.trim();
+      if (!reportType) {
+        if (window.Motion) Motion.reject(typeSelect, "Choose what kind of concern this is.");
+        else typeSelect.focus();
+        return;
+      }
       if (!title) {
         formEl.querySelector('[data-f="title"]').focus();
         return;
@@ -5763,6 +5879,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
 
   resetView();
   renderAll();
+  // Everything drawn above was already there when the map opened; from here on
+  // a pin the map has not seen is a pin someone just placed, and it drops in.
+  pinsFirstPass = false;
   updateDrawUI();
   updateLegendDimStates();
 

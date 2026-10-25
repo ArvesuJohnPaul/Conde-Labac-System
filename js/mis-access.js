@@ -6,8 +6,7 @@
 //
 // The answer comes from the Role Access Matrix on User Management, stored in
 // shared settings under 'module-access' beside every other module row — MIS
-// access is simply the module key 'mis'. Keeping it in the same store means the
-// mobile app reads the same decision from the same place.
+// access is simply the module key 'mis'.
 //
 // Admin is never lockable out: an Admin who revoked their own MIS access would
 // have no way back in to undo it.

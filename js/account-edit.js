@@ -31,31 +31,34 @@
   // facts, and changing them is a Residency-page action. Household IS
   // self-declared — a resident knows which house is theirs — but it is not a
   // text input, so it lives below with the photo rather than in this table.
+  //
+  // `rule` is what js/input-guard.js lets into the field as it is typed —
+  // the same rules the server holds the record to (validate.js).
   var FIELDS = [
-    { key: "last_name", label: "Last Name", type: "text", required: true },
-    { key: "first_name", label: "First Name", type: "text", required: true },
-    { key: "middle_name", label: "Middle Name", type: "text" },
-    { key: "suffix", label: "Suffix", type: "text", placeholder: "e.g. Jr., III" },
-    { key: "birthdate", label: "Birthdate", type: "date" },
+    { key: "last_name", label: "Last Name", type: "text", required: true, rule: "name", max: 80 },
+    { key: "first_name", label: "First Name", type: "text", required: true, rule: "name", max: 80 },
+    { key: "middle_name", label: "Middle Name", type: "text", rule: "name", max: 80 },
+    { key: "suffix", label: "Suffix", type: "text", placeholder: "e.g. Jr., III", rule: "name", max: 10 },
+    { key: "birthdate", label: "Birthdate", type: "date", rule: "past-date" },
     {
       key: "sex",
       label: "Sex",
       type: "select",
-      options: [["", "—"], ["M", "Male"], ["F", "Female"]],
+      options: [["", "Select sex"], ["M", "Male"], ["F", "Female"]],
     },
     {
       key: "civil_status",
       label: "Civil Status",
       type: "select",
-      options: [["", "—"], ["Single", "Single"], ["Married", "Married"], ["Widowed", "Widowed"], ["Separated", "Separated"]],
+      options: [["", "Select civil status"], ["Single", "Single"], ["Married", "Married"], ["Widowed", "Widowed"], ["Separated", "Separated"]],
     },
-    { key: "contact_no", label: "Contact No.", type: "text", placeholder: "e.g. 0917 123 4567" },
-    { key: "occupation", label: "Occupation", type: "text", placeholder: "e.g. Farmer" },
+    { key: "contact_no", label: "Contact No.", type: "text", placeholder: "e.g. 09171234567", rule: "mobile", max: 11 },
+    { key: "occupation", label: "Occupation", type: "text", placeholder: "e.g. Farmer", rule: "words", max: 80 },
     {
       key: "voter_status",
       label: "Voter Status",
       type: "select",
-      options: [["", "—"], ["Registered", "Registered"], ["Not Registered", "Not Registered"]],
+      options: [["", "Select voter status"], ["Registered", "Registered"], ["Not Registered", "Not Registered"]],
     },
   ];
 
@@ -136,6 +139,8 @@
     return (
       '<input class="form-control" id="acct-edit-' + f.key + '"' +
       ' type="' + f.type + '" value="' + esc(v) + '"' +
+      (f.rule ? ' data-rule="' + f.rule + '"' : "") +
+      (f.max ? ' maxlength="' + f.max + '"' : "") +
       (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : "") +
       " />"
     );
@@ -145,7 +150,7 @@
   // Held apart from FIELDS because it is not a text input and not diffed the
   // same way: PHOTO_NEXT is null until the resident actually picks a file, and
   // only then does `photo` enter the change set. The image is stored inline as
-  // a data URI on resident.photo (same shape the mobile app writes), so it
+  // a data URI on resident.photo, so it
   // needs a hard size cap — a modern phone photo is several megabytes, and
   // that lands in a JSONB column, in every /api/edit-requests response, and in
   // the staff review list.
@@ -653,6 +658,12 @@
         missingRequired + " cannot be left empty.",
         "acct-edit-" + missingKey
       );
+      return;
+    }
+    // A name in letters, an 11-digit number, a birthdate that has happened —
+    // each refusal marked on its own field by js/input-guard.js.
+    if (window.InputGuard && !InputGuard.check(document.getElementById(MODAL_ID))) {
+      showError("Please correct the highlighted fields.");
       return;
     }
     if (!Object.keys(changes).length) {

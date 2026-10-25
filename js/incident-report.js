@@ -23,9 +23,10 @@ function incEscape(str) {
   return div.innerHTML;
 }
 
-// Resolves who is filing from the active session, best-effort matching their
-// surname against the resident directory for purok/contact. Returns null when
-// nobody is signed in (public visitor) — the modal then shows editable fields.
+// Resolves who is filing from the active session. Returns null when nobody is
+// signed in — the modal then shows editable fields. Since 2026-10-24 a visitor
+// is asked to sign in before the form opens, so that is now only the case for
+// a session that ended while the page was open.
 function incidentCurrentReporter() {
   let session = null;
   try {
@@ -64,10 +65,15 @@ function incidentCurrentReporter() {
 
 // Options for the Incident Type select, straight from the unified metadata so
 // the interpersonal flags (which drive the conditional fields) stay in sync.
+// It opens on "Select the type of incident": a first type picked by default
+// is a report filed under a heading the reporter never chose.
 function incidentTypeOptions() {
-  return Object.entries(GIS_REPORT_TYPE_META)
-    .map(([key, meta]) => `<option value="${key}">${incEscape(meta.label)}</option>`)
-    .join("");
+  return (
+    '<option value="">Select the type of incident</option>' +
+    Object.entries(GIS_REPORT_TYPE_META)
+      .map(([key, meta]) => `<option value="${key}">${incEscape(meta.label)}</option>`)
+      .join("")
+  );
 }
 
 // Builds the modal shell once (header, emergency notice, incident-type row,
@@ -94,7 +100,11 @@ function ensureIncidentModalShell() {
       <div class="alert alert-warning">
         <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
         For life-threatening emergencies, call <strong>911</strong> or the barangay
-        hotline at <strong>043-702-8875</strong> immediately.
+        hotline at <strong data-hotline="primary-number">043-702-8875</strong> immediately.
+      </div>
+      <div class="alert alert-info is-hidden" id="inc-log-banner">
+        <span class="alert-icon"><i data-icon="phone"></i></span>
+        <span id="inc-log-banner-text"></span>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -110,6 +120,14 @@ function ensureIncidentModalShell() {
         <label class="form-label">Location of Incident</label>
         <div class="gis-modal-map" id="incident-map" style="height:340px"></div>
         <div class="inc-pick-status" id="inc-pick-status">Click on the map to drop a pin where it happened.</div>
+        <!-- Logged calls only. A caller on the phone often cannot say exactly
+             where they are, and a pin dropped on their behalf is a guess that
+             looks like a fact on the map. Filed without one, the officials'
+             text says "NO PIN DROPPED" and gives the caller's number. -->
+        <label class="inc-nopin is-hidden" id="inc-nopin-wrap">
+          <input type="checkbox" id="inc-nopin" />
+          <span>The caller could not say exactly where — file without a pin</span>
+        </label>
       </div>
       <div id="inc-fields"></div>
       <div class="alert alert-info">
@@ -124,6 +142,10 @@ function ensureIncidentModalShell() {
       </button>
     </div>`;
   box.setAttribute("data-incident-built", "1");
+  // The notice above carries the hotline as written-in fallback text; the
+  // directory is what should actually be printed there. This markup is built
+  // at open time, long after js/hotlines.js painted the page.
+  if (window.Hotlines) Hotlines.paint(box);
 
   // Type change toggles the interpersonal-only fields. Wired once; it looks the
   // fields up by id each time so it survives #inc-fields being rebuilt.
@@ -140,14 +162,14 @@ function renderIncidentFields(reporter) {
   const nameVal = known ? incEscape(reporter.name) : "";
   const purokLine = reporter && reporter.purok ? ` &middot; ${incEscape(reporter.purok)}` : "";
   const contactVal = reporter && reporter.contact ? incEscape(reporter.contact) : "";
-  // A signed-in resident's name is fixed; only a visitor may type one.
+  // A signed-in reporter's name is fixed; with no session, one is typed.
   const nameField = known
     ? `<input class="form-control" id="inc-complainant" value="${nameVal}" readonly />
        <div class="inc-field-hint">Auto-filled from your resident record${purokLine}</div>`
-    : `<input class="form-control" id="inc-complainant" placeholder="Your full name" />`;
+    : `<input class="form-control" id="inc-complainant" data-rule="names" maxlength="120" placeholder="Your full name" />`;
   // Contact pre-fills when a number is on file; otherwise it stays editable so
   // one can be provided (the resident directory carries no phone numbers yet).
-  const contactField = `<input class="form-control" type="tel" id="inc-contact" placeholder="09XXXXXXXXX" value="${contactVal}" ${contactVal ? "readonly" : ""} />`;
+  const contactField = `<input class="form-control" type="tel" id="inc-contact" data-rule="phone" maxlength="11" placeholder="09XXXXXXXXX" value="${contactVal}" ${contactVal ? "readonly" : ""} />`;
 
   fieldsEl.innerHTML = `
     <div class="form-row">
@@ -162,16 +184,16 @@ function renderIncidentFields(reporter) {
     </div>
     <div class="form-group inc-interpersonal" id="inc-respondent-group" hidden>
       <label class="form-label">Respondent / Subject (if known)</label>
-      <input class="form-control" id="inc-respondent" placeholder="Name or description of the other party (optional)" />
+      <input class="form-control" id="inc-respondent" maxlength="200" placeholder="Name or description of the other party (optional)" />
     </div>
     <div class="form-group">
       <label class="form-label">Detailed Narration of Incident</label>
-      <textarea class="form-control textarea-tall" id="inc-narration"
+      <textarea class="form-control textarea-tall" id="inc-narration" maxlength="4000"
         placeholder="Describe what happened — sequence of events, persons involved, and any details..."></textarea>
     </div>
     <div class="form-group inc-interpersonal" id="inc-witness-group" hidden>
       <label class="form-label">Witness Names (optional)</label>
-      <input class="form-control" id="inc-witnesses" placeholder="e.g. Maria Cruz, Jose Reyes" />
+      <input class="form-control" id="inc-witnesses" data-rule="names" maxlength="400" placeholder="e.g. Maria Cruz, Jose Reyes" />
     </div>`;
 }
 
@@ -245,8 +267,22 @@ function updateIncidentConditionalFields() {
   if (witness) witness.hidden = !interpersonal;
 }
 
+// Where this report came from, when a member of staff is logging one that
+// arrived some other way — 'hotline' for a call to the barangay landline,
+// 'walk-in' for someone at the counter. null for the ordinary form, where the
+// server decides ('web').
+//
+// WHY IT MATTERS: phone calls are probably most of what a barangay receives,
+// and until now none of them entered the system at all — the blotter, the map
+// pins, the heatmap and the AI briefing only ever saw what was typed into the
+// portal. Logging a call makes the analytics describe the real caseload
+// (SMS-HOTLINE-PLAN.md §4.2).
+let incidentSource = null;
+
 // Entry point — replaces the old openServicePopup('incidents') behaviour.
-function openIncidentModal() {
+// opts.source: 'hotline' | 'walk-in' puts the form in logged-call mode.
+function openIncidentModal(opts) {
+  incidentSource = (opts && opts.source) || null;
   const modal = ensureIncidentModalShell();
   if (!modal) return;
 
@@ -261,6 +297,21 @@ function openIncidentModal() {
   const typeEl = document.getElementById("inc-type");
   if (typeEl) typeEl.selectedIndex = 0;
   updateIncidentConditionalFields();
+
+  // Logged-call mode: say which channel is being logged, and offer the
+  // "no pin" option that only makes sense for a call.
+  const banner = document.getElementById("inc-log-banner");
+  const bannerText = document.getElementById("inc-log-banner-text");
+  const noPinWrap = document.getElementById("inc-nopin-wrap");
+  const noPin = document.getElementById("inc-nopin");
+  if (banner) banner.classList.toggle("is-hidden", !incidentSource);
+  if (noPinWrap) noPinWrap.classList.toggle("is-hidden", !incidentSource);
+  if (noPin) noPin.checked = false;
+  if (bannerText && incidentSource)
+    bannerText.textContent =
+      incidentSource === "hotline"
+        ? "Logging a call to the barangay hotline. Enter the caller's name and number — the officials' text carries that number so they can ring back."
+        : "Logging a report made in person at the barangay hall.";
 
   incidentPickPoint = null;
   const status = document.getElementById("inc-pick-status");
@@ -292,7 +343,7 @@ function openIncidentModal() {
 
 async function submitIncidentReport() {
   const typeEl = document.getElementById("inc-type");
-  const type = typeEl ? typeEl.value : "other";
+  const type = typeEl ? typeEl.value : "";
   const meta = GIS_REPORT_TYPE_META[type] || {};
   const narration = (document.getElementById("inc-narration")?.value || "").trim();
   const complainant = (document.getElementById("inc-complainant")?.value || "").trim();
@@ -305,13 +356,18 @@ async function submitIncidentReport() {
     : "";
 
   incidentClearErrors();
+  if (!type) {
+    return incidentFieldError("inc-type", "Choose the type of incident you are reporting.");
+  }
   if (!complainant) {
     return incidentFieldError(
       "inc-complainant",
       "Enter the complainant's full name so the report can be followed up."
     );
   }
-  if (!incidentPickPoint) {
+  const noPinEl = document.getElementById("inc-nopin");
+  const filedWithoutPin = !!(incidentSource && noPinEl && noPinEl.checked);
+  if (!incidentPickPoint && !filedWithoutPin) {
     return incidentPinError(
       "Drop a pin on the map to mark where the incident happened."
     );
@@ -323,6 +379,10 @@ async function submitIncidentReport() {
     );
   }
 
+  // A name in letters, a number someone can call back on — each marked on
+  // its own field (js/input-guard.js).
+  if (window.InputGuard && !InputGuard.check(document.querySelector("#modal-incidents .modal-body"))) return;
+
   const reporter = incidentCurrentReporter() || {
     name: complainant,
     initials: complainant.charAt(0).toUpperCase() || "?",
@@ -330,18 +390,32 @@ async function submitIncidentReport() {
     purok: null,
   };
 
-  // File to the shared database first (the same POST the mobile app uses),
+  // Filing takes an account (routes/incidents.js, since 2026-10-24). The form
+  // only opens for a signed-in account, but the session can end while it is
+  // open — signed out in another tab. The server would refuse the report, and
+  // the local-copy fallback below would then show a case number the barangay
+  // never received. Say so instead, and keep what was typed.
+  let s = null;
+  try {
+    s = JSON.parse(localStorage.getItem("ibmdss.session"));
+  } catch (e) {
+    /* signed out */
+  }
+  if (!s) {
+    if (typeof showToast === "function")
+      showToast(
+        "You are signed out. Sign in again to file this report — what you typed is still here.",
+        "<i data-icon=lock></i>"
+      );
+    return;
+  }
+
+  // File to the shared database first (POST /api/incidents),
   // so the report reaches the MIS and the incident table — the pin point is
   // [lng, lat]. Falls back to local-only if the server can't be reached.
   let serverCaseNo = null;
   let serverId = null;
   if (typeof apiPost === "function") {
-    let s = null;
-    try {
-      s = JSON.parse(localStorage.getItem("ibmdss.session"));
-    } catch (e) {
-      /* signed out */
-    }
     try {
       const res = await apiPost("/api/incidents", {
         report_type: type,
@@ -351,8 +425,12 @@ async function submitIncidentReport() {
         contact: contact || null,
         respondent: respondent || null,
         witnesses: witnesses || null,
-        lng: incidentPickPoint[0],
-        lat: incidentPickPoint[1],
+        // Omitted entirely when there is no pin, so the server stores its
+        // own default and the officials' text says so, rather than this form
+        // inventing a location.
+        lng: incidentPickPoint ? incidentPickPoint[0] : undefined,
+        lat: incidentPickPoint ? incidentPickPoint[1] : undefined,
+        source: incidentSource || undefined,
         complainant_id: s?.resident_id || null,
         account_id: s?.account_id || null,
       });
@@ -363,7 +441,13 @@ async function submitIncidentReport() {
     }
   }
 
-  const record = gisAddCommunityReport(incidentPickPoint, {
+  // A report filed without a pin still needs a point for the local map store;
+  // the server stores the same barangay centroid for one (routes/incidents.js),
+  // so the pin a member of staff sees is the pin the database holds. The
+  // officials' text is the one place it matters, and that says "NO PIN
+  // DROPPED" rather than sending anyone here.
+  const BARANGAY_CENTROID = [121.110793, 13.736541];
+  const record = gisAddCommunityReport(incidentPickPoint || BARANGAY_CENTROID, {
     reportType: type,
     // The incident type doubles as the pin/feed headline; the narration is the
     // detail body. (The combined form has no separate title field.)
@@ -374,6 +458,7 @@ async function submitIncidentReport() {
     contact,
     respondent,
     witnesses,
+    source: incidentSource || null,
     caseNo: serverCaseNo,
     serverId,
   });

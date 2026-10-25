@@ -17,9 +17,19 @@
            visitor whose JS never arrives reads the whole page instead of a
            blank one.
          · theme.js must set data-theme before the first stylesheet resolves,
-           or a dark-mode visitor gets a white flash. -->
+           or a dark-mode visitor gets a white flash.
+         · `is-visitor` (no session saved) turns the service buttons into
+           "Sign in to use" from the first paint, rather than showing "Open
+           service" and swapping it once the page script runs.
+           applySessionToNav() keeps it right after that. -->
     <script>
       document.documentElement.classList.add("js");
+      try {
+        if (!JSON.parse(localStorage.getItem("ibmdss.session")))
+          document.documentElement.classList.add("is-visitor");
+      } catch (e) {
+        document.documentElement.classList.add("is-visitor");
+      }
     </script>
     <script src="js/theme.js"></script>
 
@@ -31,7 +41,7 @@
     />
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/landing.css?v=20260725" />
+    <link rel="stylesheet" href="css/landing.css?v=20261024" />
     <!-- The motion layer loads last: a few of its rules replace a one-shot
          animation with a two-way one and have to win the cascade. -->
     <link rel="stylesheet" href="css/motion.css" />
@@ -57,9 +67,12 @@
     <script defer src="js/icons.js"></script>
     <script defer src="js/preferences.js"></script>
     <script defer src="js/account-edit.js"></script>
+    <script defer src="js/sms-settings.js"></script>
+    <script defer src="js/sms-alerts.js"></script>
     <script defer src="js/change-password.js"></script>
     <script defer src="js/api-config.js"></script>
     <script defer src="js/api.js"></script>
+    <script defer src="js/hotlines.js"></script>
     <script defer src="js/mis-access.js"></script>
     <script defer src="js/audit-log.js"></script>
     <script defer src="js/site-config.js"></script>
@@ -161,6 +174,7 @@
         <li><a href="#features" data-i18n="navServices">Services</a></li>
         <li><a href="#gis" data-i18n="navGisMap">GIS Map</a></li>
         <li><a href="#bulletin" data-i18n="navBulletin">Bulletin</a></li>
+        <li><a href="#history" data-i18n="navHistory">History</a></li>
         <li><a href="#team" data-i18n="navOfficials">Officials</a></li>
         <li><a href="#visit" data-i18n="navContact">Contact</a></li>
         <!-- MIS sits last, hard against the right edge of the link row. It is
@@ -346,7 +360,7 @@
                       Barangay Hotline
                     </dt>
                     <dd class="hero-meta-value">
-                      <a href="tel:+63437028875">043-702-8875</a>
+                      <a href="tel:+63437028875" data-hotline="primary">043-702-8875</a>
                     </dd>
                   </div>
                 </div>
@@ -486,7 +500,8 @@
                 class="service-cta"
                 onclick="openServicePopup('certificates')"
               >
-                <span data-i18n="openService">Open service</span>
+                <span class="cta-member" data-i18n="openService">Open service</span>
+                <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
               </button>
             </li>
@@ -512,7 +527,8 @@
                 class="service-cta"
                 onclick="openServicePopup('incidents')"
               >
-                <span data-i18n="openService">Open service</span>
+                <span class="cta-member" data-i18n="openService">Open service</span>
+                <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
               </button>
             </li>
@@ -536,19 +552,24 @@
                 class="service-cta"
                 onclick="openServicePopup('feedback')"
               >
-                <span data-i18n="openService">Open service</span>
+                <span class="cta-member" data-i18n="openService">Open service</span>
+                <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
               </button>
             </li>
           </ul>
 
+          <!-- Shown to visitors only (html.is-visitor, landing.css): a
+               signed-in resident has no use for it. -->
           <p class="services-footnote reveal">
-            <i data-icon="info" aria-hidden="true"></i>
+            <i data-icon="lock" aria-hidden="true"></i>
             <span data-i18n="accountRequired"
-              >Accounts are required for most services.</span
+              >These services are for residents with an account.</span
             >
+            <a href="system.html" data-i18n="signIn">Sign In</a>
+            <span aria-hidden="true">·</span>
             <a href="claim-account.html" data-i18n="claimToTrack"
-              >Claim an account to track your requests</a
+              >No account yet? Apply for one</a
             >
           </p>
         </div>
@@ -567,11 +588,12 @@
             <li class="how-step">
               <span class="how-num" aria-hidden="true">1</span>
               <h3 class="how-step-title" data-i18n="how1Title">
-                Choose a service
+                Sign in, pick a service
               </h3>
               <p class="how-step-desc" data-i18n="how1Desc">
-                Pick a service above. It opens right here on the page — nothing
-                to download or install.
+                Sign in with your resident account, then pick a service above.
+                It opens right here on the page — nothing to download or
+                install.
               </p>
             </li>
             <li class="how-step">
@@ -683,6 +705,64 @@
         </div>
       </section>
 
+      <!-- --- HISTORY --- -->
+      <!-- The barangay's own account of itself, edited from MIS → Site Content
+           → History (/api/history, SiteConfig.renderHistory). The text below
+           is written in as the fallback, the way the hotline numbers are: a
+           visitor with no connection still reads it, and the renderer swaps
+           in whatever staff last saved. An empty story hides the section and
+           the links to it. Placed just before the officials: who the barangay
+           is, then who leads it. -->
+      <section id="history" class="section-history">
+        <div class="container">
+          <div class="history-grid reveal">
+            <div class="history-head">
+              <p class="section-kicker" data-i18n="historyKicker">
+                Our Barangay
+              </p>
+              <h2 class="section-title" id="history-title">
+                The History of Conde Labak
+              </h2>
+              <p class="section-desc" data-i18n="historyDesc">
+                The story of the barangay, as the barangay tells it.
+              </p>
+            </div>
+            <article
+              class="history-text"
+              id="history-text"
+              aria-labelledby="history-title"
+            >
+              <p>
+                Conde was derived from the Spanish word “Conde” which means
+                “Court”. Balisong was the only sitio of Conde Labak. The Asi’s,
+                Lopez’ and De Torres’ were the original families of Conde
+                Labak.
+              </p>
+              <p>
+                During the Spanish time, many houses in Conde Labak were along
+                the road. Many of the houses were transferred to interior place
+                because of the people’s fear and hatred to the “Guardia Civil”
+                the latter often visited the barrio and men found idle are
+                gathered and brought to town where they were forced to work
+                without pay. During the Spanish regime, they were severely
+                punished if they failed to pay tax.
+              </p>
+              <p>
+                On good influence, however of the Spanish rule was the religion
+                spread in the country – Catholism even in the remote barrios of
+                town including Conde
+              </p>
+              <p>
+                The Spaniards did not introduced improvements in the economic
+                life of the people so the inhabitants of this barrio tilled the
+                soil with their antique way, however, they were able to raise
+                good crops like rice, corn and different kinds of vegetables.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <!-- --- BARANGAY OFFICIALS --- -->
       <section id="team" class="section-officials">
         <div class="container">
@@ -724,7 +804,7 @@
                 </li>
                 <li>
                   <i data-icon="phone" aria-hidden="true"></i>
-                  <a href="tel:+63437028875">043-702-8875</a>
+                  <a href="tel:+63437028875" data-hotline="primary">043-702-8875</a>
                 </li>
                 <li>
                   <i data-icon="mail" aria-hidden="true"></i>
@@ -750,16 +830,23 @@
                 Do not wait for an online report. Call the national emergency
                 hotline, then the barangay.
               </p>
-              <a class="visit-emergency-num" href="tel:911">
-                <strong>911</strong>
-                <span data-i18n="emergencyNational"
-                  >National Emergency Hotline</span
-                >
-              </a>
-              <a class="visit-emergency-num" href="tel:+63437028875">
-                <strong>043-702-8875</strong>
-                <span data-i18n="infoHotline">Barangay Hotline</span>
-              </a>
+              <!-- Written in as the fallback — a visitor with no connection
+                   still gets two numbers that work. js/hotlines.js replaces
+                   this with the directory (Site Content → Hotlines) as soon as
+                   it has it, 911 first. -->
+              <div data-hotline-list="emergency">
+                <a class="visit-emergency-num" href="tel:911">
+                  <strong>911</strong>
+                  <span data-i18n="emergencyNational"
+                    >National Emergency Hotline</span
+                  >
+                </a>
+                <a class="visit-emergency-num" href="tel:+63437028875">
+                  <strong>043-702-8875</strong>
+                  <span data-i18n="infoHotline">Barangay Hotline</span>
+                </a>
+              </div>
+              <div data-hotline-list="other"></div>
             </aside>
           </div>
         </div>
@@ -821,6 +908,66 @@
       </div>
     </div>
 
+    <!-- -- SIGN-IN REQUIRED -- -->
+    <!-- What a visitor gets from a service card instead of the form. A
+         certificate request, an incident report and feedback all need an
+         account now — the server refuses each without one — so a form that
+         could only be filled in and then turned away is not offered at all.
+         openSignInRequired() fills in which service was asked for. The
+         emergency line is shown for a report: someone who needs help now
+         should not stop to make an account. -->
+    <div
+      class="modal-backdrop"
+      id="modal-signin-required"
+      onclick="closeServiceModal('signin-required', event)"
+    >
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon"><i data-icon="lock"></i></div>
+            <span id="signin-required-title">Sign in to continue</span>
+          </div>
+          <button
+            class="modal-close"
+            aria-label="Close"
+            onclick="closeServiceModal('signin-required')"
+          >
+            <i data-icon="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="alert alert-warning is-hidden"
+            id="signin-required-emergency"
+          >
+            <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
+            <span
+              >For life-threatening emergencies, call <strong>911</strong> or
+              the barangay hotline at
+              <strong data-hotline="primary-number">043-702-8875</strong>
+              now — you do not need an account to call.</span
+            >
+          </div>
+          <p class="modal-muted-text" id="signin-required-text">
+            The barangay's online services are for residents with an account.
+          </p>
+          <p class="modal-muted-text">
+            No account yet? Apply online. The barangay checks your application
+            against its resident records and lets you know when your account is
+            ready.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <a class="btn btn-outline" href="claim-account.html"
+            >Apply for an account</a
+          >
+          <a class="btn btn-gold" href="system.html"
+            >Sign in <i data-icon="arrow-right"></i
+          ></a>
+        </div>
+      </div>
+    </div>
+
     <!-- 1. BARANGAY RESIDENCY — removed. This modal searched the whole
          resident directory (names, ages, puroks, and the senior / PWD / solo
          parent / indigent classifications) and offered an "Export Results"
@@ -874,7 +1021,7 @@
               <input
                 class="form-control"
                 placeholder="Juan"
-                id="cert-fname"
+                id="cert-fname" data-rule="name" maxlength="80"
                 required
               />
             </div>
@@ -883,7 +1030,7 @@
               <input
                 class="form-control"
                 placeholder="Santos"
-                id="cert-lname"
+                id="cert-lname" data-rule="name" maxlength="80"
                 required
               />
             </div>
@@ -891,19 +1038,19 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Date of Birth</label>
-              <input class="form-control" type="date" id="cert-dob" />
+              <input class="form-control" type="date" id="cert-dob" data-rule="past-date" />
             </div>
             <div class="form-group">
-              <label class="form-label">Purok / Address</label>
+              <label class="form-label">Purok</label>
               <select class="form-control" id="cert-purok">
-                <option>Purok 1 – Sitio Maliwanag</option>
-                <option>Purok 2 – Sitio Masagana</option>
-                <option>Purok 3 – Sitio Malinis</option>
-                <option>Purok 4 – Sitio Mapayapa</option>
-                <option>Purok 5 – Sitio Bagong Pag-Asa</option>
+                <option value="">Select your purok</option>
+                <option>Purok 1</option>
+                <option>Purok 2</option>
+                <option>Purok 3</option>
+                <option>Purok 4</option>
+                <option>Purok 5</option>
                 <option>Purok 6</option>
                 <option>Purok 7</option>
-                <option>Purok 8</option>
               </select>
             </div>
           </div>
@@ -912,6 +1059,7 @@
             <textarea
               class="form-control"
               id="cert-purpose"
+              maxlength="500"
               placeholder="e.g. For employment purposes, scholarship application, etc."
             ></textarea>
           </div>
@@ -923,11 +1071,13 @@
                 placeholder="09XXXXXXXXX"
                 type="tel"
                 id="cert-contact"
+                data-rule="mobile"
+                maxlength="11"
               />
             </div>
             <div class="form-group">
               <label class="form-label">Preferred Pickup Date</label>
-              <input class="form-control" type="date" id="cert-pickup" />
+              <input class="form-control" type="date" id="cert-pickup" data-rule="future-date" />
             </div>
           </div>
           <div class="alert alert-info">
@@ -970,7 +1120,9 @@
           <div class="alert alert-warning">
             <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
             For life-threatening emergencies, call <strong>911</strong> or the
-            barangay hotline at <strong>043-702-8875</strong> immediately.
+            barangay hotline at
+            <strong data-hotline="primary-number">043-702-8875</strong>
+            immediately.
           </div>
 
           <div class="form-row">
@@ -1118,6 +1270,7 @@
           <div class="form-group">
             <label class="form-label">Category</label>
             <select class="form-control" id="fb-category">
+              <option value="">Select a category</option>
               <option>Barangay Services</option>
               <option>Cleanliness &amp; Sanitation</option>
               <option>Peace &amp; Order</option>
@@ -1165,6 +1318,8 @@
             <input
               class="form-control"
               id="fb-name"
+              data-rule="names"
+              maxlength="120"
               placeholder="Leave blank to submit anonymously"
             />
           </div>
@@ -1174,6 +1329,8 @@
             <input
               class="form-control"
               id="fb-contact"
+              data-rule="email-or-mobile"
+              maxlength="120"
               placeholder="Email or phone number"
             />
           </div>
@@ -1278,13 +1435,16 @@
                 <a href="#bulletin" data-i18n="announcements">Announcements</a>
               </li>
               <li>
+                <a href="#history" data-i18n="historyLink">Barangay History</a>
+              </li>
+              <li>
                 <a href="#team" data-i18n="officialsTitle"
                   >Barangay Officials</a
                 >
               </li>
               <li>
                 <a href="claim-account.html" data-i18n="claimAccount"
-                  >Claim your account</a
+                  >Apply for an account</a
                 >
               </li>
               <li>
@@ -1306,7 +1466,7 @@
               </li>
               <li>
                 <i data-icon="phone"></i>
-                <a href="tel:+63437028875">043-702-8875</a>
+                <a href="tel:+63437028875" data-hotline="primary">043-702-8875</a>
               </li>
               <li>
                 <i data-icon="mail"></i>
@@ -1567,6 +1727,10 @@
 
           let current = "";
           sections.forEach((sec) => {
+            // A hidden section (the history, when its story is empty) has an
+            // offsetTop of 0 and would otherwise claim every scroll position
+            // after the one before it.
+            if (sec.hidden) return;
             if (y >= sec.offsetTop - 140) current = sec.id;
           });
           links.forEach((link) => {
@@ -1645,9 +1809,11 @@
 
       // ── Boot ────────────────────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
-        // Render the DB-backed landing sections (announcements + officials).
+        // Render the DB-backed landing sections (announcements, history,
+        // officials).
         if (window.SiteConfig) {
           SiteConfig.renderAnnouncements("announcements-grid", 6);
+          SiteConfig.renderHistory("history");
           SiteConfig.renderOfficials("officials-grid");
         }
         paintAdvisory();
@@ -1696,6 +1862,8 @@
         const userPill = document.getElementById("nav-user-pill");
         const misLi = document.getElementById("nav-mis-li");
         const notifBtn = document.getElementById("nav-notif-btn");
+        // The service buttons and the footnote under them read this.
+        document.documentElement.classList.toggle("is-visitor", !session);
 
         if (!session) {
           signin.style.display = "inline-flex";
@@ -1820,7 +1988,47 @@
         }, 3500);
       }
 
+      // What each service is asked for on the sign-in prompt, and why it needs
+      // an account.
+      const SIGNIN_REASONS = {
+        certificates: {
+          title: "Sign in to request a certificate",
+          text: "A certificate is issued from your resident record, so the request has to come from your account. Sign in and the form fills itself in from your record.",
+        },
+        incidents: {
+          title: "Sign in to file a report",
+          text: "Reports are filed under your account so an official can follow up with you and you can see what was done in My Activity.",
+          emergency: true,
+        },
+        feedback: {
+          title: "Sign in to send feedback",
+          text: "Feedback is sent from your account, so the barangay can tell you when a concern you raised is dealt with. You can still sign it as Anonymous.",
+        },
+      };
+
+      // A visitor's service card opens this instead of the form.
+      function openSignInRequired(service) {
+        const r = SIGNIN_REASONS[service] || {};
+        document.getElementById("signin-required-title").textContent =
+          r.title || "Sign in to continue";
+        document.getElementById("signin-required-text").textContent =
+          r.text ||
+          "The barangay's online services are for residents with an account.";
+        document
+          .getElementById("signin-required-emergency")
+          .classList.toggle("is-hidden", !r.emergency);
+        document.getElementById("modal-signin-required").classList.add("open");
+      }
+
       function openServicePopup(service) {
+        // Requests, reports and feedback all need an account — the server
+        // refuses each without one (until 2026-10-24 reports and feedback did
+        // not) — so a visitor is asked to sign in rather than handed a form
+        // that could only be turned away once it was filled in.
+        if (!getSession()) {
+          openSignInRequired(service);
+          return;
+        }
         // Blotter/incident filing uses the unified modal (incident-report.js),
         // which builds its own body and embedded pin-picker map. That map — and
         // the store a filed report is saved into — is the GIS engine, which is
@@ -2021,6 +2229,7 @@
     <script defer src="js/portal-account.js"></script>
     <!-- Motion runtime: collapse/validation/exit animations. Last, so it
          observes a DOM every other script has already set up. -->
+    <script src="js/input-guard.js"></script>
     <script src="js/motion.js"></script>
   </body>
 </html>

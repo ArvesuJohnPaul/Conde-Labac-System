@@ -6,18 +6,20 @@
 //                              details, a form with one input per blank on the
 //                              printed form, and a live A4 preview of the sheet
 //                              that updates as you type. This is what "View"
-//                              opens on the queue, and what the requester sees
-//                              after filing so they can fill it in themselves
-//                              (and again from View in My Activity).
+//                              opens on the queue — and, read-only, what the
+//                              requester sees from View in My Activity. Only
+//                              staff fill in or change the blanks once a
+//                              request is filed.
 //   certPrintRequest(request)  straight to the browser's print dialog with
 //                              whatever is on file — what "Export" does.
 //   certPrintCurrent()         prints the sheet currently open in the modal.
 //
 // Blanks are seeded from the request + the linked resident record, so usually
 // only what the database can't know needs typing. Values are saved to
-// certificate.form_fields on the server (PUT /api/certificates/:id/fields), so
-// what the requester types is what staff print; localStorage is kept as an
-// offline fallback only.
+// certificate.form_fields on the server — first with the filing (what the
+// requester typed on the request form), then by staff (PUT
+// /api/certificates/:id/fields) — so what is on file is what gets printed;
+// localStorage is kept as an offline fallback only.
 //
 // Every certificate is the same page: the barangay's heading (city seal on the
 // left, barangay seal on the right), the form's own document below it, and the
@@ -632,9 +634,11 @@ async function certOpenSheet(request, opts) {
     ctx,
     values: printable ? certValuesFor(ctx) : {},
     mode,
-    // Once staff have acted on a request, the requester can still see the
-    // sheet but no longer change it: what was approved is what gets printed.
-    locked: mode === "requester" && (request.status || "pending") !== "pending",
+    // The requester can always see the sheet, and never change it. What they
+    // know went in with the filing (js/portal-account.js renderCertBlanks);
+    // after that the request is the barangay's, and only staff edit it — the
+    // server refuses anyone else (routes/certificates.js PUT /:id/fields).
+    locked: mode === "requester",
     onClose: typeof o.onClose === "function" ? o.onClose : null,
   };
 
@@ -650,10 +654,9 @@ async function certOpenSheet(request, opts) {
   });
   set("cert-export-help", (el) => {
     el.textContent = CERT_EXPORT_STATE.locked
-      ? `This request has been ${request.status}, so the form can no longer be changed. This is how the barangay will print it.`
-      : mode === "requester"
-        ? "This is the form the barangay will print. Fill in anything you want on it — what you enter is saved with your request."
-        : "Fill in the blanks on the barangay's form. The preview updates as you type and is saved with this request.";
+      ? "This is the form the barangay will print, with the details you gave when you filed. " +
+        "Only barangay staff can change it now — if something is wrong, please contact the barangay office."
+      : "Fill in the blanks on the barangay's form. The preview updates as you type and is saved with this request.";
   });
   // A type with no printable form still shows its details; the sheet half of
   // the modal just says so instead of showing an empty frame.
@@ -663,8 +666,7 @@ async function certOpenSheet(request, opts) {
   set("cert-export-stage", (el) => (el.style.display = printable ? "" : "none"));
   set("cert-export-no-template", (el) => (el.style.display = printable ? "none" : ""));
   // Same rule as the queue's Export button: nothing gets printed before the
-  // request has been approved, whoever is looking at it. The blanks are still
-  // editable while it waits — that's the point of showing this to the requester.
+  // request has been approved, whoever is looking at it.
   const released = request.status === "approved" || request.status === "issued";
   set("cert-print-btn", (el) => (el.style.display = printable && released ? "" : "none"));
   const resetBtn = document.querySelector("#cert-export-grid .btn-group .btn");

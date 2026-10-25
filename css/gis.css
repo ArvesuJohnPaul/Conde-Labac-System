@@ -314,31 +314,36 @@
     display: none;
   }
 }
+/* Legend swatches. They carry the same pastel fills the map does, so a pale
+   dot needs a hairline ring of its own to stay visible against a white panel —
+   the inset shadow gives every dot one, including the classification dots the
+   engine colours inline from GIS_HOUSEHOLD_SUBCAT_META. */
 .gis-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(27, 42, 74, 0.22);
 }
 .gis-dot-government {
-  background: #92400e;
+  background: #e9c6a4;
 }
 .gis-dot-business {
-  background: #0891b2;
+  background: #a8d5d8;
 }
 .gis-dot-households {
-  background: #1d4ed8;
+  background: #b3c6ea;
 }
 .gis-dot-seniors {
-  border: 2px solid #f59e0b;
+  background: #f3c98b;
 }
 .gis-dot-pwd {
-  background: #8b5cf6;
+  background: #c6b6ec;
 }
 .gis-dot-solo-parent {
-  background: #db2777;
+  background: #f3b1cc;
 }
 .gis-dot-indigent {
-  background: #0d9488;
+  background: #9ed9c8;
 }
 .gis-dot-hazard {
   background: rgba(239, 68, 68, 0.4);
@@ -349,13 +354,13 @@
   border: 1px dashed #ea8c08;
 }
 .gis-dot-vegetation {
-  background: #16a34a;
+  background: #c6ddb4;
 }
 .gis-dot-water {
-  background: #3b82f6;
+  background: #cfe0f2;
 }
 .gis-dot-roads {
-  background: #64748b;
+  background: #ffffff;
 }
 .gis-dot-accidents {
   background: #b91c1c;
@@ -368,7 +373,7 @@
   height: 420px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: #e8f4e8;
+  background: #d9ddcd;
   cursor: crosshair;
 }
 .map-legend {
@@ -410,11 +415,30 @@
 }
 
 /* ─── CUSTOM GEOJSON GIS MAP ──────────── */
+/* BASEMAP PALETTE. The map is drawn in the flat street-map idiom: pale sage
+   ground, white roads with a soft casing under them, one amber artery, light
+   blue water and blue-grey buildings. Every colour the base layers use is
+   named here, in one place, so the whole map can be re-tinted at once — and so
+   the pastel building fills further down stay in the same family as the ground
+   they sit on. Features that mean "pay attention" (hazard zones, report pins,
+   draw previews) deliberately keep their saturated colours: they are supposed
+   to break out of this palette. */
 .gis-custom-map {
+  --gis-land: #eef1e4;
+  --gis-land-outside: #d9ddcd;
+  --gis-land-edge: #adb79c;
+  --gis-water: #cfe0f2;
+  --gis-water-edge: #a9c8e6;
+  --gis-road: #ffffff;
+  --gis-road-casing: #e1e4d6;
+  --gis-road-major: #f8dca2;
+  --gis-road-major-casing: #e9c47f;
+  --gis-bldg: #c9d0e0;
+  --gis-bldg-edge: rgba(255, 255, 255, 0.7);
   position: relative;
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: var(--gis-land-outside);
   overflow: hidden;
 }
 .gis-map-toolbar {
@@ -688,8 +712,8 @@
   cursor: grabbing;
 }
 .gis-boundary {
-  fill: rgba(37, 99, 235, 0.08);
-  stroke: var(--navy, #0d1b3e);
+  fill: var(--gis-land);
+  stroke: var(--gis-land-edge);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
@@ -700,153 +724,152 @@
 .gis-interactive-feature {
   cursor: pointer;
 }
+/* Greens are flat and pale so a field reads as ground cover rather than as a
+   thing to look at. Each kind sets --veg-fill and the shared rules below do
+   the rest, which is what keeps the hover shade in step with the fill. */
 .gis-vegetation {
-  fill: rgba(34, 197, 94, 0.2);
-  stroke: rgba(22, 163, 74, 0.4);
-  stroke-width: 1;
+  fill: var(--veg-fill, #dbe7c6);
+  stroke: none;
   vector-effect: non-scaling-stroke;
-  transition: fill-opacity 0.15s ease;
+  transition: fill 0.15s ease;
+}
+.gis-vegetation:hover {
+  fill: color-mix(in srgb, var(--veg-fill, #dbe7c6) 80%, #3f5a28);
 }
 /* Surrounding-context vegetation past the barangay border. */
 .gis-vegetation-outside {
-  opacity: 0.35;
+  opacity: 0.45;
   pointer-events: none;
 }
-.gis-vegetation:hover {
-  fill-opacity: 0.6;
-}
 .gis-vegetation-farmland {
-  fill: rgba(234, 179, 8, 0.22);
-  stroke: rgba(161, 98, 7, 0.4);
+  --veg-fill: #e6ecc8;
 }
 .gis-vegetation-farmyard {
-  fill: rgba(217, 119, 6, 0.18);
-  stroke: rgba(161, 98, 7, 0.4);
+  --veg-fill: #e9e4cd;
 }
 .gis-vegetation-orchard {
-  fill: rgba(132, 204, 22, 0.28);
-  stroke: rgba(77, 124, 15, 0.4);
+  --veg-fill: #d4e7bd;
 }
 .gis-vegetation-meadow {
-  fill: rgba(163, 230, 53, 0.22);
-  stroke: rgba(77, 124, 15, 0.35);
+  --veg-fill: #e2efcf;
 }
 .gis-vegetation-wood,
 .gis-vegetation-forest {
-  fill: rgba(21, 128, 61, 0.28);
-  stroke: rgba(20, 83, 45, 0.45);
+  --veg-fill: #c6ddb4;
 }
 .gis-water-poly {
-  fill: rgba(59, 130, 246, 0.35);
-  stroke: #3b82f6;
+  fill: var(--gis-water);
+  stroke: var(--gis-water-edge);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 .gis-water-line {
   fill: none;
-  stroke: #3b82f6;
-  stroke-width: 2;
+  stroke: var(--gis-water-edge);
+  stroke-width: 2.4;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
+/* Roads are drawn twice (renderRoads): a wider casing path underneath, then
+   the white road itself on top. That one extra pass is what makes a street
+   read as a street on pale ground — a bare white line on sage looks like a
+   gap in the map rather than a road. */
 .gis-road {
   fill: none;
-  stroke: #94a3b8;
-  stroke-width: 2;
+  stroke: var(--gis-road);
+  stroke-width: 2.4;
   stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 .gis-road-service {
-  stroke: #cbd5e1;
-  stroke-width: 1.2;
+  stroke-width: 1.5;
 }
 .gis-road-local {
-  stroke: #94a3b8;
-  stroke-width: 2;
+  stroke-width: 2.4;
 }
 .gis-road-major {
-  stroke: #64748b;
-  stroke-width: 2.8;
+  stroke: var(--gis-road-major);
+  stroke-width: 4;
 }
+.gis-road-casing-layer {
+  pointer-events: none;
+}
+.gis-road-casing {
+  fill: none;
+  stroke: var(--gis-road-casing);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.gis-road-casing-service {
+  stroke-width: 2.6;
+}
+.gis-road-casing-local {
+  stroke-width: 3.6;
+}
+.gis-road-casing-major {
+  stroke: var(--gis-road-major-casing);
+  stroke-width: 5.4;
+}
+/* BUILDINGS. One fill variable, --bldg-fill, decides a building's colour, and
+   every tag, type and classification below sets nothing but that variable. So
+   a tagged building is told apart by its FILL alone: the outline is the same
+   hairline white on every one of them, which is what keeps a street of mixed
+   tags looking like a map instead of a set of coloured boxes. The hover shade
+   is mixed from the same variable, so it follows automatically.
+   Order matters where two of these can apply at once: the later rule wins
+   (classification over household type), and they are written in that order. */
 .gis-building {
-  fill: rgba(13, 27, 62, 0.12);
-  stroke: rgba(13, 27, 62, 0.35);
-  stroke-width: 1;
+  fill: var(--bldg-fill, var(--gis-bldg));
+  stroke: var(--gis-bldg-edge);
+  stroke-width: 0.8;
   vector-effect: non-scaling-stroke;
   cursor: pointer;
   transition: fill 0.15s ease;
 }
-.gis-building:hover {
-  fill: rgba(37, 99, 235, 0.35);
+.gis-building:hover,
+.gis-building.gis-building-group-hover {
+  fill: color-mix(in srgb, var(--bldg-fill, var(--gis-bldg)) 76%, #1b2a4a);
 }
 .gis-building-tagged {
-  fill: rgba(201, 162, 39, 0.35);
-  stroke: var(--gold, #c9a227);
+  --bldg-fill: #e7d6a3;
 }
-/* Buildings picked while group tagging — bold blue so the running selection
-   stands out against both untagged and tagged fills. */
+/* Buildings picked while group tagging — a solid blue with a real outline, the
+   one place a building is deliberately louder than the rest, because the
+   running selection has to be countable at a glance. */
 .gis-building-grouped,
 .gis-building-grouped:hover {
-  fill: rgba(37, 99, 235, 0.5);
+  fill: #7ea2e0;
   stroke: #1d4ed8;
-  stroke-width: 2;
-}
-/* Fellow members of a hovered building's tag group light up in their own
-   tag color -- each category's :hover rule doubles as the group highlight --
-   with a thicker outline so the group still reads as one unit. */
-.gis-building.gis-building-group-hover {
   stroke-width: 2;
 }
 /* Surrounding-context buildings past the barangay border — faded grey,
    not interactive. */
 .gis-building-outside {
-  fill: rgba(148, 163, 184, 0.14);
-  stroke: rgba(100, 116, 139, 0.3);
+  fill: #c3c9cf;
+  stroke: rgba(255, 255, 255, 0.5);
   cursor: default;
   pointer-events: none;
 }
-.gis-building-tagged:hover,
-.gis-building-tagged.gis-building-group-hover {
-  fill: rgba(201, 162, 39, 0.55);
-}
 .gis-building-cat-government {
-  fill: rgba(146, 64, 14, 0.35);
-  stroke: #92400e;
-}
-.gis-building-cat-government:hover,
-.gis-building-cat-government.gis-building-group-hover {
-  fill: rgba(146, 64, 14, 0.55);
+  --bldg-fill: #e9c6a4;
 }
 .gis-building-cat-business {
-  fill: rgba(8, 145, 178, 0.35);
-  stroke: #0891b2;
-}
-.gis-building-cat-business:hover,
-.gis-building-cat-business.gis-building-group-hover {
-  fill: rgba(8, 145, 178, 0.55);
+  --bldg-fill: #a8d5d8;
 }
 .gis-building-cat-households {
-  fill: rgba(29, 78, 216, 0.35);
-  stroke: #1d4ed8;
-}
-.gis-building-cat-households:hover,
-.gis-building-cat-households.gis-building-group-hover {
-  fill: rgba(29, 78, 216, 0.55);
+  --bldg-fill: #b3c6ea;
 }
 /* A household someone vulnerable lives in — a senior citizen, a PWD, a solo
    parent, an indigent family — is filled, whole, in that classification's
    colour (renderBuildings() in js/gis-map.js). The colour arrives as
    --class-color straight from GIS_HOUSEHOLD_SUBCAT_META, so it is written down
-   in one place; the compound selector outranks .gis-building-cat-households
-   above whatever order the two end up in. A household holding several takes the
-   first in priority order, and its popup names the rest. */
-.gis-building-cat-households.gis-building-classified {
-  fill: color-mix(in srgb, var(--class-color) 50%, transparent);
-  stroke: var(--class-color);
-}
-.gis-building-cat-households.gis-building-classified:hover,
-.gis-building-cat-households.gis-building-classified.gis-building-group-hover {
-  fill: color-mix(in srgb, var(--class-color) 70%, transparent);
+   in one place. A household holding several takes the first in priority order,
+   and its popup names the rest. */
+.gis-building-classified {
+  --bldg-fill: var(--class-color);
 }
 .gis-construction {
   fill: rgba(234, 179, 8, 0.15);
@@ -884,30 +907,6 @@
 .gis-building.gis-building-focus {
   stroke: #ea580c;
   stroke-width: 3;
-}
-/* Rendered as a raw <g> of icon paths (not wrapped by gisIcon()'s <svg>), so
-   the stroke/fill presentation attributes those paths rely on are supplied
-   here instead via inheritance from this ancestor.
-   One solid disc, one colour, white glyph — the same marker language as the
-   incident report pins further down. */
-.gis-accident-icon {
-  cursor: pointer;
-  user-select: none;
-  fill: none;
-  stroke: #fff;
-  /* Some glyphs end in a filled dot marked fill="currentColor" — point that
-     at white so it reads as a solid on the disc. */
-  color: #fff;
-  stroke-width: 3.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.gis-accident-icon-bg {
-  fill: #b91c1c;
-  stroke: none;
-}
-.gis-accident-icon:hover .gis-accident-icon-bg {
-  fill: #991b1b;
 }
 .gis-hazard-severity-low {
   fill-opacity: 0.32;
@@ -1274,57 +1273,62 @@
   }
 }
 
-/* ── Incident report pins & cards ──
-   One unified marker for community concerns AND accidents: a solid disc in a
-   single flat colour with the report type's glyph knocked out of it in white.
-   The colour says who filed it (resident green / official navy); the glyph
-   says what it was. Nothing else — no outline, no second hue, no gradient —
-   because at map scale a 20px thin-outline icon on a transparent background
-   disappeared into the buildings underneath it. */
-.gis-report-pin {
+/* ── Map pins (incident reports, accident markers, the pick-a-spot marker) ──
+   One marker language for all of them: a teardrop in a single flat colour,
+   its tip ON the spot it marks, with the report type's glyph knocked straight
+   out of it in white — no inner disc, no second hue, nothing behind the glyph.
+   A small ground shadow sits under the tip so the pin reads as standing on the
+   map rather than printed on it.
+   The colour is passed in as --pin-color by whatever kind of pin it is, so the
+   hover shade, the drop animation and the ripple all follow one value. */
+.gis-map-pin {
   cursor: pointer;
+  user-select: none;
 }
-.gis-report-pin-disc {
-  fill: #15803d;
-  stroke: none;
+.gis-pin-body {
+  fill: var(--pin-color, #15803d);
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
   transition: fill 0.15s ease;
 }
-.gis-report-pin:hover .gis-report-pin-disc {
-  fill: #166534;
+.gis-map-pin:hover .gis-pin-body {
+  fill: color-mix(in srgb, var(--pin-color, #15803d) 78%, #000);
 }
-.gis-report-pin-official .gis-report-pin-disc {
-  fill: #1d4ed8;
+.gis-pin-shadow {
+  fill: rgba(27, 42, 74, 0.22);
+  stroke: none;
 }
-.gis-report-pin-official:hover .gis-report-pin-disc {
-  fill: #1e40af;
-}
-/* The glyph rides at 60% scale (see renderReports), so the stroke is set
-   proportionally heavier to land at ~2px on screen.
-   Set on the GROUP, not on a list of element selectors: fill and stroke are
+/* Set on the GROUP, not on a list of element selectors: fill and stroke are
    inherited SVG properties, so this reaches every shape a glyph might use —
    including the <rect> in `medical` and `landDispute`, which an element list
    missed and which therefore rendered as a solid black box. It also lets the
    few deliberately filled dots (alertCircle, exclamation) keep their own
    fill="currentColor" stroke="none" attributes, which beat an inherited
    value; `color` below is what those resolve against. */
-.gis-report-pin-glyph {
+.gis-pin-glyph {
   fill: none;
-  stroke: #fff;
-  color: #fff;
+  stroke: #ffffff;
+  color: #ffffff;
   stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* The pin the Blotter's "View on Map" flew us to. A gold halo pulsing out from
-   under the disc: the camera move alone was too easy to miss on a map that
-   already carries dozens of identical green discs, and a resolved report has
-   no other pin around it to compare against. The ring sits BEHIND the disc
-   (rendered first) so it reads as a halo, not an outline. */
-.gis-report-pin-focus .gis-report-pin-disc {
-  stroke: #ffffff;
-  stroke-width: 2;
+/* Resident green / official navy / accident red. */
+.gis-report-pin {
+  --pin-color: #15803d;
 }
-.gis-report-pin-ring {
+.gis-report-pin-official {
+  --pin-color: #1d4ed8;
+}
+.gis-accident-icon {
+  --pin-color: #b91c1c;
+}
+/* The pin the Blotter's "View on Map" flew us to. A gold halo pulsing out from
+   behind the head: the camera move alone was too easy to miss on a map that
+   already carries dozens of identical pins, and a resolved report has no other
+   pin around it to compare against. */
+.gis-pin-halo {
   fill: none;
   stroke: #c79a3b;
   stroke-width: 3;
@@ -1346,33 +1350,82 @@
     opacity: 0;
   }
 }
+/* PLACING A PIN. A pin that simply appears is easy to miss — on a map this
+   busy the eye needs to be told where it landed. So a newly placed pin drops
+   in from above, settles with a small bounce, and knocks a ring out of the
+   ground at its tip. Only pins the map has not drawn before animate, so a
+   filter change or a redraw does not set every pin on the map bouncing.
+   The drop lives on an INNER group: the outer group carries the positioning
+   transform attribute, and a CSS `transform` would replace it outright and
+   throw the pin to the corner of the map. */
+.gis-pin-placing .gis-pin-anim {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: gis-pin-drop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes gis-pin-drop {
+  0% {
+    transform: translateY(-22px) scale(0.5);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(0) scale(1.14);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(0) scale(0.93);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+.gis-pin-ripple {
+  fill: none;
+  stroke: var(--pin-color, #15803d);
+  stroke-width: 2.4;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gis-pin-ripple 0.7s ease-out 0.24s both;
+}
+@keyframes gis-pin-ripple {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .gis-report-pin-ring {
+  .gis-pin-halo {
     animation: none;
     transform: scale(1.5);
     opacity: 0.8;
+  }
+  .gis-pin-placing .gis-pin-anim,
+  .gis-pin-ripple {
+    animation: none;
+  }
+  .gis-pin-ripple {
+    opacity: 0;
   }
   .gis-hazard-focus-ring {
     animation: none;
   }
 }
-
 /* The incident modal's "you picked here" marker — brand gold so it stands
-   apart from the report icons already on the map. (Still the classic pin
-   shape: it marks a choice, not a filed report.) */
-.gis-pick-pin path {
-  fill: #c79a3b;
-  stroke: #ffffff;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+   apart from the report pins already on the map, and the one pin that keeps a
+   plain white dot instead of a glyph: it marks a choice, not a report, and at
+   the moment it is dropped nobody has said yet what kind of incident it is. */
+.gis-pick-pin {
+  --pin-color: #c79a3b;
+  pointer-events: none;
 }
-.gis-pick-pin circle {
+.gis-pick-pin .gis-pin-dot {
   fill: #ffffff;
   stroke: none;
-}
-.gis-pick-pin {
-  pointer-events: none;
 }
 /* Minimal map embed (incident modal): drop the layer/filter controls and the
    legend overlay so the pick-a-location map gets the full modal width. */
@@ -1879,8 +1932,11 @@
   background: linear-gradient(135deg, rgba(27, 42, 74, 0.05), rgba(201, 162, 39, 0.08));
   border-color: rgba(27, 42, 74, 0.1);
 }
+/* The map card's surface is the map's own ground colour, not a tint of its
+   own: the old blue-white gradient showed through everywhere the barangay
+   outline does not reach and fought with the sage ground inside it. */
 .gis-map-card .gis-map-embed {
-  background: linear-gradient(180deg, #e9f1fa 0%, #f6f9fc 100%);
+  background: var(--gis-land-outside, #d9ddcd);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }

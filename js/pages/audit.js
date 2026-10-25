@@ -38,7 +38,7 @@ let auditLoading = false;
 
 function renderPage() {
   // Local trail first (instant), then re-render once the shared DB trail
-  // arrives — that's where the mobile app's and the DB triggers' entries
+  // arrives — that's where other browsers' and the DB triggers' entries
   // live (see js/audit-log.js).
   renderAudit();
   // The full budget, always — this page IS the trail, so it should never show

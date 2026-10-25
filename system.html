@@ -24,6 +24,8 @@
       <script src="js/icons.js"></script>
       <script src="js/preferences.js"></script>
       <script src="js/account-edit.js"></script>
+      <script src="js/sms-settings.js"></script>
+    <script src="js/sms-alerts.js"></script>
       <script src="js/change-password.js"></script>
     <script src="js/audit-log.js"></script>
   </head>
@@ -63,8 +65,8 @@
         <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In to System</button>
 
         <div class="login-claim">
-          New resident?
-          <a href="claim-account.html">Claim your account <i data-icon=arrow-right></i></a>
+          No account yet?
+          <a href="claim-account.html">Apply for an account <i data-icon=arrow-right></i></a>
         </div>
 
         <a href="index.html" class="login-back-link"
@@ -126,6 +128,17 @@
           return;
         }
 
+        // No token means the server answering is older than this page. Saving
+        // a session without one would only have js/api.js throw it away on the
+        // next page, and the user would land back here with no explanation.
+        if (!acct.token) {
+          errEl.textContent =
+            "The server did not issue a session. It needs to be restarted on the current version.";
+          btn.disabled = false;
+          btn.textContent = "Sign In to System";
+          return;
+        }
+
         const bits = nameBits(acct.name);
         setSession({
           role: acct.role, // from the DB, not a chip
@@ -136,6 +149,9 @@
           user: acct.username,
           account_id: acct.account_id || null,
           resident_id: acct.resident_id || null,
+          // What the server actually believes — sent on every request by
+          // js/api.js. The fields above only decide what the screen offers.
+          token: acct.token,
         });
 
         if (typeof logAudit === "function")
@@ -163,10 +179,15 @@
         } else {
           window.location.href = "pages/dashboard.html";
         }
+      } else if (new URLSearchParams(location.search).get("expired")) {
+        // Sent here by js/api.js after the server refused the session token.
+        document.getElementById("login-error").textContent =
+          "Your session has expired. Please sign in again.";
       }
     </script>
     <!-- Motion runtime: collapse/validation/exit animations. Last, so it
          observes a DOM every other script has already set up. -->
+    <script src="js/input-guard.js"></script>
     <script src="js/motion.js"></script>
   </body>
 </html>

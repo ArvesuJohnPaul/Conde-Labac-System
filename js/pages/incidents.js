@@ -127,6 +127,88 @@ function incidentDetailRow(label, value, opts) {
     </div>`;
 }
 
+// How the report reached the barangay, for the detail header. NULL on rows
+// filed before the column existed — those say nothing rather than guess.
+const INCIDENT_SOURCE_LABEL = {
+  hotline: "Logged call",
+  "walk-in": "Walk-in",
+  web: "Filed online",
+  app: "Filed in the app",
+  map: "Added on the map",
+};
+
+// The A5 texts for one report: when they went, how many landed, and to whom.
+// Fetched when the modal opens rather than carried in the list, because it is
+// one report's worth of detail and the list is every report.
+async function paintIncidentSms(id) {
+  const box = document.getElementById("incident-sms");
+  if (!box) return;
+  let d = null;
+  try {
+    d = await apiGet("/api/incidents/" + encodeURIComponent(id) + "/sms");
+  } catch (e) {
+    box.innerHTML =
+      '<span class="incident-sms-muted">Could not check the text messages: ' +
+      incidentEscape(e.message) +
+      "</span>";
+    return;
+  }
+  const when = d.last_at
+    ? new Date(d.last_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+    : null;
+  // Said plainly, in the order someone asks it: did it go, to how many, and
+  // is there anybody on right now if it did not.
+  const line = !d.total
+    ? d.recipients_now
+      ? "No text was sent for this report. " +
+        d.recipients_now +
+        (d.recipients_now === 1 ? " official is" : " officials are") +
+        " receiving reports now."
+      : "No text was sent, and no official is receiving reports right now."
+    : "Texted " +
+      when +
+      " — " +
+      [
+        d.sent ? d.sent + " sent" : "",
+        d.queued ? d.queued + " waiting" : "",
+        d.failed ? d.failed + " failed" : "",
+        d.skipped ? d.skipped + " not sent" : "",
+      ]
+        .filter(Boolean)
+        .join(", ") +
+      (d.names.length ? " · " + d.names.map(incidentEscape).join(", ") : "");
+  box.innerHTML =
+    '<span class="' + (d.failed || !d.total ? "incident-sms-warn" : "incident-sms-ok") + '">' +
+    '<i data-icon="' + (d.failed || !d.total ? "triangle-alert" : "phone") + '"></i> ' +
+    incidentEscape(line) +
+    "</span>" +
+    '<button class="btn btn-sm btn-outline" onclick="resendIncidentAlert(\'' +
+    incidentEscape(String(id)) +
+    '\')"><i data-icon="refresh"></i> Re-send</button>';
+  if (typeof hydrateIcons === "function") hydrateIcons(box);
+}
+
+// Send the report to the officials again — for the case where nobody was
+// switched on at the time, or a number was fixed afterwards.
+async function resendIncidentAlert(id) {
+  try {
+    const r = await apiPost("/api/incidents/" + encodeURIComponent(id) + "/alert", {});
+    if (typeof showToast === "function")
+      showToast(
+        r.recipients
+          ? "Report sent to " + r.recipients + (r.recipients === 1 ? " official." : " officials.")
+          : "Nobody is receiving incident reports right now.",
+        "<i data-icon=phone></i>"
+      );
+    if (typeof logAudit === "function")
+      logAudit("INCIDENT_ALERT_RESEND", "Incident report texted to the officials again", "info", "concern");
+    paintIncidentSms(id);
+  } catch (e) {
+    if (typeof showToast === "function")
+      showToast("Could not re-send: " + e.message, "<i data-icon=triangle-alert></i>");
+  }
+}
+
 function openIncidentDetail(id) {
   const reports = typeof gisAllCommunityReports === "function" ? gisAllCommunityReports() : [];
   const r = reports.find((x) => String(x.id) === String(id));
@@ -165,7 +247,10 @@ function openIncidentDetail(id) {
           <span class="badge ${r.resolved ? "badge-success" : "badge-danger"}">${r.resolved ? "Resolved" : "Active"}</span>
           <span class="badge badge-gray">${incidentEscape(typeLabel)}</span>
           ${days !== null && !r.resolved ? `<span class="badge ${days >= 30 ? "badge-warning" : "badge-gray"}">${days} day${days === 1 ? "" : "s"} open</span>` : ""}
+          ${r.source && INCIDENT_SOURCE_LABEL[r.source] ? `<span class="badge badge-gray">${incidentEscape(INCIDENT_SOURCE_LABEL[r.source])}</span>` : ""}
         </div>
+        <!-- Filled in by paintIncidentSms() once the modal is on screen. -->
+        <div class="incident-sms" id="incident-sms"><span class="incident-sms-muted">Checking the text messages…</span></div>
         ${incidentDetailRow("Title", r.title, { always: true })}
         ${incidentDetailRow("Narration", r.comment, { always: true, block: true })}
         ${incidentDetailRow("Complainant", r.complainant || reporter.name, { always: true })}
@@ -188,6 +273,7 @@ function openIncidentDetail(id) {
     </div>`;
   if (typeof hydrateIcons === "function") hydrateIcons(modal);
   modal.classList.add("open");
+  paintIncidentSms(r.id);
 }
 
 function resolveIncident(id) {
@@ -253,13 +339,55 @@ function renderIncidentsPage() {
     <div class="card">
       <div class="card-header">
         <div class="card-title">Incident Blotter</div>
+        <div class="incident-recipients" id="incident-recipients"></div>
         <div class="btn-group">
+          <!-- For whoever answers the landline. The same form, in logged-call
+               mode: it asks for the caller's number and can be filed without a
+               pin (SMS-HOTLINE-PLAN.md §4.2). -->
+          <button class="btn btn-sm btn-outline" onclick="openIncidentModal({ source: 'hotline' })">
+            <i data-icon="phone"></i> Log hotline call</button>
           <button class="btn btn-sm btn-gold" onclick="openServicePopup('incidents')">⊕ File Incident</button>
         </div>
       </div>
       <div id="incident-list-wrap">${renderIncidentsList()}</div>
     </div>
   `);
+  paintReportRecipients();
+}
+
+// "Report recipients" — who a new report is texted to right now, by name.
+//
+// Whoever answers the landline needs to know who else already knows, and an
+// official who switched their alerts off two weeks ago needs to be visible to
+// somebody. Names only: the numbers are the officials' private ones.
+async function paintReportRecipients() {
+  const box = document.getElementById("incident-recipients");
+  if (!box) return;
+  let d = null;
+  try {
+    d = await apiGet("/api/sms/recipients");
+  } catch (e) {
+    box.innerHTML = '<span class="table-muted">Could not check who receives reports.</span>';
+    return;
+  }
+  const names = (list) => list.map((x) => incidentEscape(x.name)).join(", ");
+  box.innerHTML = d.recipients.length
+    ? '<i data-icon="phone"></i> <span>New reports are texted to <strong>' +
+      d.recipients.length +
+      "</strong> " +
+      (d.recipients.length === 1 ? "official" : "officials") +
+      ": " +
+      names(d.recipients) +
+      ".</span>"
+    : '<i data-icon="triangle-alert"></i> <span><strong>No official is receiving incident reports.</strong> ' +
+      (d.fallback.length
+        ? "Until someone switches it on in “My SMS alerts”, reports go to the Administrators: " +
+          names(d.fallback) +
+          "."
+        : "Reports are not being texted to anyone at all — ask an Administrator to set a number.") +
+      "</span>";
+  box.className = "incident-recipients" + (d.recipients.length ? "" : " is-warning");
+  if (typeof hydrateIcons === "function") hydrateIcons(box);
 }
 
 // The blotter list plus its pager, in one block so the page buttons can

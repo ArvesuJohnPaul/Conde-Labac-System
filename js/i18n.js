@@ -1,14 +1,11 @@
 // ════════════════════ I18N ════════════════════
-// Resident-facing strings in English and Filipino — the web counterpart of
-// the mobile app's AppText + LocaleController
-// (cares_app/lib/core/i18n/app_text.dart). Same two languages, same
-// 'cares.language' preference key, same translations word for word.
+// Resident-facing strings in English and Filipino, with the choice kept
+// under the 'cares.language' preference key.
 //
 // SCOPE: resident-facing surfaces only — the landing page, the resident
 // portal, and the service modals. The staff MIS (sidebar, module pages,
 // tables) stays in English on purpose: barangay personnel are trained on the
-// English module names, and the app makes the same call for its own MIS
-// screens. Don't add data-i18n attributes to pages/*.html.
+// English module names. Don't add data-i18n attributes to pages/*.html.
 //
 // Usage in markup:
 //   <span data-i18n="announcements"></span>          → textContent
@@ -25,8 +22,7 @@
   var LANGS = ["english", "filipino"];
 
   // ── String table ────────────────────────────────────────────────────
-  // [english, filipino] — kept in the same order and grouping as the
-  // app's AppText so the two files can be diffed side by side.
+  // [english, filipino], grouped by the screen they appear on.
   var STRINGS = {
     languageName: ["English", "Filipino"],
 
@@ -55,18 +51,15 @@
       "Choose a service to get started.",
       "Pumili ng serbisyo upang magsimula.",
     ],
-    // Replaced noAccountNeeded — most services now sit behind an account.
+    // Replaced noAccountNeeded. Since 2026-10-24 every service on the page
+    // sits behind an account, so it is no longer "most".
     accountRequired: [
-      "Accounts are required for most services.",
-      "Kailangan ng account sa karamihan ng serbisyo.",
+      "These services are for residents with an account.",
+      "Para sa mga residenteng may account ang mga serbisyong ito.",
     ],
     seeAll: ["See all", "Lahat"],
 
     // Landing page (index.html)
-    // No counterpart in the app's AppText: the app opens on a signed-in home
-    // screen and has no public landing page to translate. Everything else in
-    // this file is kept word for word with the app; this group is web-only by
-    // nature, not by drift.
     skipToContent: ["Skip to main content", "Lumaktaw sa pangunahing nilalaman"],
     officialPortal: [
       "The Official Web Portal of Barangay Conde Labac, Batangas City",
@@ -74,6 +67,7 @@
     ],
     republic: ["Republic of the Philippines", "Republika ng Pilipinas"],
     navBulletin: ["Bulletin", "Bulletin"],
+    navHistory: ["History", "Kasaysayan"],
     navOfficials: ["Officials", "Mga Opisyal"],
     navContact: ["Contact", "Kontak"],
     heroEyebrow: [
@@ -84,16 +78,18 @@
     viewGisMap: ["View GIS Map", "Tingnan ang GIS Map"],
     // newResident dropped with the hero's "New resident? Claim your account"
     // line — the services footnote and the footer still carry claimAccount.
-    claimAccount: ["Claim your account", "I-claim ang inyong account"],
+    claimAccount: ["Apply for an account", "Mag-apply ng account"],
     claimToTrack: [
-      "Claim an account to track your requests",
-      "Mag-claim ng account upang masubaybayan ang inyong mga hiling",
+      "No account yet? Apply for one",
+      "Wala pang account? Mag-apply",
     ],
     readBulletin: ["Read the bulletin", "Tingnan ang bulletin"],
     openNow: ["Open now", "Bukas ngayon"],
     closedNow: ["Closed now", "Sarado ngayon"],
 
     openService: ["Open service", "Buksan ang serbisyo"],
+    // The same button for a visitor, who is asked to sign in first.
+    signInToUse: ["Sign in to use", "Mag-sign in para magamit"],
     noteLogged: [
       "Lookups logged under RA 10173",
       "Naitatala ang paghahanap sa ilalim ng RA 10173",
@@ -113,10 +109,10 @@
 
     howKicker: ["How it works", "Paano ito gumagana"],
     howTitle: ["Three steps, no queue", "Tatlong hakbang, walang pila"],
-    how1Title: ["Choose a service", "Pumili ng serbisyo"],
+    how1Title: ["Sign in, pick a service", "Mag-sign in, pumili ng serbisyo"],
     how1Desc: [
-      "Pick a service above. It opens right here on the page — nothing to download or install.",
-      "Pumili ng serbisyo sa itaas. Bubukas ito dito mismo sa pahina — walang ida-download o ii-install.",
+      "Sign in with your resident account, then pick a service above. It opens right here on the page — nothing to download or install.",
+      "Mag-sign in gamit ang inyong account bilang residente, saka pumili ng serbisyo sa itaas. Bubukas ito dito mismo sa pahina — walang ida-download o ii-install.",
     ],
     how2Title: ["Fill in your details", "Punan ang inyong detalye"],
     how2Desc: [
@@ -165,6 +161,15 @@
       "Advisories, events, and community updates from the barangay.",
       "Mga advisory, kaganapan, at update mula sa barangay.",
     ],
+
+    // The history's title and text come from Site Content, in whatever
+    // language staff write them; only the frame around them is translated.
+    historyKicker: ["Our Barangay", "Ating Barangay"],
+    historyDesc: [
+      "The story of the barangay, as the barangay tells it.",
+      "Ang kuwento ng barangay, mula mismo sa barangay.",
+    ],
+    historyLink: ["Barangay History", "Kasaysayan ng Barangay"],
 
     leadershipKicker: ["Leadership", "Pamunuan"],
     officialsTitle: ["Barangay Officials", "Mga Opisyal ng Barangay"],
@@ -239,8 +244,8 @@
       "Tingnan ang inyong account at talaan sa barangay",
     ],
     // My Requests and Activity History merged into one entry — see
-    // openMyActivity() in js/portal-account.js. The old keys stay so the
-    // mobile app and any cached markup still resolve.
+    // openMyActivity() in js/portal-account.js. The old keys stay so
+    // any cached markup still resolves.
     myActivity: ["My Activity", "Aking mga Aktibidad"],
     myActivitySub: [
       "Requests, reports & feedback you sent",
@@ -296,8 +301,8 @@
 
     languageSection: ["Language", "Wika"],
     languageCaption: [
-      "Applies to resident-facing screens. The staff MIS stays in English to match the mobile app.",
-      "Nalalapat sa mga screen na nakaharap sa residente. Nananatiling Ingles ang MIS ng kawani upang tumugma sa mobile app.",
+      "Applies to resident-facing screens. The staff MIS stays in English.",
+      "Nalalapat sa mga screen na nakaharap sa residente. Nananatiling Ingles ang MIS ng kawani.",
     ],
     languageChanged: ["Switched to English.", "Nakatakda na sa Filipino."],
     languageEnglishSub: [
@@ -390,8 +395,7 @@
     return language === "filipino" ? 1 : 0;
   }
 
-  // Look up one string. An unknown key returns the key itself and warns —
-  // the app gets a compile error for this, the web can only shout.
+  // Look up one string. An unknown key returns the key itself and warns.
   function t(key) {
     var pair = STRINGS[key];
     if (!pair) {
@@ -401,7 +405,7 @@
     return pair[index()] || pair[0];
   }
 
-  // "Advisories turned on." — the app's turnedOn()/turnedOff().
+  // "Advisories turned on." / "Advisories turned off."
   function turnedOn(what) {
     return language === "filipino"
       ? "Naka-on ang " + what + "."

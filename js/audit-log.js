@@ -35,8 +35,7 @@ const AUDIT_FETCH_PAGE = 2000;
 let auditServerTruncated = false;
 
 // "Clear Logs" cutoff for the shared DB trail: the server is append-only,
-// so a clear hides everything at or before this instant (same approach as
-// the mobile app's AuditLog.clear()).
+// so a clear hides everything at or before this instant.
 const AUDIT_CLEARED_AT_KEY = "ibmdss.audit_cleared_at";
 
 // "Logs were cleared" marker entries: immune to clearing (every wipe must
@@ -113,7 +112,7 @@ async function auditClearLogs(actor) {
 
 // ───────── Shared DB trail (GET /api/audit) ─────────
 // The web mirrors its own entries into the DB (see logAudit below), and the
-// mobile app + DB triggers write there directly — so the server is the one
+// DB triggers write there directly — so the server is the one
 // place that has EVERYONE's activity. The audit page fetches it and merges
 // it over the local trail (which covers offline sessions / failed pushes).
 
@@ -129,9 +128,9 @@ function auditClearedAtTs() {
   }
 }
 
-// Latest "Clear Logs" moment recorded on the shared trail (by either the web
-// or the mobile app — both post an AUDIT_CLEAR marker when clearing). Using it
-// as a cutoff is what makes a clear on one client hide entries on the other.
+// Latest "Clear Logs" moment recorded on the shared trail (every browser
+// posts an AUDIT_CLEAR marker when clearing). Using it as a cutoff is what
+// makes a clear in one browser hide entries in every other.
 //
 // Answered by the server (GET /api/audit/cutoff), which can see the whole
 // table. This used to be inferred by scanning the fetched rows for a marker,
@@ -312,17 +311,19 @@ function logAudit(action, details, level = "info", category = "system") {
     localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(list));
 
     // Mirror the entry into the shared DB trail (POST /api/audit) so web
-    // actions show up alongside the mobile app's and the DB triggers'.
+    // actions show up alongside the DB triggers'.
     // Fire-and-forget: a failed push only means the entry stays local.
-    if (typeof apiPost === "function") {
+    //
+    // Only when signed in. The server stamps the entry with the account the
+    // session token proves and ignores any name sent here, so a visitor has
+    // nothing to be stamped with — what a visitor does (a report, feedback)
+    // is recorded by the database trigger on the row they created.
+    if (typeof apiPost === "function" && typeof apiToken === "function" && apiToken()) {
       apiPost("/api/audit", {
         action: String(action || "UNKNOWN"),
         details: String(details == null ? "" : details),
         level: level,
         category: category,
-        actor_name: user,
-        actor_role: role,
-        account_id: accountId,
       }).catch(() => {});
     }
   } catch (e) {

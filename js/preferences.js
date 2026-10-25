@@ -1,7 +1,6 @@
 // ════════════════════ PREFERENCES ════════════════════
-// The web counterpart of the app's Settings screen
-// (cares_app/lib/screens/profile/settings_screen.dart) — same five groups in
-// the same order: Appearance, Language, Security, Notifications, About.
+// The Settings screen — five groups in this order: Appearance, Language,
+// Security, Notifications, About.
 //
 // Built as a modal rather than a page so it is reachable from everywhere
 // (landing page, resident portal, and every MIS page) without each page
@@ -27,7 +26,7 @@
     }
   }
 
-  // Notification toggles. Local-only for now, exactly as in the app — wire
+  // Notification toggles. Local-only for now — wire
   // to /api/notifications preferences when that grows a per-account row.
   function notifPrefs() {
     var d = { advisories: true, requests: true };
@@ -74,7 +73,7 @@
 
   // ── Row builders ────────────────────────────────────────────────────
   // A selectable option (theme / language) — icon, title, subtitle, and a
-  // check on the right. Mirrors the app's _ThemeOption / _LanguageOption.
+  // check on the right.
   function optionRow(opts) {
     return (
       '<button type="button" class="pref-row pref-row-btn' +
@@ -102,7 +101,7 @@
     );
   }
 
-  // A row that opens something else (the app's _NavRow).
+  // A row that opens something else.
   function navRow(opts) {
     return (
       '<button type="button" class="pref-row pref-row-btn"' +
@@ -126,7 +125,7 @@
     );
   }
 
-  // A toggle row (the app's _SwitchRow).
+  // A toggle row.
   function switchRow(opts) {
     return (
       '<label class="pref-row pref-row-switch">' +
@@ -153,7 +152,7 @@
     );
   }
 
-  // A read-only label/value row (the app's _InfoRow).
+  // A read-only label/value row.
   function infoRow(opts) {
     return (
       '<div class="pref-row">' +
@@ -260,6 +259,33 @@
           : "This account is not linked to a resident record",
       enabled: canEditAccount,
     });
+    // The resident's two SMS settings (js/sms-settings.js) — the same dialog
+    // the first sign-in shows.
+    var canSms = typeof smsSettingsAvailable === "function" && smsSettingsAvailable();
+    account += navRow({
+      action: "sms-settings",
+      icon: "phone",
+      title: "Text messages",
+      subtitle: !signedIn
+        ? t("signIn")
+        : canSms
+          ? "Certificate updates and barangay announcements by SMS"
+          : "This account is not linked to a resident record",
+      enabled: canSms,
+    });
+
+    // Officials only: their own number and switch for incident report texts
+    // (js/sms-alerts.js). A resident account is refused these routes by the
+    // server, so the row is not offered to one.
+    var canAlerts = typeof smsAlertsAvailable === "function" && smsAlertsAvailable();
+    if (canAlerts)
+      account += navRow({
+        action: "sms-alerts",
+        icon: "siren",
+        title: "My SMS alerts",
+        subtitle: "Be texted new incident reports — your number, verified",
+        enabled: true,
+      });
 
     var security = navRow({
       action: "change-password",
@@ -372,6 +398,16 @@
         openAccountEdit();
       } else if (typeof showToast === "function") {
         showToast("Account editing is unavailable on this page.", "<i data-icon=user></i>");
+      }
+    } else if (action === "sms-settings" && e.type === "click") {
+      if (typeof openSmsSettings === "function") {
+        close();
+        openSmsSettings();
+      }
+    } else if (action === "sms-alerts" && e.type === "click") {
+      if (typeof openSmsAlerts === "function") {
+        close();
+        openSmsAlerts();
       }
     } else if (action === "change-password" && e.type === "click") {
       if (typeof openChangePassword === "function") {

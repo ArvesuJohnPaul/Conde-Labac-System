@@ -126,7 +126,7 @@ function renderResidencyPage() {
                  placeholder="Search by name…" oninput="residentFilterChanged()"/>
         </div>
         <select class="gis-filter-select" id="res-purok" onchange="residentFilterChanged()">
-          <option>All Puroks</option><option>Purok 1</option><option>Purok 2</option><option>Purok 3</option><option>Purok 4</option><option>Purok 5</option><option>Purok 6</option><option>Purok 7</option><option>Purok 8</option>
+          <option>All Puroks</option><option>Purok 1</option><option>Purok 2</option><option>Purok 3</option><option>Purok 4</option><option>Purok 5</option><option>Purok 6</option><option>Purok 7</option>
         </select>
         <select class="gis-filter-select" id="res-cat" onchange="residentFilterChanged()">
           <option value="">All Categories</option>
@@ -223,57 +223,70 @@ function renderResidencyPage() {
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Last Name *</label>
-              <input class="form-control" id="add-last" placeholder="e.g. Santos"/>
+              <input class="form-control" id="add-last" data-rule="name" maxlength="80" placeholder="e.g. Santos"/>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">First Name *</label>
-              <input class="form-control" id="add-first" placeholder="e.g. Pedro"/>
+              <input class="form-control" id="add-first" data-rule="name" maxlength="80" placeholder="e.g. Pedro"/>
             </div>
           </div>
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Middle Name</label>
-              <input class="form-control" id="add-middle" placeholder="optional"/>
+              <input class="form-control" id="add-middle" data-rule="name" maxlength="80" placeholder="optional"/>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">Suffix</label>
-              <input class="form-control" id="add-suffix" placeholder="e.g. Jr., III"/>
+              <input class="form-control" id="add-suffix" data-rule="name" maxlength="10" placeholder="e.g. Jr., III"/>
             </div>
           </div>
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Birthdate</label>
-              <input class="form-control" id="add-birthdate" type="date"/>
+              <input class="form-control" id="add-birthdate" type="date" data-rule="past-date"/>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">Sex</label>
               <select class="form-control" id="add-sex">
-                <option value="">—</option><option value="M">Male</option><option value="F">Female</option>
+                <option value="">Select sex</option><option value="M">Male</option><option value="F">Female</option>
               </select>
             </div>
+          </div>
+          <!-- When they began living in the barangay — not the day this record
+               is made, which the system stamps on its own (Date Registered). A
+               Certificate of Barangay Residency is only issued after six months
+               of it (routes/certificates.js). Required for a new record; older
+               records were made before it was asked, and fall back to their
+               registration date until someone fills it in. -->
+          <div class="form-group form-group-flat">
+            <label class="form-label" id="add-residency-label">Start of Residency *</label>
+            <input class="form-control" id="add-residency-start" type="date" data-rule="past-date" data-after="add-birthdate"/>
+            <p class="modal-help-text" style="margin-top:6px" id="add-residency-note">
+              When they began living in Barangay Conde Labak. A Certificate of Barangay Residency can only be requested after 6 months.
+            </p>
           </div>
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Civil Status</label>
               <select class="form-control" id="add-civil">
-                <option value="">—</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option>
+                <option value="">Select civil status</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option>
               </select>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">Voter Status</label>
               <select class="form-control" id="add-voter">
-                <option value="">—</option><option>Registered</option><option>Not Registered</option>
+                <option value="">Select voter status</option><option>Registered</option><option>Not Registered</option>
               </select>
             </div>
           </div>
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Contact No.</label>
-              <input class="form-control" id="add-contact" placeholder="e.g. 0917 123 4567"/>
+              <input class="form-control" id="add-contact" data-rule="mobile" maxlength="11" placeholder="e.g. 09171234567"/>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">Occupation</label>
-              <input class="form-control" id="add-occupation" placeholder="e.g. Farmer"/>
+              <input class="form-control" id="add-occupation" data-rule="words" maxlength="80" placeholder="e.g. Farmer"/>
             </div>
           </div>
           <!-- Where the resident lives. Purok and Address sit on the resident
@@ -283,16 +296,16 @@ function renderResidencyPage() {
           <div class="form-row form-row-tight">
             <div class="form-group form-group-flat">
               <label class="form-label">Purok</label>
-              <select class="form-control" id="add-purok"><option value="">—</option></select>
+              <select class="form-control" id="add-purok"><option value="">Select purok</option></select>
             </div>
             <div class="form-group form-group-flat">
               <label class="form-label">Address</label>
-              <input class="form-control" id="add-address" placeholder="e.g. 49 Sitio Gitna"/>
+              <input class="form-control" id="add-address" data-rule="address" maxlength="200" placeholder="e.g. 49 Sitio Gitna"/>
             </div>
           </div>
           <div class="form-group form-group-flat">
             <label class="form-label">Household</label>
-            <select class="form-control" id="add-household"><option value="">— None —</option></select>
+            <select class="form-control" id="add-household"><option value="">Select household (optional)</option></select>
             <p class="modal-help-text" style="margin-top:6px">
               A household is a building tagged as one on the
               <a href="gis.html">GIS map</a>. Tag the resident's house there and
@@ -308,6 +321,19 @@ function renderResidencyPage() {
               <label><input type="checkbox" class="add-cat" value="indigent"/> Indigent Family</label>
             </div>
           </div>
+          <!-- Text messages. Staff ask at registration or at the counter;
+               residents with an account choose for themselves at first
+               sign-in. Only sent when changed here, and then stamped. -->
+          <div class="form-group form-group-flat">
+            <label class="form-label">Text Messages (SMS)</label>
+            <div class="checkbox-row" style="display:flex;gap:16px;flex-wrap:wrap">
+              <label><input type="checkbox" id="add-sms-updates" checked/> Certificate updates</label>
+              <label><input type="checkbox" id="add-sms-advisories" checked/> Barangay announcements</label>
+            </div>
+            <p class="modal-help-text" style="margin-top:6px" id="add-sms-note">
+              Texted to the contact number above. Emergency announcements and security codes are always sent.
+            </p>
+          </div>
           <!-- Record classification. Editing only: a resident being added is
                alive and living here by definition, and offering "Deceased" on
                a blank form is an invitation to a mis-click on a record nobody
@@ -321,7 +347,7 @@ function renderResidencyPage() {
             </select>
             <p class="modal-help-text" id="status-note" style="margin-top:6px"></p>
           </div>
-          <p class="modal-help-text" style="margin-top:8px">New residents start as <strong>Unclaimed</strong> — the status becomes Active only when the resident claims their account via Account Claiming.</p>
+          <p class="modal-help-text" style="margin-top:8px">New residents start as <strong>Unclaimed</strong> — the status becomes Active only when an official approves the resident's account application in Account Claiming.</p>
           <div id="add-resident-error" style="color:#b91c1c;font-size:13px;min-height:16px"></div>
         </div>
         <div class="modal-footer">
@@ -436,8 +462,8 @@ function residentInitials(name) {
   return ((first[0] || "") + (last[0] || "")).toUpperCase() || "?";
 }
 
-// The Photo column. Residents who have uploaded one (from the mobile app, or
-// through an approved profile change request) get the picture; everyone else
+// The Photo column. Residents who have uploaded one (through an approved
+// profile change request) get the picture; everyone else
 // gets their initials, so the column is never a row of empty boxes and always
 // gives the eye something to track along the row.
 //
@@ -628,28 +654,67 @@ function renderResidentDetail(r) {
           house has not been tagged on the map yet. */ ""}
     ${row("Household", v(r.household_name))}
     ${row("Classifications", cats || dash)}
+    ${row("Resident Since", r.residency_start ? v(fmtDate(r.residency_start)) : '<span class="table-muted">Not recorded</span>')}
     ${row("Date Registered", v(fmtDate(r.date_registered)))}
   `;
 }
 
 // ──────────────────── Add / Edit Resident (write path) ───────────────────────
+// The two SMS switches. SMS_LOADED holds the values the form opened with, so
+// only a switch staff actually changed is sent — an ordinary edit must not
+// stamp "the resident was asked" (resident.sms_pref_set_at).
+let SMS_LOADED = { sms_updates: true, sms_advisories: true };
+
+function setSmsSwitches(r) {
+  SMS_LOADED = {
+    sms_updates: r.sms_updates !== false,
+    sms_advisories: r.sms_advisories !== false,
+  };
+  const u = document.getElementById("add-sms-updates");
+  const a = document.getElementById("add-sms-advisories");
+  if (u) u.checked = SMS_LOADED.sms_updates;
+  if (a) a.checked = SMS_LOADED.sms_advisories;
+  const note = document.getElementById("add-sms-note");
+  if (note)
+    note.textContent =
+      "Texted to the contact number above. Emergency announcements and security codes are always sent." +
+      (r.sms_pref_set_at
+        ? " Last chosen " + new Date(r.sms_pref_set_at).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" }) + "."
+        : " Not asked yet — ask the resident.");
+}
+
+function changedSmsSwitches() {
+  const out = {};
+  const u = document.getElementById("add-sms-updates");
+  const a = document.getElementById("add-sms-advisories");
+  if (u && u.checked !== SMS_LOADED.sms_updates) out.sms_updates = u.checked;
+  if (a && a.checked !== SMS_LOADED.sms_advisories) out.sms_advisories = a.checked;
+  return out;
+}
+
 // One modal, two modes: EDITING_ID null = add (POST), set = edit (PUT).
 function resetResidentForm() {
   [
     "add-last", "add-first", "add-middle", "add-suffix", "add-birthdate",
-    "add-contact", "add-occupation", "add-address",
+    "add-residency-start", "add-contact", "add-occupation", "add-address",
     "add-sex", "add-civil", "add-voter", "add-household", "add-purok",
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
   document.querySelectorAll(".add-cat").forEach((c) => (c.checked = false));
+  setSmsSwitches({ sms_updates: true, sms_advisories: true, sms_pref_set_at: null });
   const status = document.getElementById("add-status");
   if (status) status.value = "active";
   EDITING_CLAIMED = false;
   residentStatusChanged();
   const errEl = document.getElementById("add-resident-error");
   if (errEl) errEl.textContent = "";
+  const residencyNote = document.getElementById("add-residency-note");
+  if (residencyNote)
+    residencyNote.textContent =
+      "When they began living in Barangay Conde Labak. A Certificate of Barangay Residency can only be requested after 6 months.";
+  if (window.Motion) Motion.clearErrors(document.getElementById("modal-add-resident"));
 }
 
 function setResidentModalMode(editing) {
@@ -664,6 +729,10 @@ function setResidentModalMode(editing) {
   // markup above.
   const statusGroup = document.getElementById("edit-status-group");
   if (statusGroup) statusGroup.style.display = editing ? "" : "none";
+  // Required for a new record. An old record being edited may never have had
+  // it asked — saving it is not held up on a date staff may not know yet.
+  const residencyLabel = document.getElementById("add-residency-label");
+  if (residencyLabel) residencyLabel.textContent = editing ? "Start of Residency" : "Start of Residency *";
 }
 
 // The note under the Record Classification select. "Deceased" is the one value
@@ -719,6 +788,12 @@ async function openEditResident(id) {
     set("add-middle", r.middle_name);
     set("add-suffix", r.suffix);
     set("add-birthdate", r.birthdate);
+    set("add-residency-start", r.residency_start);
+    const residencyNote = document.getElementById("add-residency-note");
+    if (residencyNote && !r.residency_start)
+      residencyNote.textContent =
+        "Not recorded yet — ask the resident. Until it is filled in, the 6 months for a Certificate of " +
+        "Barangay Residency are counted from the date this record was registered.";
     set("add-sex", r.sex);
     set("add-civil", r.civil_status);
     set("add-voter", r.voter_status);
@@ -732,6 +807,7 @@ async function openEditResident(id) {
     // silently rewriting the record's state on the next save.
     set("add-status", ["active", "deceased", "moved"].includes(r.status) ? r.status : "active");
     EDITING_CLAIMED = r.account_claimed === true;
+    setSmsSwitches(r);
     residentStatusChanged();
     const cats = r.classifications || [];
     document
@@ -785,7 +861,7 @@ async function populateHouseholdOptions() {
     );
   };
   sel.innerHTML =
-    `<option value="">— None —</option>` +
+    `<option value="">Select household (optional)</option>` +
     HOUSEHOLD_OPTIONS.map(
       (h) => `<option value="${h.building_id}">${escapeHtml(label(h))}</option>`
     ).join("");
@@ -794,7 +870,7 @@ async function populateHouseholdOptions() {
 // The dropdown value for a resident's stored building_id. Usually the same
 // number, but a resident attached to a group-tagged household may sit on any
 // footprint of it while the option carries the group's representative — so map
-// through member_ids, or the select would fall back to "— None —" and an
+// through member_ids, or the select would fall back to no household and an
 // innocent save would detach them.
 function householdOptionValue(buildingId) {
   if (buildingId == null || buildingId === "") return "";
@@ -827,7 +903,7 @@ async function populatePurokOptions() {
     }
   }
   sel.innerHTML =
-    `<option value="">—</option>` +
+    `<option value="">Select purok</option>` +
     PUROK_OPTIONS.map(
       (p) => `<option value="${p.purok_id}">${escapeHtml(p.name)}</option>`
     ).join("");
@@ -839,21 +915,37 @@ async function submitAddResident() {
   const val = (id) => (document.getElementById(id)?.value || "").trim();
   const last = val("add-last");
   const first = val("add-first");
-  if (!last || !first) {
-    if (errEl) errEl.textContent = "Last name and first name are required.";
+  const modal = document.getElementById("modal-add-resident");
+  const needed = [
+    { id: "add-last", message: "Last name is required." },
+    { id: "add-first", message: "First name is required." },
+  ];
+  if (EDITING_ID == null)
+    needed.push({ id: "add-residency-start", message: "Enter when they started living in the barangay." });
+  const filled = window.Motion
+    ? Motion.require(needed)
+    : needed.every((f) => val(f.id));
+  if (!filled) {
+    if (errEl) errEl.textContent = "Please fill in the highlighted fields.";
+    return;
+  }
+  // Letters in a name, 11 digits in a number, no birthday in the future.
+  if (window.InputGuard && !InputGuard.check(modal)) {
+    if (errEl) errEl.textContent = "Please correct the highlighted fields.";
     return;
   }
   const classifications = Array.from(document.querySelectorAll(".add-cat"))
     .filter((c) => c.checked)
     .map((c) => c.value);
   // account_claimed is never sent — new residents always start Unclaimed;
-  // only the Account Claiming flow (POST /api/residents/claim) activates it.
+  // only an approved account application (Account Claiming) activates it.
   const body = {
     last_name: last,
     first_name: first,
     middle_name: val("add-middle") || null,
     suffix: val("add-suffix") || null,
     birthdate: val("add-birthdate") || null,
+    residency_start: val("add-residency-start") || null,
     sex: val("add-sex") || null,
     civil_status: val("add-civil") || null,
     contact_no: val("add-contact") || null,
@@ -870,6 +962,7 @@ async function submitAddResident() {
   // Record Classification only exists in edit mode; a new resident takes the
   // table's 'active' default.
   if (EDITING_ID != null) body.status = val("add-status") || "active";
+  Object.assign(body, changedSmsSwitches());
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = "Saving…";

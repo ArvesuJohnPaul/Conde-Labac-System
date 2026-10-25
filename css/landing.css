@@ -51,6 +51,11 @@
   /* Hairline used to separate stacked sections of the same surface. */
   --section-line: var(--border);
 
+  /* The history band: a warm paper tone between the white bulletin and the
+     grey officials, so the one section that is read rather than used looks
+     like a page. */
+  --history-bg: var(--gold-50);
+
   /* GIS map chrome. The engine's styles below used to hard-wire two values
      that do not survive a theme flip: `color: var(--navy)` for every label,
      and `rgba(255,255,255,…)` for the floating panels. --navy re-points to a
@@ -67,6 +72,10 @@
 }
 
 [data-theme="dark"] {
+  /* The page navy with a trace of gold — gold-50 itself would be a light
+     band in the middle of a dark page. */
+  --history-bg: color-mix(in srgb, var(--gold-300) 6%, var(--surface));
+
   --tile-bg: rgba(245, 197, 24, 0.12);
   --tile-fg: var(--gold-300);
   --tile-border: rgba(245, 197, 24, 0.22);
@@ -261,6 +270,23 @@ button:focus-visible {
   width: 100%;
 }
 
+/* Seven links for a signed-in staff member. shared.css spaces them 32px
+   apart, which wraps them onto a second line just above the width where the
+   menu button takes over (1100px); 20px keeps them on one. */
+@media (max-width: 1180px) {
+  .nav-links {
+    gap: var(--space-5);
+  }
+}
+
+/* From 1100px down the row is the drawer (shared.css), and on this page it
+   opens below the masthead + navbar, not just the navbar. */
+@media (max-width: 1100px) {
+  .nav-links.open {
+    top: calc(var(--navbar-h) + var(--masthead-h));
+  }
+}
+
 .nav-logo-fallback {
   display: none;
   width: 40px;
@@ -371,6 +397,55 @@ button:focus-visible {
 .nav-user-caret {
   color: rgba(255, 255, 255, 0.5);
   transition: transform var(--duration-base) var(--ease-out);
+}
+
+/* Phone widths. Signed in, the bar holds the seal, the wordmark, the bell,
+   the account pill and the menu button, and below about 414px the name in the
+   pill pushed the menu button off the right edge — there was no way to reach
+   the page's links. The bar now gives way in steps: the name goes first (the
+   initials stay, and a screen reader still hears the name), then the spacing
+   and the wordmark tighten, and on the narrowest phones the wordmark goes,
+   leaving the seal. */
+@media (max-width: 600px) {
+  .nav-user-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .nav-user-btn {
+    gap: 6px;
+    padding: 4px 8px 4px 4px;
+  }
+  .nav-right {
+    gap: var(--space-2);
+  }
+}
+@media (max-width: 420px) {
+  .navbar {
+    gap: 10px;
+  }
+  .nav-logo {
+    gap: var(--space-2);
+  }
+  .nav-logo img {
+    width: 36px;
+    height: 36px;
+  }
+  .nav-brand {
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+  .btn-nav-signin {
+    padding: 8px 12px;
+  }
+}
+@media (max-width: 350px) {
+  .nav-brand {
+    display: none;
+  }
 }
 .nav-user-btn[aria-expanded="true"] .nav-user-caret {
   transform: rotate(180deg);
@@ -1053,6 +1128,16 @@ main section {
 .service-cta:focus-visible {
   outline: none;
 }
+/* A visitor's button says what pressing it will ask for: every service here
+   needs an account, and the card opens the sign-in prompt instead of the
+   form. html.is-visitor is set in the page head and by applySessionToNav(). */
+.service-cta .cta-visitor,
+html.is-visitor .service-cta .cta-member {
+  display: none;
+}
+html.is-visitor .service-cta .cta-visitor {
+  display: inline;
+}
 .service-card:focus-within {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
@@ -1074,6 +1159,15 @@ main section {
 .services-footnote a {
   color: var(--text-accent);
   font-weight: var(--weight-semibold);
+}
+/* "Sign in · Apply for one" is only news to someone who is signed out. */
+html:not(.is-visitor) .services-footnote {
+  display: none;
+}
+/* A phone number broken at its hyphen ("043-" / "702-8875") is one a reader
+   in a hurry can misdial. js/hotlines.js rewrites these, so it is CSS. */
+[data-hotline] {
+  white-space: nowrap;
 }
 
 /* ─── HOW IT WORKS ─────────────────────────────── */
@@ -1463,38 +1557,43 @@ main section {
   }
 }
 
+/* Legend swatches. They carry the same pastel fills the map does, so a pale
+   dot needs a hairline ring of its own to stay visible against a white panel —
+   the inset shadow gives every dot one, including the classification dots the
+   engine colours inline from GIS_HOUSEHOLD_SUBCAT_META. */
 .gis-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(27, 42, 74, 0.22);
 }
 
 .gis-dot-government {
-  background: #92400e;
+  background: #e9c6a4;
 }
 
 .gis-dot-business {
-  background: #0891b2;
+  background: #a8d5d8;
 }
 
 .gis-dot-households {
-  background: #1d4ed8;
+  background: #b3c6ea;
 }
 
 .gis-dot-seniors {
-  border: 2px solid #f59e0b;
+  background: #f3c98b;
 }
 
 .gis-dot-pwd {
-  background: #8b5cf6;
+  background: #c6b6ec;
 }
 
 .gis-dot-solo-parent {
-  background: #db2777;
+  background: #f3b1cc;
 }
 
 .gis-dot-indigent {
-  background: #0d9488;
+  background: #9ed9c8;
 }
 
 .gis-dot-hazard {
@@ -1507,13 +1606,13 @@ main section {
   border: 1px dashed #ea8c08;
 }
 .gis-dot-vegetation {
-  background: #16a34a;
+  background: #c6ddb4;
 }
 .gis-dot-water {
-  background: #3b82f6;
+  background: #cfe0f2;
 }
 .gis-dot-roads {
-  background: #64748b;
+  background: #ffffff;
 }
 .gis-dot-accidents {
   background: #b91c1c;
@@ -1567,6 +1666,29 @@ main section {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 18px;
+}
+
+/* The optional "confirm your number" step (js/account-application.js): the
+   button that asks for a code, and the line that says it worked. Hidden
+   entirely unless the server says a text would really arrive. */
+.acc-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.acc-confirmed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--success-border, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--success-bg, var(--surface-sunken));
+  color: var(--success, var(--text-secondary));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
 }
 
 .alert-mb {
@@ -1842,11 +1964,30 @@ main section {
 }
 
 /* ─── CUSTOM GEOJSON GIS MAP ──────────── */
+/* BASEMAP PALETTE. The map is drawn in the flat street-map idiom: pale sage
+   ground, white roads with a soft casing under them, one amber artery, light
+   blue water and blue-grey buildings. Every colour the base layers use is
+   named here, in one place, so the whole map can be re-tinted at once — and so
+   the pastel building fills further down stay in the same family as the ground
+   they sit on. Features that mean "pay attention" (hazard zones, report pins,
+   draw previews) deliberately keep their saturated colours: they are supposed
+   to break out of this palette. */
 .gis-custom-map {
+  --gis-land: #eef1e4;
+  --gis-land-outside: #d9ddcd;
+  --gis-land-edge: #adb79c;
+  --gis-water: #cfe0f2;
+  --gis-water-edge: #a9c8e6;
+  --gis-road: #ffffff;
+  --gis-road-casing: #e1e4d6;
+  --gis-road-major: #f8dca2;
+  --gis-road-major-casing: #e9c47f;
+  --gis-bldg: #c9d0e0;
+  --gis-bldg-edge: rgba(255, 255, 255, 0.7);
   position: relative;
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: var(--gis-land-outside);
   overflow: hidden;
 }
 .gis-map-toolbar {
@@ -2057,8 +2198,8 @@ main section {
   cursor: grabbing;
 }
 .gis-boundary {
-  fill: rgba(37, 99, 235, 0.08);
-  stroke: var(--navy, #0d1b3e);
+  fill: var(--gis-land);
+  stroke: var(--gis-land-edge);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
@@ -2069,162 +2210,152 @@ main section {
 .gis-interactive-feature {
   cursor: pointer;
 }
+/* Greens are flat and pale so a field reads as ground cover rather than as a
+   thing to look at. Each kind sets --veg-fill and the shared rules below do
+   the rest, which is what keeps the hover shade in step with the fill. */
 .gis-vegetation {
-  fill: rgba(34, 197, 94, 0.2);
-  stroke: rgba(22, 163, 74, 0.4);
-  stroke-width: 1;
+  fill: var(--veg-fill, #dbe7c6);
+  stroke: none;
   vector-effect: non-scaling-stroke;
-  transition: fill-opacity 0.15s ease;
+  transition: fill 0.15s ease;
+}
+.gis-vegetation:hover {
+  fill: color-mix(in srgb, var(--veg-fill, #dbe7c6) 80%, #3f5a28);
 }
 /* Surrounding-context vegetation past the barangay border. */
 .gis-vegetation-outside {
-  opacity: 0.35;
+  opacity: 0.45;
   pointer-events: none;
 }
-.gis-vegetation:hover {
-  fill-opacity: 0.6;
-}
 .gis-vegetation-farmland {
-  fill: rgba(234, 179, 8, 0.22);
-  stroke: rgba(161, 98, 7, 0.4);
+  --veg-fill: #e6ecc8;
 }
 .gis-vegetation-farmyard {
-  fill: rgba(217, 119, 6, 0.18);
-  stroke: rgba(161, 98, 7, 0.4);
+  --veg-fill: #e9e4cd;
 }
 .gis-vegetation-orchard {
-  fill: rgba(132, 204, 22, 0.28);
-  stroke: rgba(77, 124, 15, 0.4);
+  --veg-fill: #d4e7bd;
 }
 .gis-vegetation-meadow {
-  fill: rgba(163, 230, 53, 0.22);
-  stroke: rgba(77, 124, 15, 0.35);
+  --veg-fill: #e2efcf;
 }
 .gis-vegetation-wood,
 .gis-vegetation-forest {
-  fill: rgba(21, 128, 61, 0.28);
-  stroke: rgba(20, 83, 45, 0.45);
+  --veg-fill: #c6ddb4;
 }
 .gis-water-poly {
-  fill: rgba(59, 130, 246, 0.35);
-  stroke: #3b82f6;
+  fill: var(--gis-water);
+  stroke: var(--gis-water-edge);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 .gis-water-line {
   fill: none;
-  stroke: #3b82f6;
-  stroke-width: 2;
+  stroke: var(--gis-water-edge);
+  stroke-width: 2.4;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
+/* Roads are drawn twice (renderRoads): a wider casing path underneath, then
+   the white road itself on top. That one extra pass is what makes a street
+   read as a street on pale ground — a bare white line on sage looks like a
+   gap in the map rather than a road. */
 .gis-road {
   fill: none;
-  stroke: #94a3b8;
-  stroke-width: 2;
+  stroke: var(--gis-road);
+  stroke-width: 2.4;
   stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 .gis-road-service {
-  stroke: #cbd5e1;
-  stroke-width: 1.2;
+  stroke-width: 1.5;
 }
 .gis-road-local {
-  stroke: #94a3b8;
-  stroke-width: 2;
+  stroke-width: 2.4;
 }
 .gis-road-major {
-  stroke: #64748b;
-  stroke-width: 2.8;
+  stroke: var(--gis-road-major);
+  stroke-width: 4;
 }
+.gis-road-casing-layer {
+  pointer-events: none;
+}
+.gis-road-casing {
+  fill: none;
+  stroke: var(--gis-road-casing);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.gis-road-casing-service {
+  stroke-width: 2.6;
+}
+.gis-road-casing-local {
+  stroke-width: 3.6;
+}
+.gis-road-casing-major {
+  stroke: var(--gis-road-major-casing);
+  stroke-width: 5.4;
+}
+/* BUILDINGS. One fill variable, --bldg-fill, decides a building's colour, and
+   every tag, type and classification below sets nothing but that variable. So
+   a tagged building is told apart by its FILL alone: the outline is the same
+   hairline white on every one of them, which is what keeps a street of mixed
+   tags looking like a map instead of a set of coloured boxes. The hover shade
+   is mixed from the same variable, so it follows automatically.
+   Order matters where two of these can apply at once: the later rule wins
+   (classification over household type), and they are written in that order. */
 .gis-building {
-  fill: rgba(13, 27, 62, 0.12);
-  stroke: rgba(13, 27, 62, 0.35);
-  stroke-width: 1;
+  fill: var(--bldg-fill, var(--gis-bldg));
+  stroke: var(--gis-bldg-edge);
+  stroke-width: 0.8;
   vector-effect: non-scaling-stroke;
   cursor: pointer;
   transition: fill 0.15s ease;
 }
-.gis-building:hover {
-  fill: rgba(37, 99, 235, 0.35);
-}
-/* Fellow members of a hovered building's tag group light up in their own
-   tag color -- each category's :hover rule doubles as the group highlight --
-   with a thicker outline so the group still reads as one unit. */
+.gis-building:hover,
 .gis-building.gis-building-group-hover {
-  stroke-width: 2;
+  fill: color-mix(in srgb, var(--bldg-fill, var(--gis-bldg)) 76%, #1b2a4a);
 }
 .gis-building-tagged {
-  fill: rgba(201, 162, 39, 0.35);
-  stroke: var(--gold, #c9a227);
+  --bldg-fill: #e7d6a3;
 }
-.gis-building-tagged:hover,
-.gis-building-tagged.gis-building-group-hover {
-  fill: rgba(201, 162, 39, 0.55);
+/* Buildings picked while group tagging — a solid blue with a real outline, the
+   one place a building is deliberately louder than the rest, because the
+   running selection has to be countable at a glance. */
+.gis-building-grouped,
+.gis-building-grouped:hover {
+  fill: #7ea2e0;
+  stroke: #1d4ed8;
+  stroke-width: 2;
 }
 /* Surrounding-context buildings past the barangay border — faded grey,
    not interactive. */
 .gis-building-outside {
-  fill: rgba(148, 163, 184, 0.14);
-  stroke: rgba(100, 116, 139, 0.3);
+  fill: #c3c9cf;
+  stroke: rgba(255, 255, 255, 0.5);
   cursor: default;
   pointer-events: none;
 }
 .gis-building-cat-government {
-  fill: rgba(146, 64, 14, 0.35);
-  stroke: #92400e;
-}
-.gis-building-cat-government:hover,
-.gis-building-cat-government.gis-building-group-hover {
-  fill: rgba(146, 64, 14, 0.55);
+  --bldg-fill: #e9c6a4;
 }
 .gis-building-cat-business {
-  fill: rgba(8, 145, 178, 0.35);
-  stroke: #0891b2;
-}
-.gis-building-cat-business:hover,
-.gis-building-cat-business.gis-building-group-hover {
-  fill: rgba(8, 145, 178, 0.55);
+  --bldg-fill: #a8d5d8;
 }
 .gis-building-cat-households {
-  fill: rgba(29, 78, 216, 0.35);
-  stroke: #1d4ed8;
+  --bldg-fill: #b3c6ea;
 }
-.gis-building-cat-households:hover,
-.gis-building-cat-households.gis-building-group-hover {
-  fill: rgba(29, 78, 216, 0.55);
-}
-.gis-building-cat-seniors {
-  fill: rgba(245, 158, 11, 0.35);
-  stroke: #f59e0b;
-}
-.gis-building-cat-seniors:hover,
-.gis-building-cat-seniors.gis-building-group-hover {
-  fill: rgba(245, 158, 11, 0.55);
-}
-.gis-building-cat-pwd {
-  fill: rgba(139, 92, 246, 0.35);
-  stroke: #8b5cf6;
-}
-.gis-building-cat-pwd:hover,
-.gis-building-cat-pwd.gis-building-group-hover {
-  fill: rgba(139, 92, 246, 0.55);
-}
-.gis-building-cat-solo-parent {
-  fill: rgba(219, 39, 119, 0.35);
-  stroke: #db2777;
-}
-.gis-building-cat-solo-parent:hover,
-.gis-building-cat-solo-parent.gis-building-group-hover {
-  fill: rgba(219, 39, 119, 0.55);
-}
-.gis-building-cat-indigent {
-  fill: rgba(13, 148, 136, 0.35);
-  stroke: #0d9488;
-}
-.gis-building-cat-indigent:hover,
-.gis-building-cat-indigent.gis-building-group-hover {
-  fill: rgba(13, 148, 136, 0.55);
+/* A household someone vulnerable lives in — a senior citizen, a PWD, a solo
+   parent, an indigent family — is filled, whole, in that classification's
+   colour (renderBuildings() in js/gis-map.js). The colour arrives as
+   --class-color straight from GIS_HOUSEHOLD_SUBCAT_META, so it is written down
+   in one place. A household holding several takes the first in priority order,
+   and its popup names the rest. */
+.gis-building-classified {
+  --bldg-fill: var(--class-color);
 }
 .gis-construction {
   fill: rgba(234, 179, 8, 0.15);
@@ -2239,30 +2370,6 @@ main section {
 .gis-hazard-ping {
   cursor: pointer;
   transition: fill-opacity 0.15s ease;
-}
-/* Rendered as a raw <g> of icon paths (not wrapped by gisIcon()'s <svg>), so
-   the stroke/fill presentation attributes those paths rely on are supplied
-   here instead via inheritance from this ancestor.
-   One solid disc, one colour, white glyph — the same marker language as the
-   incident report pins further down. */
-.gis-accident-icon {
-  cursor: pointer;
-  user-select: none;
-  fill: none;
-  stroke: #fff;
-  /* Some glyphs end in a filled dot marked fill="currentColor" — point that
-     at white so it reads as a solid on the disc. */
-  color: #fff;
-  stroke-width: 3.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.gis-accident-icon-bg {
-  fill: #b91c1c;
-  stroke: none;
-}
-.gis-accident-icon:hover .gis-accident-icon-bg {
-  fill: #991b1b;
 }
 .gis-hazard-severity-low {
   fill-opacity: 0.18;
@@ -2413,63 +2520,160 @@ main section {
   font-size: 12px;
   color: var(--text-muted);
 }
-/* One unified marker for community concerns AND accidents: a solid disc in a
-   single flat colour with the report type's glyph knocked out of it in white.
-   The colour says who filed it (resident green / official navy); the glyph
-   says what it was. Nothing else — no outline, no second hue, no gradient —
-   because at map scale a 20px thin-outline icon on a transparent background
-   disappeared into the buildings underneath it. Kept in step with gis.css,
-   which styles the same pins on the MIS map. */
-.gis-report-pin {
+/* ── Map pins (incident reports, accident markers, the pick-a-spot marker) ──
+   One marker language for all of them: a teardrop in a single flat colour,
+   its tip ON the spot it marks, with the report type's glyph knocked straight
+   out of it in white — no inner disc, no second hue, nothing behind the glyph.
+   A small ground shadow sits under the tip so the pin reads as standing on the
+   map rather than printed on it.
+   The colour is passed in as --pin-color by whatever kind of pin it is, so the
+   hover shade, the drop animation and the ripple all follow one value.
+   Kept in step with gis.css, which styles the same pins on the MIS map. */
+.gis-map-pin {
   cursor: pointer;
+  user-select: none;
 }
-.gis-report-pin-disc {
-  fill: #15803d;
-  stroke: none;
+.gis-pin-body {
+  fill: var(--pin-color, #15803d);
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
   transition: fill 0.15s ease;
 }
-.gis-report-pin:hover .gis-report-pin-disc {
-  fill: #166534;
+.gis-map-pin:hover .gis-pin-body {
+  fill: color-mix(in srgb, var(--pin-color, #15803d) 78%, #000);
 }
-.gis-report-pin-official .gis-report-pin-disc {
-  fill: #1d4ed8;
+.gis-pin-shadow {
+  fill: rgba(27, 42, 74, 0.22);
+  stroke: none;
 }
-.gis-report-pin-official:hover .gis-report-pin-disc {
-  fill: #1e40af;
-}
-/* The glyph rides at 60% scale (see renderReports), so the stroke is set
-   proportionally heavier to land at ~2px on screen.
-   Set on the GROUP, not on a list of element selectors: fill and stroke are
+/* Set on the GROUP, not on a list of element selectors: fill and stroke are
    inherited SVG properties, so this reaches every shape a glyph might use —
    including the <rect> in `medical` and `landDispute`, which an element list
    missed and which therefore rendered as a solid black box. It also lets the
    few deliberately filled dots (alertCircle, exclamation) keep their own
    fill="currentColor" stroke="none" attributes, which beat an inherited
    value; `color` below is what those resolve against. */
-.gis-report-pin-glyph {
+.gis-pin-glyph {
   fill: none;
-  stroke: #fff;
-  color: #fff;
+  stroke: #ffffff;
+  color: #ffffff;
   stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* The incident modal's "you picked here" marker — brand gold so it stands
-   apart from the report discs already on the map. (Still the classic pin
-   shape: it marks a choice, not a filed report.) */
-.gis-pick-pin path {
-  fill: #c79a3b;
-  stroke: #ffffff;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* Resident green / official navy / accident red. */
+.gis-report-pin {
+  --pin-color: #15803d;
 }
-.gis-pick-pin circle {
+.gis-report-pin-official {
+  --pin-color: #1d4ed8;
+}
+.gis-accident-icon {
+  --pin-color: #b91c1c;
+}
+/* The pin the Blotter's "View on Map" flew us to. A gold halo pulsing out from
+   behind the head: the camera move alone was too easy to miss on a map that
+   already carries dozens of identical pins, and a resolved report has no other
+   pin around it to compare against. */
+.gis-pin-halo {
+  fill: none;
+  stroke: #c79a3b;
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gis-report-focus-pulse 1.6s ease-out infinite;
+}
+@keyframes gis-report-focus-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+/* PLACING A PIN. A pin that simply appears is easy to miss — on a map this
+   busy the eye needs to be told where it landed. So a newly placed pin drops
+   in from above, settles with a small bounce, and knocks a ring out of the
+   ground at its tip. Only pins the map has not drawn before animate, so a
+   filter change or a redraw does not set every pin on the map bouncing.
+   The drop lives on an INNER group: the outer group carries the positioning
+   transform attribute, and a CSS `transform` would replace it outright and
+   throw the pin to the corner of the map. */
+.gis-pin-placing .gis-pin-anim {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: gis-pin-drop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes gis-pin-drop {
+  0% {
+    transform: translateY(-22px) scale(0.5);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(0) scale(1.14);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(0) scale(0.93);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+.gis-pin-ripple {
+  fill: none;
+  stroke: var(--pin-color, #15803d);
+  stroke-width: 2.4;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gis-pin-ripple 0.7s ease-out 0.24s both;
+}
+@keyframes gis-pin-ripple {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gis-pin-halo {
+    animation: none;
+    transform: scale(1.5);
+    opacity: 0.8;
+  }
+  .gis-pin-placing .gis-pin-anim,
+  .gis-pin-ripple {
+    animation: none;
+  }
+  .gis-pin-ripple {
+    opacity: 0;
+  }
+  .gis-hazard-focus-ring {
+    animation: none;
+  }
+}
+/* The incident modal's "you picked here" marker — brand gold so it stands
+   apart from the report pins already on the map, and the one pin that keeps a
+   plain white dot instead of a glyph: it marks a choice, not a report, and at
+   the moment it is dropped nobody has said yet what kind of incident it is. */
+.gis-pick-pin {
+  --pin-color: #c79a3b;
+  pointer-events: none;
+}
+.gis-pick-pin .gis-pin-dot {
   fill: #ffffff;
   stroke: none;
-}
-.gis-pick-pin {
-  pointer-events: none;
 }
 /* Minimal map embed (incident modal): drop the layer/filter controls and the
    legend overlay so the pick-a-location map gets the full modal width. */
@@ -3201,6 +3405,62 @@ main section {
   font-size: 0.88rem;
 }
 
+/* ─── HISTORY ──────────────────────────────────── */
+/* Heading on the left, the story on the right on a sheet of its own. It is
+   the one section people sit and read, so it is set for reading:
+   a measure near 65 characters, generous leading, and a drop cap to say
+   where the story starts. */
+.section-history {
+  background: var(--history-bg);
+  border-bottom: 1px solid var(--section-line);
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+}
+
+/* Stays beside the text while it is read on a wide screen. */
+.history-head {
+  position: sticky;
+  top: calc(var(--navbar-h) + var(--masthead-h) + 32px);
+}
+
+.history-text {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.75rem, 4vw, 3rem) clamp(1.5rem, 4.5vw, 3.5rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-text p {
+  max-width: 65ch;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--text-secondary);
+}
+.history-text p + p {
+  margin-top: 1.15em;
+}
+
+.history-text p:first-child {
+  font-size: 1.08rem;
+  color: var(--text-primary);
+}
+.history-text p:first-child::first-letter {
+  float: left;
+  margin: 0.06em 0.12em 0 0;
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 3.7em;
+  line-height: 0.82;
+  color: var(--text-brand);
+}
+
 /* ─── BARANGAY OFFICIALS ───────────────────────── */
 .section-officials {
   background: var(--surface);
@@ -3416,17 +3676,44 @@ main section {
   background: rgba(0, 0, 0, 0.34);
   border-color: rgba(252, 165, 165, 0.45);
 }
+/* The number never wraps. The card is a ~400px column, and once the label
+   beside it carries the hours as well ("Barangay Hotline · Mon-Fri 8AM-5PM")
+   the flex row started shrinking the number instead — "043-702-" on one line
+   and "8875" on the next, which is not a phone number. The label wraps; the
+   thing being read out loud to an operator does not. */
 .visit-emergency-num strong {
+  flex: none;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 1.05rem;
   color: #fff;
   letter-spacing: 0.02em;
 }
 .visit-emergency-num span {
+  min-width: 0;
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
+}
+/* When the line is answered ("24/7", "office hours only"), from the hotline
+   directory. A number nobody picks up after 9 PM is worth saying out loud —
+   the report form is the after-hours route. Not italic: the label beside it is
+   already small uppercase, and two kinds of emphasis in six words is noise. */
+.visit-emergency-num .hotline-when {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.42);
+}
+/* Heading over the non-emergency entries (a water or power office). Rendered
+   by js/hotlines.js only when there are any, so there is never a heading
+   standing over nothing. */
+.visit-emergency-more {
+  margin: var(--space-4) 0 8px;
+  font-size: 0.66rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* ─── FOOTER ───────────────────────────────────── */
@@ -3660,17 +3947,29 @@ main section {
   font-weight: var(--weight-bold);
 }
 
-/* Anchor jumps land below the fixed masthead + navbar */
-section[id] {
-  scroll-margin-top: calc(var(--navbar-h) + var(--masthead-h) + 12px);
+/* Anchor jumps land below the fixed masthead + navbar. One value, on the
+   scroller: this used to be a scroll-margin on each section, and it ADDED UP
+   with shared.css's scroll-padding (navbar only), so a nav link landed 92px
+   lower than meant — far enough that the link highlighted was the section
+   above the one clicked. As padding it also keeps a focused field clear of
+   the masthead, which the navbar-only value did not. */
+html {
+  scroll-padding-top: calc(var(--navbar-h) + var(--masthead-h) + 12px);
 }
 
 /* ─── RESPONSIVE ───────────────────────────────── */
 @media (max-width: 1024px) {
   .hero-grid,
   .gis-head-row,
+  .history-grid,
   .visit-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Stacked, the heading sits above the text and there is nothing for it to
+     stay beside. */
+  .history-head {
+    position: static;
   }
 
   .hero-grid {
@@ -3718,11 +4017,6 @@ section[id] {
 
   .gov-tools {
     margin-left: 0;
-  }
-
-  /* Mobile nav dropdown opens below masthead + navbar */
-  .nav-links.open {
-    top: calc(var(--navbar-h) + var(--masthead-h));
   }
 
   .hero-seal-badge {

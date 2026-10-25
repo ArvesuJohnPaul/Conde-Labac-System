@@ -23,10 +23,16 @@ function renderPage() {
   if (typeof renderAiAlerts === "function") renderAiAlerts();
   if (typeof loadAiAlerts === "function") loadAiAlerts();
   // Recent Activity paints from the local trail immediately, then repaints
-  // once the shared DB trail lands — that is where the mobile app's and the
+  // once the shared DB trail lands — that is where other browsers' and the
   // database triggers' entries live, so the first paint is only this browser's
   // own history. Same two-step the Audit Logs page uses.
-  if (typeof auditFetchServerLogs === "function")
+  //
+  // The shared trail is the Audit Logs module's. A role without it still gets
+  // the card, painted from this browser's own history; asking the server
+  // anyway would only be refused.
+  const mayReadTrail =
+    typeof moduleAllowedFor !== "function" || moduleAllowedFor("audit", currentRole);
+  if (mayReadTrail && typeof auditFetchServerLogs === "function")
     auditFetchServerLogs().then(function (got) {
       if (got) repaintDashActivity();
     });
@@ -99,17 +105,42 @@ function repaintDashActivity() {
   if (typeof hydrateIcons === "function") hydrateIcons(el);
 }
 
+// Morning until noon, afternoon until six, evening after — by the clock of the
+// computer it is read on.
+function dashGreeting(now = new Date()) {
+  const h = now.getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
+// The dashboard is the page left open all day, so the greeting is re-checked
+// every minute rather than staying "Good morning" into the evening.
+let dashGreetingTimer = null;
+function keepDashGreetingCurrent() {
+  if (dashGreetingTimer) return;
+  dashGreetingTimer = setInterval(() => {
+    const el = document.getElementById("dash-greeting");
+    if (el) el.textContent = dashGreeting();
+  }, 60 * 1000);
+}
+
 function renderDashboard() {
+  keepDashGreetingCurrent();
   setContent(`
     <div class="page-header">
-      <h2 class="page-title">Good morning, ${currentRole === "Officer" ? "Officer Reyes" : "Administrator"}! <i data-icon=wave></i></h2>
+      <h2 class="page-title"><span id="dash-greeting">${dashGreeting()}</span>, ${currentRole === "Officer" ? "Officer Reyes" : "Administrator"}! <i data-icon=wave></i></h2>
       <p class="page-desc">Here's what's happening in Barangay Conde Labac today</p>
     </div>
 
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Registered Residents</div><div class="kpi-value" id="kpi-residents">—</div><div class="kpi-trend" id="kpi-residents-sub">Active records on file</div></div>
       <div class="kpi-card success"><div class="kpi-label">Certificates Issued</div><div class="kpi-value" id="kpi-certs-issued">—</div><div class="kpi-trend" id="kpi-certs-issued-sub">Released to residents</div></div>
-      <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value" id="kpi-incidents">—</div><div class="kpi-trend" id="kpi-incidents-sub">Open or under review</div></div>
+      <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value" id="kpi-incidents">—</div><div class="kpi-trend" id="kpi-incidents-sub">Open or under review</div>
+        <!-- Who a new report is texted to. It belongs on the dashboard rather
+             than only in the SMS page, because recipients disappear without
+             anybody switching anything off — an account suspended, a role
+             changed — and nobody finds out until a report goes nowhere
+             (SMS-HOTLINE-PLAN.md §4.3 point 6). -->
+        <div class="kpi-trend" id="kpi-incident-sms"></div></div>
       <div class="kpi-card info"><div class="kpi-label">Pending Requests</div><div class="kpi-value" id="kpi-pending">—</div><div class="kpi-trend" id="kpi-pending-sub">Awaiting action</div></div>
       <div class="kpi-card"><div class="kpi-label">Feedback Score</div><div class="kpi-value" id="kpi-feedback">—</div><div class="kpi-trend" id="kpi-feedback-sub">Average resident rating</div></div>
       <div class="kpi-card"><div class="kpi-label">Registered Households</div><div class="kpi-value" id="kpi-households">—</div><div class="kpi-trend" id="kpi-households-sub">Active households</div></div>
@@ -128,7 +159,7 @@ function renderDashboard() {
         No briefing yet. Use Generate for a summary of what is pending and what needs attention.
       </div>
       <!-- Urgent alerts, directly under the summary they belong to: the
-           briefing's "Resident Sentiment" column says how many are flagged, and
+           briefing's "Resident Feedback" column says how many are flagged, and
            these are the actual items behind that number, each with the button
            that clears it. Kept as thin, individually-boxed rows so a run of
            them reads as a list of things to do rather than a second wall of
@@ -150,7 +181,7 @@ function renderDashboard() {
     <!-- Site Activity — the one card on the dashboard that describes the
          SYSTEM rather than a single service. It is drawn from the audit trail,
          which is the only store every part of the system writes to: the web
-         MIS, the mobile app and the database triggers alike. Counting rows in
+         MIS and the database triggers alike. Counting rows in
          any one service table could only ever describe that service. -->
     <div class="card">
       <div class="card-header">
@@ -301,6 +332,25 @@ async function loadDashboardStats() {
     "kpi-residents-sub",
     `${(d.residents_unclaimed ?? 0).toLocaleString()} yet to claim an account`,
   );
+  loadReportRecipients();
+}
+
+// "Incident reports go to N officials", red at zero — at zero the barangay has
+// an alerting system that alerts nobody, and that is worth seeing every
+// morning rather than discovering after a fire.
+async function loadReportRecipients() {
+  const el = document.getElementById("kpi-incident-sms");
+  if (!el) return;
+  try {
+    const s = await apiGet("/api/sms/status");
+    const n = s.report_recipients || 0;
+    el.textContent = n
+      ? `Reports texted to ${n} official${n === 1 ? "" : "s"}`
+      : "No official is receiving report texts";
+    el.classList.toggle("kpi-trend-alarm", !n);
+  } catch (e) {
+    el.textContent = "";
+  }
 }
 
 // ── Site Activity ──────────────────────────────────────────────────────────

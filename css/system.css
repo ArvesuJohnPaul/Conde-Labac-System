@@ -161,7 +161,7 @@ body.drawer-open {
 
    Stays dark in both themes. A light sidebar would drop
    the navy that identifies this as the same system as
-   the public portal and the mobile app.
+   the public portal.
 ═══════════════════════════════════════════════════ */
 
 #sidebar {
@@ -1322,6 +1322,14 @@ body.drawer-open {
   color: var(--text-muted);
 }
 
+/* A trend line that is reporting a fault rather than a figure — "no official
+   is receiving report texts". Empty most of the time, and it should be
+   impossible to read past when it is not. */
+.kpi-trend.kpi-trend-alarm {
+  color: var(--danger);
+  font-weight: var(--weight-semibold);
+}
+
 .kpi-trend .up,
 .kpi-trend .dn {
   display: inline-flex;
@@ -1575,6 +1583,19 @@ body.drawer-open {
   text-align: left;
   background: var(--surface);
   font-weight: var(--weight-medium);
+}
+
+/* A heading row inside the matrix. The SMS rows are a group of their own
+   because they are not module access — they decide who a 2 AM text goes to
+   and who may spend the barangay's credits — and a reader scanning fourteen
+   module rows needs to be told where that list stops. */
+.perm-table .perm-group td {
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
 .perm-check {
@@ -1930,24 +1951,6 @@ body.drawer-open {
 .sev-low {
   background: var(--blue-500);
   color: #fff;
-}
-
-.sentiment-bar {
-  display: flex;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--surface-sunken);
-  overflow: hidden;
-}
-
-.sent-pos {
-  background: var(--success-solid);
-}
-.sent-neu {
-  background: var(--n-400);
-}
-.sent-neg {
-  background: var(--danger-solid);
 }
 
 .archive-status {
@@ -3245,6 +3248,26 @@ body.drawer-open {
   font-weight: var(--weight-semibold);
 }
 
+/* Logged calls only (js/incident-report.js): file without a pin when the
+   caller could not say where they are. Hidden on the public form — a resident
+   filing their own report is standing in it. */
+.inc-nopin {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.inc-nopin input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold-600);
+  cursor: pointer;
+}
+
 .inc-field-hint {
   margin-top: var(--space-1);
   font-size: var(--text-2xs);
@@ -3356,6 +3379,219 @@ body.drawer-open {
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   color: var(--text-brand);
+}
+
+/* The ID photo pickers (js/account-application.js): three tap targets that
+   become their own preview once a photo is chosen. */
+.acc-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+@media (max-width: 560px) {
+  .acc-photo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.acc-photo-label {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+.acc-photo-drop {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1.5px dashed var(--border-strong, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  transition: border-color var(--duration-base) var(--ease-out);
+}
+.acc-photo-drop:hover {
+  border-color: var(--gold);
+}
+.acc-photo-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  font-size: var(--text-2xs);
+  text-align: center;
+  color: var(--text-muted);
+}
+.acc-photo-empty svg {
+  width: 22px;
+  height: 22px;
+}
+.acc-photo-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.acc-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.acc-consent input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--gold-600);
+}
+
+/* The optional "confirm your number" step (js/account-application.js): the
+   button that asks for a code, and the line that says it worked. Hidden
+   entirely unless the server says a text would really arrive. */
+.acc-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.acc-confirmed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--success-border, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--success-bg, var(--surface-sunken));
+  color: var(--success, var(--text-secondary));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+/* The review modal on Account Claiming (js/pages/accounts.js): the applicant's
+   details beside their ID photos, then the candidate records below. */
+.app-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+}
+@media (max-width: 760px) {
+  .app-review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.detail-table th,
+.detail-table td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.detail-table th {
+  padding-right: var(--space-3);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+.app-photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.app-photo {
+  margin: 0;
+}
+.app-photo figcaption {
+  margin-top: 4px;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+.app-photo-frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+.app-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+/* One click shows a photo whole, across the three columns. */
+.app-photo.app-photo-zoom {
+  grid-column: 1 / -1;
+  order: -1;
+}
+.app-photo.app-photo-zoom .app-photo-frame {
+  aspect-ratio: auto;
+}
+.app-photo.app-photo-zoom .app-photo-frame img {
+  height: auto;
+  object-fit: contain;
+  cursor: zoom-out;
+}
+.app-candidates {
+  display: grid;
+  gap: var(--space-2);
+}
+.app-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.app-candidate-photo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+.app-candidate-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.app-candidate-main {
+  flex: 1;
+  min-width: 0;
+}
+.app-candidate-actions {
+  flex: none;
+}
+@media (max-width: 560px) {
+  .app-candidate {
+    flex-wrap: wrap;
+  }
+}
+
+/* In the portal modal the wizard supplies .modal-body and .modal-footer
+   itself; its own box must not get between them and .modal-box's layout. */
+.modal-box > .acc-wizard {
+  display: contents;
+}
+/* Buttons and grids set their own display, which beats the UA's [hidden]
+   rule — restate it for everything the wizard shows and hides. */
+.acc-wizard [hidden] {
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -3962,7 +4198,7 @@ body.drawer-open {
 }
 
 /* ═══════════════════════════════════════════════════
-   AI SURFACES — Feedback sentiment (js/pages/feedback.js)
+   AI SURFACES — Feedback page (js/pages/feedback.js)
    Filled by Gemini via /api/ai/feedback/*. Every rule here styles
    something that is absent when the server has no Gemini key, so the
    page simply renders without them.
@@ -4012,20 +4248,7 @@ body.drawer-open {
   text-overflow: ellipsis;
 }
 
-/* Theme bars are tinted by the average sentiment of the comments that
-   raised the theme — a long red bar is the thing costing most goodwill. */
-.progress-fill.fb-theme-neg {
-  background: #ef4444;
-}
-.progress-fill.fb-theme-neu {
-  background: #94a3b8;
-}
-.progress-fill.fb-theme-pos {
-  background: #22c55e;
-}
-
-/* Per-item sentiment chip. It sits beside the stars precisely so a
-   disagreement between the two is visible at a glance. */
+/* Per-item alert chip, beside the stars in Recent Feedback. */
 .fb-chip {
   display: inline-block;
   padding: 1px 8px;
@@ -4035,26 +4258,6 @@ body.drawer-open {
   text-transform: capitalize;
   border: 1px solid transparent;
   cursor: help;
-}
-.fb-chip-positive {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.4);
-  color: #15803d;
-}
-.fb-chip-neutral {
-  background: rgba(148, 163, 184, 0.15);
-  border-color: rgba(148, 163, 184, 0.45);
-  color: var(--text-muted);
-}
-.fb-chip-negative {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #b91c1c;
-}
-.fb-chip-mixed {
-  background: rgba(245, 158, 11, 0.14);
-  border-color: rgba(245, 158, 11, 0.45);
-  color: #b45309;
 }
 .fb-chip-urgent {
   background: rgba(239, 68, 68, 0.9);
@@ -4218,15 +4421,6 @@ body.drawer-open {
 
 /* Dark palette is driven by data-theme="dark" on <html> (js/theme.js), not by
    the media query — a manual toggle has to win over the OS preference. */
-[data-theme="dark"] .fb-chip-positive {
-  color: #4ade80;
-}
-[data-theme="dark"] .fb-chip-negative {
-  color: #f87171;
-}
-[data-theme="dark"] .fb-chip-mixed {
-  color: #fbbf24;
-}
 [data-theme="dark"] .fb-ai-badge {
   color: #a78bfa;
 }
@@ -4241,6 +4435,51 @@ body.drawer-open {
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
+}
+
+/* ── What the officials were texted about this report ────────────────────
+   Sits under the badges in the detail modal, above the report itself: the
+   first thing someone opening a report at 2 AM wants to know is whether
+   anybody else has been told. */
+.incident-sms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+
+.incident-sms-ok {
+  color: var(--text-secondary);
+}
+
+.incident-sms-warn {
+  color: var(--warning);
+  font-weight: var(--weight-semibold);
+}
+
+.incident-sms-muted {
+  color: var(--text-muted);
+}
+
+/* "Reports go to N officials", in the blotter's card header. Red when the
+   answer is nobody — that is a fault in the system, not a statistic. */
+.incident-recipients {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.incident-recipients.is-warning {
+  color: var(--danger);
 }
 .incident-detail-row {
   display: grid;
@@ -5061,7 +5300,15 @@ body.drawer-open {
   color: var(--text-muted);
 }
 
-/* Officials only: display order and the reorder controls. */
+/* The history is showing on the homepage. */
+.sc-chip-live {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+
+/* The hand-ordered lists (officials, hotlines): display order and the
+   reorder controls. */
 .sc-rank {
   flex: none;
   display: grid;
@@ -5180,6 +5427,12 @@ body.drawer-open {
   grid-column: span 3;
 }
 
+/* Added with the Hotlines tab: three even columns, which is what a row of
+   short fields (a number, a category, the hours) actually wants. */
+.sc-col-4 {
+  grid-column: span 4;
+}
+
 .sc-col-5 {
   grid-column: span 5;
 }
@@ -5290,6 +5543,208 @@ textarea.sc-textarea {
   color: var(--text-muted);
 }
 
+/* ── "Also send as a text message" (js/pages/content.js) ─────────────────
+   Inside an open announcement row, below the fields. Deliberately a panel
+   and not a button: it is the only action in the system that spends money on
+   everybody at once, so picking the audience, seeing the cost and confirming
+   it are three separate moments. */
+.sc-sms {
+  margin: var(--space-4) 0 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.sc-sms.is-open {
+  border-color: var(--accent-border);
+}
+
+.sc-sms-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+}
+
+.sc-sms-toggle input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--gold-600);
+  cursor: pointer;
+}
+
+.sc-sms-toggle span {
+  display: grid;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+
+.sc-sms-body {
+  padding: 0 var(--space-4) var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sc-sms-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.sc-sms-label {
+  flex: none;
+  width: 54px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* A chip that is a checkbox. The box itself is hidden: at this size the
+   label IS the control, and a row of twelve tiny boxes reads as noise. */
+.sc-chip-pick {
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sc-chip-pick input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sc-chip-pick:hover {
+  border-color: var(--border-strong);
+}
+
+.sc-chip-pick.is-on {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+  font-weight: var(--weight-semibold);
+}
+
+.sc-sms-scope {
+  margin: 0;
+}
+
+.sc-sms-emergency {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--danger-border, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--danger-bg, var(--surface));
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.sc-sms-emergency input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: var(--red-600);
+}
+
+/* The message exactly as it will arrive, in the width of a phone. Reading it
+   back is the last check before it goes. */
+.sc-sms-preview {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sc-sms-body-text {
+  max-width: 44ch;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.sc-sms-cost {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.sc-sms-cost.is-warning {
+  color: var(--warning);
+}
+
+.sc-sms-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The suggested dial string, offered inside a hint rather than written into
+   the field: what a phone rings is not something to guess on the operator's
+   behalf. Looks like the sentence it sits in, acts like a button. */
+.sc-link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-family: var(--font-mono);
+  color: var(--accent-fg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.sc-link-btn:hover {
+  color: var(--text-brand);
+}
+
+/* ── Hotlines editor ─────────────────────────────────────────────────────
+   The category chip reuses the announcement chip, on two hues only: the
+   numbers on the public emergency card, and the rest of the directory. Eight
+   invented colours would say less than that one distinction does. */
+.hot-cat {
+  --tag: var(--text-muted);
+}
+.hot-cat.is-emergency {
+  --tag: var(--red-600);
+}
+[data-theme="dark"] .hot-cat.is-emergency {
+  --tag: var(--red-300);
+}
+
+/* The primary barangay line — the number every text message quotes, and the
+   one entry that cannot be deleted. */
+.sc-chip-primary {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent-fg);
+}
+
 /* ── Officials editor: avatar column + fields ────────────────────────────
    96px of avatar and two buttons, in place of the 250px replica of the
    public card the old editor carried beside every single official. */
@@ -5368,6 +5823,31 @@ textarea.sc-textarea {
 .sc-photo-remove:hover:not(:disabled) {
   background: var(--danger-bg);
   color: var(--danger);
+}
+
+/* ── History: one document, not a list ───────────────────────────────────
+   The same card as the lists, holding a single always-open form. The head
+   reads like a collapsed row — title, where it shows, chips — but there is
+   nothing to collapse, so it is not a button. */
+.sc-doc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+}
+
+/* A row's body is indented to clear its caret; this one has none. */
+.sc-doc-body {
+  padding-left: var(--space-5);
+  animation: none;
+}
+
+/* Long enough to read the story while editing it — the 82px announcement
+   box would show two lines of it. */
+textarea.sc-doc-text {
+  min-height: 340px;
+  line-height: 1.7;
+  resize: vertical;
 }
 
 /* ── Announcement tag chips ──────────────────────────────────────────────
@@ -5450,6 +5930,10 @@ textarea.sc-textarea {
     grid-column: span 4;
   }
 
+  .sc-col-4 {
+    grid-column: span 6;
+  }
+
   .sc-col-5 {
     grid-column: span 8;
   }
@@ -5501,6 +5985,7 @@ textarea.sc-textarea {
   /* One field per line — anything narrower than this is unusable. */
   .sc-col-2,
   .sc-col-3,
+  .sc-col-4,
   .sc-col-5,
   .sc-col-9 {
     grid-column: span 12;

@@ -347,7 +347,7 @@ async function renderGISPage() {
 // and the report has to be in the local store. The store starts as whatever
 // snapshot localStorage held, and /api/incidents is still in flight behind
 // gisSyncMapState() — so a report filed on another device (or filed seconds
-// ago from the app) simply wasn't there to fly to. Wait a frame for layout,
+// ago in another tab) simply wasn't there to fly to. Wait a frame for layout,
 // try, and on a miss pull the server list and try once more.
 async function focusReportOnMap(instance, id) {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -91,9 +91,9 @@ function renderUsers() {
 // Columns: Admin (locked — always full access) plus every editable role
 // (Officer, Resident, and any custom roles an Admin adds with "Add Role").
 // Tap a ✓/✗ to flip that role's access to a module (Module Access) or a delete
-// action (Delete Permissions). Persisted to shared settings so the app + web
-// agree; the Officer sub-keys stay enforced by shell.js (module access) and the
-// app's canDeleteModule (delete).
+// action (Delete Permissions). Persisted to shared settings so every browser
+// agrees; the Officer sub-keys stay enforced by shell.js (module access, and
+// deleteRecordsAllowed() for delete).
 // [key, label, hint?]. "MIS Access" leads because it is the door the rest of
 // the rows are inside: switch it off and the role never reaches any module.
 const MATRIX_MODULES = [
@@ -114,14 +114,19 @@ const MATRIX_MODULES = [
   ["users", "User Management"],
   ["audit", "Audit Logs"],
   ["archive", "Archive"],
+  [
+    "sms",
+    "SMS Log",
+    "Every text the system sent — holds residents' phone numbers. The server enforces this row.",
+  ],
 ];
 
 // Built-in module-access defaults per built-in role (custom roles start off).
 // `mis` mirrors what the landing page did before this was configurable: staff
 // get the MIS link, residents use the public portal.
 const DEFAULT_MODULE_ACCESS = {
-  officer: { mis: true, dashboard: true, residency: true, certificates: true, incidents: true, feedback: true, gis: true, accounts: true, analytics: true, content: true, users: false, audit: false, archive: false },
-  resident: { mis: false, dashboard: false, residency: true, certificates: true, incidents: true, feedback: true, gis: true, accounts: true, analytics: false, content: false, users: false, audit: false, archive: false },
+  officer: { mis: true, dashboard: true, residency: true, certificates: true, incidents: true, feedback: true, gis: true, accounts: true, analytics: true, content: true, users: false, audit: false, archive: false, sms: true },
+  resident: { mis: false, dashboard: false, residency: true, certificates: true, incidents: true, feedback: true, gis: true, accounts: true, analytics: false, content: false, users: false, audit: false, archive: false, sms: false },
 };
 
 // Editable role columns (Admin is implicit and always full). Built-ins first;
@@ -130,6 +135,77 @@ const BUILTIN_ROLES = ["Officer", "Resident"];
 let editableRoles = BUILTIN_ROLES.slice();
 let modulePerms = {}; // { roleKey: { moduleKey: bool } }
 let deletePerms = {}; // { roleKey: { moduleKey: bool } }
+let actionPerms = {}; // { roleKey: { actionKey: bool } }
+let smsPerms = {}; // { roleKey: { smsRowKey: bool } }
+
+// Action rows — permissions the SERVER enforces too (conde-labak-server/
+// permissions.js reads the same settings key), unlike the module rows, which
+// only hide screens. [key, label, hint, default for Officer]. The Resident
+// column is locked off for every one of them: each creates accounts or shows
+// other residents' personal data.
+const ACTION_ROWS = [
+  [
+    "approve_applications",
+    "Approve account applications",
+    "Account Claiming — connect an applicant to a record, create one, or deny",
+    true,
+  ],
+];
+
+// SMS rows — stored separately under 'sms-permissions', and separate from each
+// other because they are different risks: receiving a report is a phone
+// ringing at 2 AM, sending an announcement spends the barangay's credits on
+// every resident at once. Same shape, same server enforcement
+// (SMS-HOTLINE-PLAN.md §4.3 point 2).
+//
+// "View SMS log" is NOT here: it opens a page, so it is a module row above,
+// one row for the screen and the server alike. A1–A2 (certificate texts) are
+// not rows either — nobody sends those, they are switches in SMS settings.
+const SMS_ROWS = [
+  [
+    "receive_reports",
+    "Receive incident reports",
+    "Lets the role switch report texts on for their own account, in “My SMS alerts”",
+    true,
+  ],
+  [
+    "text_resident",
+    "Text a resident",
+    "One-off texts from a resident\u2019s record — the number is theirs, not the barangay’s",
+    true,
+  ],
+  [
+    "send_sms_announcements",
+    "Send announcements by SMS",
+    "Costs credits and reaches every textable resident at once. Off for Officers by default",
+    false,
+  ],
+];
+
+// Which settings key holds each category of row.
+const PERM_SETTING = {
+  module: "module-access",
+  delete: "delete-permissions",
+  action: "action-permissions",
+  sms: "sms-permissions",
+};
+const permStore = (category) =>
+  category === "module"
+    ? modulePerms
+    : category === "delete"
+      ? deletePerms
+      : category === "sms"
+        ? smsPerms
+        : actionPerms;
+// Rows the server refuses to residents whatever is stored: every action row,
+// and the SMS Log module (other people's phone numbers).
+// Rows the server refuses to residents whatever is stored: every action and
+// SMS row, and the SMS Log module. Each one either creates accounts, spends
+// credits, or shows another person's phone number — and a report text carries
+// a caller's number and where they are.
+const residentLocked = (category, role, key) =>
+  roleKey(role) === "resident" &&
+  (category === "action" || category === "sms" || (category === "module" && key === "sms"));
 
 const roleKey = (role) => String(role).toLowerCase();
 const isBuiltinRole = (role) =>
@@ -142,10 +218,12 @@ function isAdminSession() {
 
 async function loadPermissions() {
   try {
-    const [roles, mod, del] = await Promise.all([
+    const [roles, mod, del, act, sms] = await Promise.all([
       apiGet("/api/settings/matrix-roles"),
       apiGet("/api/settings/module-access"),
       apiGet("/api/settings/delete-permissions"),
+      apiGet("/api/settings/action-permissions"),
+      apiGet("/api/settings/sms-permissions"),
     ]);
     const saved =
       roles && roles.value && Array.isArray(roles.value.roles)
@@ -161,6 +239,8 @@ async function loadPermissions() {
       });
     modulePerms = mod && mod.value && typeof mod.value === "object" ? mod.value : {};
     deletePerms = del && del.value && typeof del.value === "object" ? del.value : {};
+    actionPerms = act && act.value && typeof act.value === "object" ? act.value : {};
+    smsPerms = sms && sms.value && typeof sms.value === "object" ? sms.value : {};
   } catch (e) {
     /* keep defaults — matrix still renders with built-in access */
   }
@@ -171,12 +251,21 @@ async function loadPermissions() {
 // default (module access) or off (delete).
 function effectiveAccess(category, role, moduleKey) {
   const rk = roleKey(role);
-  const store = category === "module" ? modulePerms : deletePerms;
+  if (residentLocked(category, role, moduleKey)) return false;
+  const store = permStore(category);
   if (store[rk] && Object.prototype.hasOwnProperty.call(store[rk], moduleKey))
     return store[rk][moduleKey] === true;
   if (category === "module") {
     const def = DEFAULT_MODULE_ACCESS[rk];
     return !!(def && def[moduleKey]);
+  }
+  if (category === "action" || category === "sms") {
+    const rows = category === "action" ? ACTION_ROWS : SMS_ROWS;
+    const row = rows.find((r) => r[0] === moduleKey);
+    // Built-in defaults apply to the built-in Officer column only; a custom
+    // role starts with every action and SMS row off, and is granted them one
+    // at a time.
+    return !!(row && rk === "officer" && row[3]);
   }
   return false;
 }
@@ -194,9 +283,12 @@ function matrixRow(category, key, label, hint) {
   const cells = editableRoles
     .map((role) => {
       const on = effectiveAccess(category, role, key);
+      // Locked cells never flip: the server refuses them whatever is stored.
       return permCell(
         on,
-        admin ? `toggleAccess('${category}','${roleKey(role)}','${key}')` : null
+        admin && !residentLocked(category, role, key)
+          ? `toggleAccess('${category}','${roleKey(role)}','${key}')`
+          : null
       );
     })
     .join("");
@@ -236,6 +328,13 @@ function renderRoleMatrix() {
       <tbody>
         ${MATRIX_MODULES.map(([k, l, hint]) => matrixRow("module", k, l, hint)).join("")}
         ${matrixRow("delete", "records", "Delete Records")}
+        ${ACTION_ROWS.map(([k, l, hint]) => matrixRow("action", k, l, hint)).join("")}
+        <tr class="perm-group"><td colspan="${editableRoles.length + 2}">
+          Text messages (SMS)
+          <span class="table-muted" style="font-weight:400">
+            — enforced by the server. The SMS Log is a module row above.</span>
+        </td></tr>
+        ${SMS_ROWS.map(([k, l, hint]) => matrixRow("sms", k, l, hint)).join("")}
       </tbody>
     </table>`;
   if (typeof hydrateIcons === "function") hydrateIcons(el);
@@ -243,8 +342,8 @@ function renderRoleMatrix() {
 
 async function toggleAccess(category, rk, moduleKey) {
   if (!isAdminSession()) return;
-  const store = category === "module" ? modulePerms : deletePerms;
-  const settingKey = category === "module" ? "module-access" : "delete-permissions";
+  const store = permStore(category);
+  const settingKey = PERM_SETTING[category];
   const current = effectiveAccess(category, rk, moduleKey);
   const next = !current;
   if (!store[rk]) store[rk] = {};
@@ -265,8 +364,14 @@ async function toggleAccess(category, rk, moduleKey) {
   }
   if (typeof logAudit === "function")
     logAudit(
-      category === "module" ? "MODULE_ACCESS_UPDATE" : "DELETE_PERM_UPDATE",
-      `${rk} ${category === "module" ? "access to" : "delete permission for"} "${moduleKey}" → ${next ? "granted" : "revoked"}`,
+      category === "module"
+        ? "MODULE_ACCESS_UPDATE"
+        : category === "delete"
+          ? "DELETE_PERM_UPDATE"
+          : category === "sms"
+            ? "SMS_PERM_UPDATE"
+            : "ACTION_PERM_UPDATE",
+      `${rk} ${category === "module" ? "access to" : category === "delete" ? "delete permission for" : "permission to"} "${moduleKey}" → ${next ? "granted" : "revoked"}`,
       "warning",
       "settings"
     );
@@ -284,7 +389,7 @@ async function addMatrixRole() {
     field: {
       label: "Role name",
       placeholder: "e.g. Barangay Secretary",
-      hint: "Shown as a column header here and stored with the shared access settings, so the mobile app sees it too.",
+      hint: "Shown as a column header here and stored with the shared access settings.",
     },
     validate: (value) => {
       if (!value) return "Give the role a name.";
@@ -346,12 +451,14 @@ async function removeMatrixRole(role) {
   editableRoles = editableRoles.filter((r) => roleKey(r) !== rk);
   delete modulePerms[rk];
   delete deletePerms[rk];
+  delete actionPerms[rk];
   renderRoleMatrix();
   try {
     await Promise.all([
       apiPut("/api/settings/matrix-roles", { value: { roles: editableRoles } }),
       apiPut("/api/settings/module-access", { value: modulePerms }),
       apiPut("/api/settings/delete-permissions", { value: deletePerms }),
+      apiPut("/api/settings/action-permissions", { value: actionPerms }),
     ]);
   } catch (e) {
     editableRoles = prev;

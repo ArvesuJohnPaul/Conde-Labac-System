@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Claim Your Account | Brgy. Conde Labac</title>
+    <title>Apply for an Account | Brgy. Conde Labac</title>
     <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
     <script src="js/theme.js"></script>
     <script src="js/i18n.js"></script>
@@ -26,8 +26,11 @@
       <script src="js/icons.js"></script>
       <script src="js/preferences.js"></script>
       <script src="js/account-edit.js"></script>
+      <script src="js/sms-settings.js"></script>
+    <script src="js/sms-alerts.js"></script>
       <script src="js/change-password.js"></script>
     <script src="js/audit-log.js"></script>
+    <script src="js/account-application.js"></script>
   </head>
   <body>
     <div class="claim-card">
@@ -35,117 +38,16 @@
         <div class="claim-seal">
           <img src="img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
         </div>
-        <h1 class="claim-title">Claim Your Account</h1>
+        <h1 class="claim-title">Apply for an Account</h1>
         <p class="claim-subtitle">
-          Link your existing barangay record to a new C.A.R.E.S. resident
-          account.
+          Your C.A.R.E.S. resident account, checked against a valid ID by a
+          barangay official before it is opened.
         </p>
       </div>
 
-      <div class="acc-steps" id="acc-steps">
-        <div class="acc-step active" id="step-1-dot">1</div>
-        <div class="acc-step-line" id="step-line-1"></div>
-        <div class="acc-step" id="step-2-dot">2</div>
-        <div class="acc-step-line" id="step-line-2"></div>
-        <div class="acc-step" id="step-3-dot">3</div>
-      </div>
-      <div class="acc-step-labels">
-        <span>Verify Identity</span><span>Set Credentials</span
-        ><span>Confirmation</span>
-      </div>
-
-      <div id="acc-step-1">
-        <p class="acc-step-help">
-          We'll search for your pre-existing record in the barangay database to
-          link your account. Your data must already be registered with the
-          barangay.
-        </p>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">First Name</label>
-            <input class="form-control" id="acc-fname" required placeholder="Juan" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Last Name</label>
-            <input class="form-control" id="acc-lname" required placeholder="Santos" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Date of Birth</label>
-            <input class="form-control" type="date" id="acc-dob" />
-          </div>
-        </div>
-        <div id="acc-verify-result" class="is-hidden"></div>
-      </div>
-
-      <div id="acc-step-2" class="is-hidden">
-        <div class="alert alert-success alert-mb">
-          <span class="alert-icon"><i data-icon=check></i></span>
-          <strong>Record found!</strong> We found a matching resident record.
-          Please set your login credentials below.
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input
-            class="form-control"
-            type="email"
-            id="acc-email" required
-            placeholder="your@email.com"
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mobile Number</label>
-          <input
-            class="form-control"
-            type="tel"
-            id="acc-mobile"
-            placeholder="09XXXXXXXXX"
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input
-            class="form-control"
-            type="password"
-            id="acc-pass" required
-            placeholder="Minimum 8 characters"
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Confirm Password</label>
-          <input
-            class="form-control"
-            type="password"
-            id="acc-pass2" required
-            placeholder="Re-enter password"
-          />
-        </div>
-        <div class="alert alert-info">
-          <span class="alert-icon"><i data-icon=info></i></span> Your account will be linked to your
-          verified barangay record and activated immediately.
-        </div>
-      </div>
-
-      <div id="acc-step-3" class="acc-step-complete is-hidden">
-        <div class="acc-success-icon"><i data-icon=check></i></div>
-        <h3 class="acc-success-title">Account Claimed!</h3>
-        <p class="acc-success-copy" id="acc-success-copy">
-          Your account is now linked to your barangay record and active. You
-          can sign in with your email and password.
-        </p>
-        <div class="acc-ref-box">
-          <div class="acc-ref-label">Reference Number</div>
-          <div class="acc-ref-number" id="acc-ref-num">ACC-2025-0048</div>
-        </div>
-      </div>
-
-      <div class="claim-footer" id="acc-footer">
-        <a class="btn btn-outline" href="system.html">Cancel</a>
-        <button class="btn btn-gold" id="acc-next-btn" onclick="accNextStep()">
-          Verify Identity <i data-icon=arrow-right></i>
-        </button>
-      </div>
+      <!-- The wizard (details → valid ID → submitted) is js/account-application.js,
+           shared with the portal's service modal. -->
+      <div id="acc-app-root"></div>
 
       <a href="system.html" class="claim-back-link"><i data-icon=arrow-left></i> Back to Sign In</a>
     </div>
@@ -157,8 +59,6 @@
     </div>
 
     <script>
-      let accStep = 1;
-
       function showToast(msg, icon = "<i data-icon=check></i>") {
         const t = document.getElementById("toast");
         document.getElementById("toast-msg").textContent = msg;
@@ -170,124 +70,11 @@
           t.style.opacity = "0";
         }, 3500);
       }
-
-      // Wired to the real API (same endpoints as the in-app modal):
-      //   step 1 → POST /api/residents/claim/verify  (name + birthdate match)
-      //   step 2 → POST /api/residents/claim         (creates the account row)
-      // NOTE: steps are shown/hidden via the is-hidden CLASS — the old demo
-      // toggled style.display, which the class overrode, so step 2 (the email
-      // form) never appeared. That bug is why this page looked email-less.
-      let accVerified = null;
-
-      function accShowStep(n) {
-        ["acc-step-1", "acc-step-2", "acc-step-3"].forEach((id, i) => {
-          document.getElementById(id).classList.toggle("is-hidden", i !== n - 1);
-        });
-      }
-
-      async function accNextStep() {
-        const btn = document.getElementById("acc-next-btn");
-        if (accStep === 1) {
-          const fname = document.getElementById("acc-fname").value.trim();
-          const lname = document.getElementById("acc-lname").value.trim();
-          const dob = document.getElementById("acc-dob").value;
-          if (!fname || !lname) {
-            alert("Please fill in your name to continue.");
-            return;
-          }
-          const resultEl = document.getElementById("acc-verify-result");
-          resultEl.classList.remove("is-hidden");
-          resultEl.innerHTML =
-            '<div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> Verifying your record…</div>';
-          btn.disabled = true;
-          try {
-            accVerified = await apiPost("/api/residents/claim/verify", {
-              first_name: fname,
-              last_name: lname,
-              birthdate: dob || null,
-            });
-          } catch (err) {
-            accVerified = null;
-            resultEl.innerHTML =
-              '<div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> ' +
-              err.message + "</div>";
-            btn.disabled = false;
-            return;
-          }
-          btn.disabled = false;
-          resultEl.classList.add("is-hidden");
-          accShowStep(2);
-          document.getElementById("step-1-dot").style.background = "#22c55e";
-          document.getElementById("step-1-dot").innerHTML = "<i data-icon=check></i>";
-          document.getElementById("step-2-dot").classList.add("active");
-          document.getElementById("step-line-1").style.background = "#22c55e";
-          btn.innerHTML = "Create Account <i data-icon=arrow-right></i>";
-          accStep = 2;
-        } else if (accStep === 2) {
-          const email = document.getElementById("acc-email").value.trim();
-          const pass = document.getElementById("acc-pass").value;
-          const pass2 = document.getElementById("acc-pass2").value;
-          if (!email) {
-            alert("Please enter your email address.");
-            return;
-          }
-          if (pass !== pass2) {
-            alert("Passwords do not match.");
-            return;
-          }
-          if (pass.length < 8) {
-            alert("Password must be at least 8 characters.");
-            return;
-          }
-          btn.disabled = true;
-          try {
-            await apiPost("/api/residents/claim", {
-              resident_id: accVerified ? accVerified.id : undefined,
-              first_name: document.getElementById("acc-fname").value.trim(),
-              last_name: document.getElementById("acc-lname").value.trim(),
-              birthdate: document.getElementById("acc-dob").value || null,
-              email: email,
-              mobile_no: document.getElementById("acc-mobile").value.trim() || null,
-              password: pass,
-            });
-          } catch (err) {
-            alert("Could not claim account: " + err.message);
-            btn.disabled = false;
-            return;
-          }
-          btn.disabled = false;
-          accShowStep(3);
-          document.getElementById("step-2-dot").style.background = "#22c55e";
-          document.getElementById("step-2-dot").innerHTML = "<i data-icon=check></i>";
-          document.getElementById("step-3-dot").classList.add("active");
-          document.getElementById("step-line-2").style.background = "#22c55e";
-          const ref = accVerified
-            ? "ACC-" + String(accVerified.id).padStart(4, "0")
-            : "ACC-" + Date.now().toString().slice(-6);
-          document.getElementById("acc-ref-num").textContent = ref;
-          if (accVerified)
-            document.getElementById("acc-success-copy").textContent =
-              "The record for " + accVerified.name +
-              " is now linked to your account and active. You can sign in with your email and password.";
-          document.getElementById("acc-footer").innerHTML =
-            '<a class="btn btn-gold" href="system.html">Done — Go to Sign In <i data-icon=arrow-right></i></a>';
-          accStep = 3;
-          if (typeof logAudit === "function") {
-            const fname = document.getElementById("acc-fname").value.trim();
-            const lname = document.getElementById("acc-lname").value.trim();
-            logAudit(
-              "ACC_CLAIM_SUBMIT",
-              `Account claimed by ${fname} ${lname} <${email}> (Ref: ${ref})`,
-              "info",
-              "auth",
-            );
-          }
-          showToast("Account claimed! Ref: " + ref, "<i data-icon=check></i>");
-        }
-      }
+      AccountApplication.mount(document.getElementById("acc-app-root"), { mode: "page" });
     </script>
     <!-- Motion runtime: collapse/validation/exit animations. Last, so it
          observes a DOM every other script has already set up. -->
+    <script src="js/input-guard.js"></script>
     <script src="js/motion.js"></script>
   </body>
 </html>

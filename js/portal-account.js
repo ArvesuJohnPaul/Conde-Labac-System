@@ -9,7 +9,7 @@
 //   • Notifications  — /api/notifications feed with unread badge + polling
 //
 // Everything reads the session from localStorage (ibmdss.session) and calls
-// the same API the mobile app uses. All functions are defensive: signed-out
+// the shared API. All functions are defensive: signed-out
 // users get a friendly "sign in first" message instead of errors.
 (function () {
   "use strict";
@@ -106,26 +106,48 @@
   // Runs again whenever the list (re)loads. The choice already made is kept if
   // that certificate is still offered, so a reload never swaps the type out
   // from under someone mid-request.
+  //
+  // It opens on "Select a certificate", not on the first type in the list: a
+  // preselected first choice is how a resident who never looked at the
+  // dropdown files for a Barangay Clearance they did not want.
+  //
+  // What the resident sees is a box to type in, not the bare <select>: typing
+  // narrows the list as they go ("clear" → Barangay Clearance, Business
+  // Clearance) with the best match highlighted for Enter, and clicking the box
+  // still shows the whole list for anyone who would rather scroll. The hidden
+  // <select id="cert-type-select"> is where the choice is kept: the submit
+  // path, the reset and the tests read it, and the box only ever writes a slug
+  // from the list into it, so what is filed is always a certificate the
+  // barangay offers, never free text.
   function renderCertTypeGrid() {
     const grid = document.getElementById("cert-type-grid");
     if (!grid) return;
     const previous = document.getElementById("cert-type-select")?.value || "";
     // The container is a CSS grid meant for cards; one full-width control.
     grid.style.display = "block";
-    grid.innerHTML = CERT_TYPE_OPTIONS.length
-      ? '<select class="form-control" id="cert-type-select"' +
-        ' onchange="certTypeChanged(this)">' +
-        CERT_TYPE_OPTIONS.map(function (t) {
-          return `<option value="${esc(t.slug)}">${esc(t.label)}</option>`;
-        }).join("") +
-        "</select>"
-      : '<select class="form-control" id="cert-type-select" disabled><option value="">' +
-        (window.certTypesLoadError
-          ? "Could not load the list of certificates — check your connection and reopen this form."
-          : "Loading certificates…") +
-        "</option></select>";
+    const loading = window.certTypesLoadError
+      ? "Could not load the list of certificates — check your connection and reopen this form."
+      : "Loading certificates…";
+    grid.innerHTML =
+      '<div class="cert-combo">' +
+      '<input class="form-control cert-combo-input" id="cert-type-search" type="text"' +
+      ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cert-type-list"' +
+      ' aria-label="Certificate type" autocomplete="off" spellcheck="false" maxlength="120"' +
+      (CERT_TYPE_OPTIONS.length
+        ? ' placeholder="Type to search, or click to see the list" />'
+        : ` placeholder="${esc(loading)}" disabled />`) +
+      '<ul class="cert-combo-list" id="cert-type-list" role="listbox" aria-label="Certificates" hidden></ul>' +
+      '<select id="cert-type-select" hidden tabindex="-1" aria-hidden="true" onchange="certTypeChanged(this)"' +
+      (CERT_TYPE_OPTIONS.length ? "" : " disabled") +
+      ">" +
+      '<option value="">Select a certificate</option>' +
+      CERT_TYPE_OPTIONS.map(function (t) {
+        return `<option value="${esc(t.slug)}">${esc(t.label)}</option>`;
+      }).join("") +
+      "</select></div>";
     const sel = document.getElementById("cert-type-select");
     if (previous && CERT_TYPE_OPTIONS.some((t) => t.slug === previous)) sel.value = previous;
+    bindCertCombo(document.getElementById("cert-type-search"), document.getElementById("cert-type-list"), sel);
     // The "Selected: …" badge only existed because the cards were hard to read
     // at a glance; the dropdown states the choice itself. Reuse its slot for the
     // requirement list, which does change with the selection.
@@ -145,11 +167,169 @@
     if (!open || sel.value !== previous) certTypeChanged(sel);
   }
 
+  // ── Type to find a certificate ─────────────────────────────────────────
+  // Every word typed has to appear in the name, in any order, so "clearance
+  // business" still finds Business Clearance. Names that begin with what was
+  // typed come first, then names with a word that begins with it, then the
+  // rest, each group in the list's own order.
+  function certMatches(text) {
+    const q = String(text || "").toLowerCase().trim();
+    const words = q.split(/\s+/).filter(Boolean);
+    if (!words.length) return CERT_TYPE_OPTIONS.slice();
+    const rank = (label) => {
+      const l = label.toLowerCase();
+      if (l.startsWith(q)) return 0;
+      return l.split(/[\s(/-]+/).some((w) => w.startsWith(words[0])) ? 1 : 2;
+    };
+    return CERT_TYPE_OPTIONS.map((t, i) => ({ t, i, hay: (t.label + " " + (t.short || "")).toLowerCase() }))
+      .filter((x) => words.every((w) => x.hay.includes(w)))
+      .map((x) => ({ t: x.t, i: x.i, r: rank(x.t.label) }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)
+      .map((x) => x.t);
+  }
+
+  // The name with each typed word marked, escaped piece by piece.
+  function markMatches(label, text) {
+    const words = String(text || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (!words.length) return esc(label);
+    return label
+      .split(new RegExp("(" + words.join("|") + ")", "gi"))
+      .map((part, i) => (i % 2 ? "<mark>" + esc(part) + "</mark>" : esc(part)))
+      .join("");
+  }
+
+  function bindCertCombo(input, list, sel) {
+    if (!input || !list || !sel) return;
+    const labelOf = (slug) => (slug && CERT_LABELS[slug]) || "";
+    input.value = labelOf(sel.value);
+    let shown = [];
+    let active = -1;
+
+    // Nothing to filter by while the box still shows the current choice, so
+    // reopening it on a chosen certificate shows the whole list again.
+    const query = () => (sel.value && input.value === labelOf(sel.value) ? "" : input.value);
+
+    function paint() {
+      const q = query();
+      shown = certMatches(q);
+      if (active >= shown.length) active = shown.length - 1;
+      list.innerHTML = shown.length
+        ? shown
+            .map(
+              (t, i) =>
+                `<li class="cert-combo-option${i === active ? " active" : ""}" id="cert-type-opt-${i}"` +
+                ` role="option" data-slug="${esc(t.slug)}" aria-selected="${t.slug === sel.value}">` +
+                markMatches(t.label, q) +
+                "</li>"
+            )
+            .join("")
+        : `<li class="cert-combo-empty" role="presentation">No certificate matches “${esc(q.trim())}”.</li>`;
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      if (active >= 0) {
+        input.setAttribute("aria-activedescendant", "cert-type-opt-" + active);
+        list.children[active]?.scrollIntoView({ block: "nearest" });
+      } else input.removeAttribute("aria-activedescendant");
+    }
+
+    function close() {
+      list.hidden = true;
+      active = -1;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+
+    function pick(slug) {
+      const changed = sel.value !== slug;
+      sel.value = slug;
+      input.value = labelOf(slug);
+      close();
+      if (window.Motion) Motion.clearField(input);
+      if (changed) window.certTypeChanged(sel);
+    }
+
+    // Leaving the box settles it: a name typed out in full is taken as the
+    // choice, an emptied box clears it, and anything else goes back to the
+    // choice already made — so the box never shows a name that is not what
+    // will be filed, and an empty box always means nothing is chosen.
+    function settle() {
+      const text = input.value.trim().toLowerCase();
+      if (!text) {
+        if (sel.value) pick("");
+        else close();
+        return;
+      }
+      const exact = CERT_TYPE_OPTIONS.find(
+        (t) => t.label.toLowerCase() === text || (t.short || "").toLowerCase() === text
+      );
+      if (exact) return pick(exact.slug);
+      input.value = labelOf(sel.value);
+      close();
+    }
+
+    input.addEventListener("focus", () => {
+      input.select();
+      paint();
+    });
+    input.addEventListener("click", () => {
+      if (list.hidden) paint();
+    });
+    // The best match is highlighted as soon as anything is typed, so Enter
+    // takes the top suggestion.
+    input.addEventListener("input", () => {
+      active = input.value.trim() ? 0 : -1;
+      paint();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        if (list.hidden) paint();
+        if (!shown.length) return;
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        active = active < 0 ? (step > 0 ? 0 : shown.length - 1) : (active + step + shown.length) % shown.length;
+        paint();
+      } else if (e.key === "Enter") {
+        if (!list.hidden && active >= 0 && shown[active]) {
+          e.preventDefault();
+          pick(shown[active].slug);
+        }
+      } else if (e.key === "Escape") {
+        // Closes the list, not the whole form.
+        if (!list.hidden) {
+          e.preventDefault();
+          e.stopPropagation();
+          input.value = labelOf(sel.value);
+          close();
+        }
+      } else if (e.key === "Tab") {
+        // Tab takes the highlighted suggestion too — but only once something
+        // has been typed, so tabbing past the box leaves the choice alone.
+        if (!list.hidden && active >= 0 && shown[active] && query().trim()) pick(shown[active].slug);
+      }
+    });
+    input.addEventListener("blur", settle);
+    // Pressing on a suggestion would otherwise blur the box before the click
+    // lands, and settle() would undo what was typed.
+    list.addEventListener("mousedown", (e) => e.preventDefault());
+    list.addEventListener("click", (e) => {
+      const li = e.target.closest("[data-slug]");
+      if (li) pick(li.dataset.slug);
+    });
+  }
+
   // Keeps the legacy `selectedCert` global in step with the dropdown. The real
   // submit path reads the slug straight off the <select>.
   window.certTypeChanged = function (sel) {
     if (!sel) return;
     const label = CERT_LABELS[sel.value] || sel.value;
+    // The box the resident types in shows the choice by name — including one
+    // made some other way, or cleared by the form's reset.
+    const box = document.getElementById("cert-type-search");
+    if (box) box.value = sel.value ? label : "";
     // shell.js / index.html declare `selectedCert` with a top-level let, which
     // is not a window property — and this file runs strict, so a missing
     // binding throws rather than quietly creating a global.
@@ -158,10 +338,187 @@
     } catch (_) {
       /* page without the demo global */
     }
-    // Each certificate asks for different documents.
+    // Each certificate asks for different documents, has different blanks,
+    // and only some have a residency requirement.
     if (typeof certRenderRequirements === "function")
       certRenderRequirements(sel.value);
+    renderCertBlanks(sel.value);
+    paintResidencyNotice(sel.value);
   };
+
+  // ── The certificate's own blanks, filled in before filing ──────────────
+  // Most of a certificate fills itself from the resident's record (name, age,
+  // purok, birthdate). What is left is what only the requester knows: their
+  // parents' names on a Certificate of Residency, the business on a Business
+  // Clearance, how many children on a Solo Parent certification.
+  //
+  // These are asked for HERE, on the request form, and go in with the filing
+  // (form_fields on POST /api/certificates). They used to be asked for after
+  // filing, on the printed form itself, which the requester could then keep
+  // changing from My Activity until staff acted on it. A filed request is now
+  // the barangay's to change — routes/certificates.js only lets staff edit it.
+  //
+  // Which blanks: a field the form does not fill from the record (no source)
+  // and is not left for a signature by hand. Read from the same templates the
+  // printed sheet uses (js/certificate-templates.js), so a blank added in
+  // Certificate Forms appears here without touching this file.
+  function certBlankFields(slug) {
+    if (!slug || typeof CERT_TEMPLATES === "undefined" || !CERT_TEMPLATES[slug]) return [];
+    const sources = typeof CERT_FIELD_SOURCE_MAP !== "undefined" ? CERT_FIELD_SOURCE_MAP : {};
+    return CERT_TEMPLATES[slug].fields.filter((f) => !f.manual && !sources[f.source]);
+  }
+
+  // What each blank holds, from its key — so a parent's name takes letters and
+  // a head count takes digits (js/input-guard.js does the refusing).
+  const BLANK_KINDS = [
+    [/birthdate$/, "date"],
+    [/^(heads|children)$/, "digits"],
+    [/(^|_)(father|mother|relative|child_name|lot_owner|functionary|hauler)$/, "name"],
+  ];
+  function blankKind(key) {
+    for (const [re, kind] of BLANK_KINDS) if (re.test(key)) return kind;
+    return "text";
+  }
+
+  function blanksWrap() {
+    let wrap = document.getElementById("cert-blanks");
+    if (wrap) return wrap;
+    // Just above Purpose: after the person's own details, before the why.
+    const group = document.getElementById("cert-purpose")?.closest(".form-group");
+    if (!group) return null;
+    wrap = document.createElement("div");
+    wrap.id = "cert-blanks";
+    group.parentNode.insertBefore(wrap, group);
+    return wrap;
+  }
+
+  function renderCertBlanks(slug) {
+    const wrap = blanksWrap();
+    if (!wrap) return;
+    const fields = certBlankFields(slug);
+    if (!fields.length) {
+      wrap.innerHTML = "";
+      return;
+    }
+    wrap.innerHTML =
+      '<label class="form-label">Details printed on the certificate</label>' +
+      '<p class="modal-help-text" style="margin:0 0 10px">Fill in what applies to you. ' +
+      "Check them before you submit — once the request is filed, only barangay staff can change them.</p>" +
+      '<div class="form-row">' +
+      fields
+        .map((f) => {
+          const id = "cert-blank-" + f.key;
+          const label = esc(f.label || f.key);
+          const hint = f.value ? ` placeholder="e.g. ${esc(f.value)}"` : "";
+          let control;
+          if ((f.options || []).length) {
+            control =
+              `<select class="form-control" id="${id}" data-blank="${esc(f.key)}">` +
+              '<option value="">Select one</option>' +
+              f.options.map((o) => `<option value="${esc(o)}">${esc(o)}</option>`).join("") +
+              "</select>";
+          } else {
+            const kind = blankKind(f.key);
+            control =
+              kind === "date"
+                ? `<input class="form-control" type="date" id="${id}" data-blank="${esc(f.key)}" data-rule="past-date" />`
+                : `<input class="form-control" id="${id}" data-blank="${esc(f.key)}" maxlength="${kind === "digits" ? 3 : 120}"` +
+                  (kind === "text" ? "" : ` data-rule="${kind}"`) +
+                  hint +
+                  " />";
+          }
+          return `<div class="form-group"><label class="form-label" for="${id}">${label}</label>${control}</div>`;
+        })
+        .join("") +
+      "</div>";
+  }
+
+  // The values typed into the blanks, as the printed form wants them — a date
+  // the way a certificate writes one ("March 14, 1992"), not "1992-03-14".
+  function collectCertBlanks() {
+    const out = {};
+    document.querySelectorAll("#cert-blanks [data-blank]").forEach((el) => {
+      let v = String(el.value || "").trim();
+      if (!v) return;
+      if (el.type === "date") {
+        const d = new Date(v + "T00:00:00");
+        if (!isNaN(d))
+          v = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+      }
+      out[el.dataset.blank] = v;
+    });
+    return out;
+  }
+
+  // ── Residency: six months before a residency certificate ───────────────
+  // The barangay issues a Certificate of Barangay Residency only to someone
+  // who has lived here at least six months (routes/certificates.js refuses
+  // the filing otherwise). The resident's record says from when they may —
+  // residency_cert_from, worked out by the server from the start of residency
+  // the barangay recorded — so the form can say so as soon as the certificate
+  // is picked, instead of after the resident has filled everything in.
+  const RESIDENCY_TYPES = ["residency"];
+  // The signed-in resident's record, once prefillCertificateForm() has it.
+  let CERT_RESIDENT = null;
+
+  function todayIso() {
+    if (window.InputGuard) return InputGuard.today();
+    const d = new Date();
+    return [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+      .map((n, i) => (i ? String(n).padStart(2, "0") : n))
+      .join("-");
+  }
+
+  function longDate(iso) {
+    const d = new Date(iso + "T00:00:00");
+    return isNaN(d)
+      ? iso
+      : d.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
+  }
+
+  // null when this resident may file for this certificate; otherwise the
+  // dates that explain why not.
+  function residencyBlock(slug) {
+    if (!RESIDENCY_TYPES.includes(slug) || !CERT_RESIDENT) return null;
+    const from = CERT_RESIDENT.residency_cert_from;
+    if (!from || from <= todayIso()) return null;
+    return { since: CERT_RESIDENT.residency_start || CERT_RESIDENT.date_registered, from };
+  }
+
+  function paintResidencyNotice(slug) {
+    const grid = document.getElementById("cert-type-grid");
+    if (!grid) return;
+    let note = document.getElementById("cert-eligibility");
+    if (!note) {
+      note = document.createElement("div");
+      note.id = "cert-eligibility";
+      note.setAttribute("role", "alert");
+      grid.parentNode.insertBefore(note, grid.nextSibling);
+    }
+    const block = residencyBlock(slug);
+    const submitBtn = document.querySelector('#modal-certificates [onclick="submitCertificate()"]');
+    if (submitBtn) {
+      submitBtn.disabled = !!block;
+      submitBtn.title = block ? "You can't apply for this certificate yet — see the note above." : "";
+    }
+    if (!block) {
+      note.innerHTML = "";
+      note.className = "";
+      return;
+    }
+    note.className = "alert alert-warning";
+    note.style.marginTop = "10px";
+    note.innerHTML =
+      '<span class="alert-icon"><i data-icon=triangle-alert></i></span>' +
+      "<div><strong>You can't apply for a Certificate of Barangay Residency yet.</strong> " +
+      "It is issued only to residents who have lived in Barangay Conde Labak for at least " +
+      "6 months. Your residency on record started on <strong>" +
+      esc(longDate(block.since)) +
+      "</strong>, so you can apply from <strong>" +
+      esc(longDate(block.from)) +
+      "</strong>. If that start date is wrong, please visit the barangay hall to have it corrected.</div>";
+    hydrate(note);
+  }
 
   const CERT_BADGES = {
     pending: "badge-warning",
@@ -175,32 +532,43 @@
   // it works with both index.html's and shell.js's copies of the modal.
   function selectedCertName() {
     const el = document.querySelector(".cert-type-card.selected .cert-name");
-    return (el && el.textContent.trim()) || (CERT_TYPE_OPTIONS[0] || {}).short || "";
+    return (el && el.textContent.trim()) || "";
   }
 
-  // The dropdown's value *is* the slug. The card lookups behind it are there
-  // for any page still showing the old hardcoded type cards.
+  // The dropdown's value *is* the slug — "" until one is picked; there is no
+  // falling back to the first type in the list. The card lookups are there for
+  // any page still showing the old hardcoded type cards.
   function selectedCertSlug() {
     const sel = document.getElementById("cert-type-select");
-    if (sel && sel.value) return sel.value;
+    if (sel) return sel.value;
     const card = document.querySelector(".cert-type-card.selected");
-    return (
-      (card && card.dataset.slug) ||
-      certSlugForName(selectedCertName()) ||
-      (CERT_TYPE_OPTIONS[0] || {}).slug ||
-      ""
-    );
+    return (card && card.dataset.slug) || certSlugForName(selectedCertName()) || "";
   }
 
   window.submitCertificate = async function () {
+    const modal = document.getElementById("modal-certificates");
     const val = (id) => (document.getElementById(id)?.value || "").trim();
     if (
       !requireFields(
-        ["cert-fname", "cert-lname"],
-        "Please enter your first and last name."
+        [
+          // Marked on the box the resident types in, which is empty exactly
+          // when nothing is chosen (settle() sees to that on the way out).
+          {
+            id: document.getElementById("cert-type-search") ? "cert-type-search" : "cert-type-select",
+            message: "Choose the certificate you need.",
+          },
+          "cert-fname",
+          "cert-lname",
+          { id: "cert-purok", message: "Choose your purok." },
+          { id: "cert-purpose", message: "Say what the certificate is for — for example, employment." },
+        ],
+        "Please choose a certificate and fill in your name, purok and purpose."
       )
     )
       return;
+    // What is filled in has to be right too: a name in letters, an 11-digit
+    // number, a birthday that has happened and a pickup day that has not.
+    if (window.InputGuard && !InputGuard.check(modal)) return;
     const fname = val("cert-fname");
     const lname = val("cert-lname");
     const type = selectedCertSlug();
@@ -211,17 +579,25 @@
       );
       return;
     }
+    // Normally the Submit button is already off; this is for the record that
+    // arrived after the certificate was picked.
+    if (residencyBlock(type)) {
+      paintResidencyNotice(type);
+      if (window.Motion) Motion.shakeBox(document.getElementById("cert-eligibility"));
+      return;
+    }
     const certName = CERT_LABELS[type] || selectedCertName();
     // Extra details ride along in `purpose` — the certificate table keeps a
-    // single free-text purpose column (same convention as the mobile app).
+    // single free-text purpose column.
     const extras = [
       val("cert-purpose"),
       val("cert-contact") && "Contact: " + val("cert-contact"),
       val("cert-pickup") && "Preferred pickup: " + fmtDate(val("cert-pickup")),
-      val("cert-purok") && "Address: " + val("cert-purok"),
+      val("cert-purok"),
     ]
       .filter(Boolean)
       .join(" · ");
+    const blanks = collectCertBlanks();
 
     // Missing requirements are a warning, not a wall: a walk-in can still bring
     // the paper to the hall, and the barangay would rather have the request in
@@ -270,6 +646,7 @@
         type: type,
         applicant_name: lname + ", " + fname,
         purpose: extras || null,
+        form_fields: Object.keys(blanks).length ? blanks : null,
         resident_id: s?.resident_id || null,
         account_id: s?.account_id || null,
       });
@@ -277,7 +654,7 @@
       // The form stays open with everything the user typed still in it, and
       // the submit button shakes to say the press did not take.
       toast("Could not submit the request: " + err.message, "<i data-icon=triangle-alert></i>");
-      if (window.Motion) Motion.shakeBox(document.getElementById("modal-certificates"));
+      if (window.Motion) Motion.shakeBox(modal);
       return;
     }
 
@@ -314,52 +691,19 @@
       );
     toast(`${certName} request submitted! Ref: ${res.request_no}`, "<i data-icon=file-text></i>");
 
-    // Show the requester the actual form so they can fill in the blanks only
-    // they know (relation, employer, purpose wording). What they type saves to
-    // certificate.form_fields, so the barangay prints their words rather than
-    // guessing. Skipped when the export machinery isn't on the page, or when
-    // this certificate type has no printable form yet.
-    //
-    // Either way the requester ends on a note saying where the request lives
-    // from here on — after they close the sheet, or straight away when there
-    // is no sheet to show.
-    const pointToActivity = () => showSubmittedNotice(certName, res.request_no);
-    if (
-      typeof certOpenSheet === "function" &&
-      typeof certHasTemplate === "function" &&
-      certHasTemplate(type)
-    ) {
-      // POST returns the row, but not the joined columns the details panel
-      // shows — and an older server returns fewer columns still. Everything the
-      // sheet needs is already known here, so seed it all and let the response
-      // override only what it actually carries.
-      certOpenSheet(
-        Object.assign(
-          {
-            type: type,
-            applicant_name: lname + ", " + fname,
-            purpose: extras || null,
-            status: "pending",
-            created_at: new Date().toISOString(),
-            resident_id: s?.resident_id || null,
-            processed_by_name: null,
-            processed_at: null,
-            remarks: null,
-            form_fields: null,
-          },
-          res
-        ),
-        { mode: "requester", onClose: pointToActivity }
-      );
-    } else {
-      pointToActivity();
-    }
+    // The requester used to be shown the printed form here, editable, to fill
+    // in the blanks only they know. Those are asked on the request form now,
+    // before filing (renderCertBlanks), and a filed request is the barangay's
+    // to change — so this ends on where to find the request again, and View in
+    // My Activity shows the form read-only.
+    showSubmittedNotice(certName, res.request_no);
   };
 
-  // Back to a blank form: every field emptied, the type back to the first in
-  // the list (which redraws its requirement list and drops any chosen files),
-  // and last time's validation marks cleared. The resident's own details come
-  // back on the next open — openServicePopup() refills them from their record.
+  // Back to a blank form: every field emptied, every dropdown back to its
+  // "Select …" line (which clears the requirement list, the blanks and any
+  // chosen files), and last time's validation marks cleared. The resident's
+  // own details come back on the next open — openServicePopup() refills them
+  // from their record.
   function resetCertificateForm() {
     const modal = document.getElementById("modal-certificates");
     if (!modal) return;
@@ -399,6 +743,7 @@
     } catch (e) {
       return; // best-effort — the blank form still works
     }
+    CERT_RESIDENT = r;
     const set = (id, v) => {
       const el = document.getElementById(id);
       if (el && !el.value && v) el.value = v;
@@ -407,15 +752,14 @@
     set("cert-lname", r.last_name);
     set("cert-dob", r.birthdate);
     set("cert-contact", r.contact_no);
+    // The record's purok is "Purok 3" and so is the option — matched exactly.
     const purokSel = document.getElementById("cert-purok");
-    if (purokSel && r.purok) {
-      for (const opt of purokSel.options) {
-        if (opt.value.indexOf(r.purok) === 0) {
-          purokSel.value = opt.value;
-          break;
-        }
-      }
+    if (purokSel && r.purok && !purokSel.value) {
+      const opt = Array.from(purokSel.options).find((o) => o.value === r.purok);
+      if (opt) purokSel.value = opt.value;
     }
+    // The record may arrive after the certificate was already picked.
+    paintResidencyNotice(selectedCertSlug());
   }
 
   // Wrap openServicePopup so opening the certificate modal auto-fills it.
@@ -432,8 +776,8 @@
     // How many stars are lit IS the rating — there is no default. This used to
     // read `.length || 4`, so a resident who never touched the control had
     // their submission filed as four stars: an opinion they never gave,
-    // counted into the barangay's average rating and into the sentiment split
-    // beside it. Now an untouched row is 0, and 0 is refused below.
+    // counted into the barangay's average rating. Now an untouched row is 0,
+    // and 0 is refused below.
     const rating = document.querySelectorAll(".star.active").length;
     // The star row is a <div>, so the validation helpers can only see it
     // through a `.value` (setRating writes one). Set it from what is lit right
@@ -445,13 +789,15 @@
     if (
       !requireFields(
         [
+          { id: "fb-category", message: "Choose what your feedback is about." },
           { id: "star-rating", message: "Choose a star rating — one to five." },
           { id: "fb-comment", message: "Tell us what you would like to say." },
         ],
-        "Please choose a star rating and enter a comment."
+        "Please choose a category and a star rating, and enter a comment."
       )
     )
       return;
+    if (window.InputGuard && !InputGuard.check(document.getElementById("modal-feedback"))) return;
     const comment = (document.getElementById("fb-comment")?.value || "").trim();
     const category = document.getElementById("fb-category")?.value || "Other";
     const name = (document.getElementById("fb-name")?.value || "").trim();
@@ -480,6 +826,12 @@
     // the last one's rating. This handler replaces the shell's, so the reset
     // it does has to happen here too.
     if (typeof resetRating === "function") resetRating();
+    // …and the rest of the form with it, the category back to "Select a
+    // category" rather than holding the last person's choice.
+    ["fb-category", "fb-comment", "fb-name", "fb-contact"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
     if (typeof logAudit === "function")
       logAudit("FEEDBACK_SUBMIT", `Feedback submitted — rated ${rating}/5`, "info", "feedback");
     if (typeof refreshRecentFeedback === "function") refreshRecentFeedback();
@@ -597,6 +949,7 @@
         // map ("Bahay ni Shane"), so it has no household number.
         row("Household", v(r.household_name)) +
         row("Classifications", cats || dash) +
+        row("Resident Since", r.residency_start ? v(fmtDate(r.residency_start)) : '<span class="table-muted">Not recorded</span>') +
         row("Date Registered", v(fmtDate(r.date_registered)));
     });
   };
@@ -709,7 +1062,10 @@
         }),
       s.account_id &&
         pull("feedback", async () => {
-          const rows = await get("/api/feedback");
+          // ?mine=1: the server sends back only what this account sent. The
+          // full list is staff data now; the filter below is kept as a second
+          // check, not as the thing doing the hiding.
+          const rows = await get("/api/feedback?mine=1");
           rows
             .filter((f) => f.account_id === s.account_id)
             .forEach((f) => {
@@ -745,7 +1101,7 @@
   }
 
   // Only the resident-facing states. The AI triage columns on a feedback row
-  // (sentiment, urgency, alerts) are staff working notes, not part of what the
+  // (topics, urgency, alerts) are staff working notes, not part of what the
   // resident submitted, so they are never shown here.
   const FEEDBACK_STATUSES = {
     new: { label: "Received", badge: "badge-info" },
@@ -963,7 +1319,7 @@
           .join("");
         hydrate(body);
       }
-      // Opening the feed clears the unread badge (same as the mobile app).
+      // Opening the feed clears the unread badge.
       if (rows.some((n) => !n.is_read)) {
         post("/api/notifications/read-all", { account_id: s.account_id }).catch(() => {});
       }

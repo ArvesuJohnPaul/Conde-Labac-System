@@ -1,8 +1,9 @@
 // ════════════════════ SITE CONFIG ════════════════════
 // Editable content for the public landing page — the "Latest Announcements"
-// bulletin and the "Barangay Officials" cards. Both live in the shared DB
-// (/api/announcements + /api/officials, managed from the MIS → Site Content
-// page — pages/content.html on the web, and the mobile app's equivalent).
+// bulletin, the barangay's history and the "Barangay Officials" cards. All
+// three live in the shared DB (/api/announcements, /api/history,
+// /api/officials, managed from the MIS → Site Content page —
+// pages/content.html).
 // localStorage keeps a best-effort cache so the landing page still renders
 // something when the API is unreachable.
 // Loaded on index.html and pages/content.html (after js/api.js).
@@ -260,6 +261,61 @@
     });
   }
 
+  // ── Barangay history ───────────────────────────────────────
+  // The story is stored as plain text with a blank line between paragraphs.
+  // A single line break inside a paragraph is read as a space: text copied out
+  // of a scanned page or a PDF arrives broken at the end of every printed line,
+  // and keeping those breaks would print it ragged.
+  function historyParagraphs(body) {
+    return String(body || "")
+      .split(/\n\s*\n/)
+      .map(function (p) {
+        return p.replace(/\s+/g, " ").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function fetchHistory() {
+    return apiGet("/api/history")
+      .then(function (h) {
+        writeCache({ history: h });
+        return h;
+      })
+      .catch(function () {
+        return readCache().history || null;
+      });
+  }
+
+  // Fills the landing page's #history section. The page carries the text
+  // written in as its fallback, so when neither the API nor the cache has an
+  // answer nothing is touched. An empty story takes the section off the page,
+  // along with every link that points at it.
+  function renderHistory(sectionId) {
+    var section = document.getElementById(sectionId);
+    if (!section) return;
+    fetchHistory().then(function (h) {
+      if (!h) return;
+      var paras = historyParagraphs(h.body);
+      section.hidden = !paras.length;
+      Array.prototype.forEach.call(
+        document.querySelectorAll('a[href="#' + sectionId + '"]'),
+        function (a) {
+          (a.closest("li") || a).classList.toggle("is-hidden", !paras.length);
+        }
+      );
+      if (!paras.length) return;
+      var title = document.getElementById("history-title");
+      if (title && h.title) title.textContent = h.title;
+      var text = document.getElementById("history-text");
+      if (text)
+        text.innerHTML = paras
+          .map(function (p) {
+            return "<p>" + escapeHtml(p) + "</p>";
+          })
+          .join("");
+    });
+  }
+
   // Expose on window for use by pages.
   window.SiteConfig = {
     KEY: SITE_CONFIG_KEY,
@@ -269,6 +325,9 @@
     fetchAnnouncements: fetchAnnouncements,
     renderOfficials: renderOfficials,
     renderAnnouncements: renderAnnouncements,
+    fetchHistory: fetchHistory,
+    renderHistory: renderHistory,
+    historyParagraphs: historyParagraphs,
     formatAnnouncementDate: formatAnnouncementDate,
     tagClass: tagClass,
     officialFromApi: officialFromApi,

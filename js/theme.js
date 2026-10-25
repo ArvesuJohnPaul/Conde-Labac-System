@@ -1,9 +1,6 @@
 // ════════════════════ THEME ════════════════════
 // Appearance preference (light / dark / follow system), persisted across
-// visits. The web counterpart of the mobile app's ThemeController
-// (cares_app/lib/data/theme_controller.dart) — same three modes, same
-// localStorage key name, so the two halves of the system describe the
-// preference identically even though they can't share storage.
+// visits in localStorage.
 //
 // Load this in <head>, BEFORE any stylesheet, on every page. It applies the
 // saved theme synchronously so the first paint is already correct — deferring
