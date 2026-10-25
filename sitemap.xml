@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The public pages, for search engines (Google Search Console → Sitemaps).
+     Staff pages (pages/*.html) are left out and carry noindex.
+     If the site moves to a custom domain, change these addresses to it. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/</loc>
+  </url>
+  <url>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/claim-account.html</loc>
+  </url>
+  <url>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/system.html</loc>
+  </url>
+</urlset>
