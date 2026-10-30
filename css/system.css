@@ -6009,3 +6009,306 @@ textarea.sc-doc-text {
     align-items: stretch;
   }
 }
+
+/* ─── HOUSEHOLD RESIDENTS PANEL ─────────────────────────────────────────────
+   The roster that opens when a tagged house is clicked on the GIS map
+   (js/household-panel.js). It is a reading screen before it is a working one:
+   an officer standing at a house wants to see, in one pass, how many people
+   live there, which of them are seniors, PWDs, solo parents or minors, and who
+   can be phoned. So the counts come first as tiles, then one row per resident
+   with the facts that decide what happens next, and the connect box last. */
+.hh-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.hh-name {
+  font-size: 1.15rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+.hh-sub {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.hh-sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hh-sub svg,
+.hh-row-lines svg,
+.hh-row-flag svg,
+.hh-flag svg,
+.hh-empty svg {
+  width: 14px;
+  height: 14px;
+}
+.hh-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hh-notes {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken, rgba(27, 42, 74, 0.04));
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+/* Eight small counts, four to a row on a desktop modal and two on a phone.
+   auto-fit rather than a fixed count so the row never leaves a ragged gap. */
+/* Eight counts, four to a row: a fixed four keeps them in two even rows of
+   related things (people, then vulnerabilities) instead of the ragged 6 + 2 an
+   auto-fit produced at this width. */
+.hh-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+}
+@media (max-width: 560px) {
+  .hh-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.hh-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.hh-tile-value {
+  font-size: 1.25rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+.hh-tile-label {
+  font-size: 0.68rem;
+  letter-spacing: var(--tracking-wide, 0.04em);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* "Nobody here can be reached by phone" is a fact worth a colour: it decides
+   whether an advisory about this house can be sent at all. */
+.hh-tile-warn {
+  border-color: rgba(217, 119, 6, 0.45);
+  background: rgba(217, 119, 6, 0.08);
+}
+.hh-flag {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  background: rgba(217, 119, 6, 0.08);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.hh-section-title {
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+.hh-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.hh-row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.hh-avatar {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy, #0d1b3e);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: var(--weight-bold);
+}
+.hh-avatar-sm {
+  width: 30px;
+  height: 30px;
+  font-size: 0.7rem;
+}
+.hh-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hh-row-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hh-row-name {
+  font-weight: var(--weight-semibold, 600);
+  color: var(--text-primary);
+}
+.hh-row-facts {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.hh-row-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.hh-row-lines span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hh-muted {
+  color: var(--text-muted);
+}
+.hh-ok {
+  color: #0d9488;
+  font-weight: var(--weight-semibold, 600);
+}
+.hh-warn,
+.hh-row-flag {
+  color: #b45309;
+}
+.hh-row-flag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 0.76rem;
+}
+.hh-row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  flex: 0 0 auto;
+}
+.hh-remove {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.35);
+}
+.hh-empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+}
+.hh-empty svg {
+  width: 26px;
+  height: 26px;
+  color: var(--text-muted);
+}
+.hh-empty p {
+  margin: 0;
+  font-size: 0.85rem;
+  max-width: 44ch;
+}
+.hh-connect {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+.hh-search-wrap {
+  position: relative;
+}
+.hh-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.hh-search-wrap .form-control {
+  padding-left: 34px;
+}
+.hh-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-3);
+}
+.hh-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.hh-result-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hh-no-match,
+.hh-hint {
+  font-size: 0.8rem;
+  margin: var(--space-3) 0 0;
+}
+.hh-readonly {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 560px) {
+  .hh-row {
+    flex-wrap: wrap;
+  }
+  .hh-row-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+  .hh-row-actions .btn {
+    flex: 1 1 0;
+  }
+}
+
+/* The "View on map" button beside a resident's Household, in their profile.
+   Small and inline: it belongs to that row's value, not to the dialog. */
+.resident-household-map {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
+.resident-household-map svg {
+  width: 13px;
+  height: 13px;
+}

@@ -63,7 +63,154 @@ function apiSessionExpired(sentToken) {
   else if (!/system\.html$/.test(location.pathname)) location.reload();
 }
 
+// ── Waking the server ───────────────────────────────────────────────────────
+// The hosted API (Render's free tier) shuts down after 15 minutes without a
+// request and takes up to a minute to start again. A page opened in that minute
+// used to sit there with empty tables and no word of why.
+//
+// So when the last answer this browser had from the server is older than that,
+// /api/health is asked first and every other request waits for it. A server
+// that is already up answers in well under a second and nothing is shown; one
+// that is starting gets a full-screen notice after API_WAKE_NOTICE_MS, which
+// leaves by itself once the server answers. Pages served by the API itself
+// (local development: window.API_BASE is "") skip all of it.
+const API_CONTACT_KEY = "condeApiLastContact";
+const API_IDLE_MS = 14 * 60 * 1000; // one minute inside Render's 15
+const API_WAKE_NOTICE_MS = 2000;
+const API_WAKE_SLOW_MS = 90 * 1000;
+
+function apiNoteContact() {
+  try {
+    localStorage.setItem(API_CONTACT_KEY, String(Date.now()));
+  } catch (e) {}
+}
+
+function apiLastContact() {
+  try {
+    return Number(localStorage.getItem(API_CONTACT_KEY)) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+let apiWaking = null; // the wake-up in progress, if there is one
+let apiWakeDismissed = false; // "Continue without waiting" — once per page
+
+function apiServerReady() {
+  if (apiWaking) return apiWaking;
+  if (!window.API_BASE || apiWakeDismissed || Date.now() - apiLastContact() < API_IDLE_MS)
+    return Promise.resolve();
+  apiWaking = apiWake().finally(() => {
+    apiWaking = null;
+  });
+  return apiWaking;
+}
+
+// One look at /api/health. Render may hold the request until the server is up,
+// or answer with something that is not the API — both just mean "not yet".
+async function apiHealthy() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const res = await fetch(window.API_BASE + "/api/health", { cache: "no-store", signal: ctrl.signal });
+    const j = res.ok ? await res.json() : null;
+    return !!(j && j.ok);
+  } catch (e) {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function apiWake() {
+  return new Promise((resolve) => {
+    let done = false;
+    let notice = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(noticeTimer);
+      if (notice) notice.close();
+      resolve();
+    };
+    const noticeTimer = setTimeout(() => {
+      notice = apiWakeNotice(() => {
+        apiWakeDismissed = true;
+        finish();
+      });
+    }, API_WAKE_NOTICE_MS);
+    (async () => {
+      while (!done) {
+        if (await apiHealthy()) {
+          apiNoteContact();
+          return finish();
+        }
+        if (!done) await new Promise((r) => setTimeout(r, 3000));
+      }
+    })();
+  });
+}
+
+// The notice itself. Styled in css/shared.css (SERVER WAKE-UP); its strings
+// are in js/i18n.js, since the landing page and the portal show it too.
+function apiWakeNotice(onContinue) {
+  const t = (key) => (window.L ? L.t(key) : key);
+  const prefix = /\/pages\/[^/]*$/.test(location.pathname) ? "../" : "";
+  const el = document.createElement("div");
+  el.className = "server-wake";
+  el.setAttribute("role", "status");
+  el.innerHTML = `
+    <div class="server-wake-card">
+      <img class="server-wake-seal" src="${prefix}img/conde%20labac%20logo.png" alt="" />
+      <h2 class="server-wake-title"></h2>
+      <p class="server-wake-body"></p>
+      <div class="server-wake-wait"><span class="server-wake-spinner"></span><span class="server-wake-elapsed"></span></div>
+      <div class="server-wake-actions">
+        <button type="button" class="server-wake-reload" hidden></button>
+        <button type="button" class="server-wake-continue"></button>
+      </div>
+    </div>`;
+  const $ = (sel) => el.querySelector(sel);
+  $(".server-wake-title").textContent = t("wakeTitle");
+  $(".server-wake-body").textContent = t("wakeBody");
+  $(".server-wake-reload").textContent = t("wakeReload");
+  $(".server-wake-continue").textContent = t("wakeContinue");
+  $(".server-wake-reload").onclick = () => location.reload();
+  $(".server-wake-continue").onclick = onContinue;
+
+  // The notice only ever appears seconds after load, but on a slow phone the
+  // page may still be parsing — and the server may answer before it is done.
+  let closed = false;
+  const attach = () => {
+    if (!closed) document.body.appendChild(el);
+  };
+  if (document.body) attach();
+  else document.addEventListener("DOMContentLoaded", attach, { once: true });
+
+  const shownAt = Date.now() - API_WAKE_NOTICE_MS;
+  const tick = () => {
+    const waited = Date.now() - shownAt;
+    $(".server-wake-elapsed").textContent = t("wakeElapsed").replace("{s}", Math.round(waited / 1000));
+    if (waited >= API_WAKE_SLOW_MS && $(".server-wake-reload").hidden) {
+      $(".server-wake-body").textContent = t("wakeSlow");
+      $(".server-wake-reload").hidden = false;
+    }
+  };
+  tick();
+  const ticker = setInterval(tick, 1000);
+
+  return {
+    close() {
+      closed = true;
+      clearInterval(ticker);
+      el.classList.add("is-leaving");
+      setTimeout(() => el.remove(), 300);
+    },
+  };
+}
+
 async function apiRequest(method, path, body) {
+  await apiServerReady();
   const headers = {
     // Skips free-ngrok's "You are about to visit..." interstitial for fetch
     // calls. Harmless (ignored) when the API isn't behind ngrok.
@@ -84,6 +231,9 @@ async function apiRequest(method, path, body) {
     // in place of the live response.
     cache: "no-store",
   });
+  // Any answer short of a 5xx came from the running API, not from Render's
+  // proxy in front of a sleeping one.
+  if (res.status < 500) apiNoteContact();
   if (!res.ok) {
     let msg = res.status + " " + res.statusText;
     let code = "";
@@ -124,6 +274,11 @@ const apiPost = (p, b) => apiRequest("POST", p, b);
 const apiPut = (p, b) => apiRequest("PUT", p, b);
 const apiPatch = (p, b) => apiRequest("PATCH", p, b);
 const apiDelete = (p) => apiRequest("DELETE", p);
+
+// Start waking the server now, while the page is still loading, rather than
+// at its first request — the sign-in page has none until the button is pressed,
+// and that is a minute the visitor would otherwise spend waiting after typing.
+apiServerReady();
 
 // Once per page load, ask the server who this token belongs to. Two things come
 // of it: a dead token is found before the page is used (apiRequest handles the

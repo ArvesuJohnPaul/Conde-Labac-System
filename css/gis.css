@@ -1084,6 +1084,30 @@
   cursor: pointer;
 }
 /* Resolve + Delete sit side by side on the expanded report card (edit mode). */
+/* A household's popup ends in the way into its roster: the button on the card
+   a click opens, and — on the popup that follows the cursor, where no button
+   could ever be pressed — the line of text that says a click is worth making.
+   See buildingInfoHtml() in js/gis-map.js. */
+.gis-popup-residents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 8px;
+}
+.gis-popup-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+}
+.gis-popup-hint .gis-icon,
+.gis-popup-residents .gis-icon {
+  width: 13px;
+  height: 13px;
+}
 .gis-popup-actions-row {
   display: flex;
   gap: 6px;

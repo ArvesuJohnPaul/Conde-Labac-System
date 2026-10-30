@@ -376,6 +376,8 @@ function renderResidencyPage() {
   applyResidencyTab();
   loadResidents();
   loadEditRequests();
+  // The map's household roster can send us here with a resident to open.
+  openResidentFromHandoff();
 }
 
 // ─────────────────────────────── Sub-page tabs ───────────────────────────────
@@ -593,11 +595,41 @@ async function openViewResident(id) {
   try {
     const r = await apiGet("/api/residents/" + id);
     body.innerHTML = renderResidentDetail(r);
+    // The Household row carries an icon button now, and icons are <i> tags
+    // until something hydrates them.
+    if (typeof hydrateIcons === "function") hydrateIcons(body);
     if (typeof logAudit === "function")
       logAudit("RESIDENT_VIEW", `Viewed resident profile: ${r.last_name}, ${r.first_name} (#${r.resident_id})`, "info", "resident");
   } catch (err) {
     body.innerHTML = `<p style="text-align:center;padding:24px;color:#b91c1c">Could not load resident (${escapeHtml(err.message)}).</p>`;
   }
+}
+
+// "View on map" — the mirror of the map's "Open record". The GIS page reads
+// the stashed building_id on load (focusHouseholdOnMap in js/pages/gis.js),
+// resolves it to the footprint the map draws, and flies there.
+function viewHouseholdOnMap(buildingId) {
+  try {
+    sessionStorage.setItem("ibmdss.focusHousehold", String(buildingId));
+  } catch (e) {
+    /* storage disabled — the GIS page just opens at its default view */
+  }
+  document.getElementById("modal-view-resident")?.classList.remove("open");
+  if (typeof nav === "function") nav(null, "gis");
+}
+
+// Arrival from the map's household roster ("Open record"): open that
+// resident's profile straight away, so the officer lands on the record they
+// asked for rather than on the directory with a search to retype.
+function openResidentFromHandoff() {
+  let id = null;
+  try {
+    id = sessionStorage.getItem("ibmdss.openResident");
+    if (id) sessionStorage.removeItem("ibmdss.openResident");
+  } catch (e) {
+    /* storage disabled — the page just opens at its list */
+  }
+  if (id) openViewResident(id);
 }
 
 function closeViewResident(e) {
@@ -651,8 +683,22 @@ function renderResidentDetail(r) {
     ${row("Address", v(r.address_text))}
     ${/* The household is a building tagged on the GIS map, so it is named
           ("Bahay ni Shane") rather than numbered. Blank means this resident's
-          house has not been tagged on the map yet. */ ""}
-    ${row("Household", v(r.household_name))}
+          house has not been tagged on the map yet.
+          When it HAS been tagged, the name is also a place: the button hands
+          the building to the GIS page, which flies to it and outlines it, the
+          same way the Blotter's "View on Map" hands over an incident. An
+          officer reading a record can then see the house, its neighbours, and
+          whether it sits in a hazard zone — none of which a name can say. */ ""}
+    ${row(
+      "Household",
+      r.building_id
+        ? `${v(r.household_name)}
+           <button class="btn btn-sm btn-outline resident-household-map"
+                   onclick="viewHouseholdOnMap(${Number(r.building_id)})">
+             <i data-icon=map-pin></i> View on map
+           </button>`
+        : v(r.household_name),
+    )}
     ${row("Classifications", cats || dash)}
     ${row("Resident Since", r.residency_start ? v(fmtDate(r.residency_start)) : '<span class="table-muted">Not recorded</span>')}
     ${row("Date Registered", v(fmtDate(r.date_registered)))}

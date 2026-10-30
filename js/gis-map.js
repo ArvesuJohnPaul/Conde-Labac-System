@@ -29,6 +29,8 @@ const GIS_VEGETATION_URL =
 // server serves the site, so a relative /api path works in local dev).
 async function gisFetchBaseLayer(apiName, staticUrl, label) {
   try {
+    // Waits, like every js/api.js request, for a sleeping server to wake.
+    if (typeof apiServerReady === "function") await apiServerReady();
     // The base layers are public, but this is the one API call that does not
     // go through js/api.js — so it carries the session token itself, where
     // there is one, and no request leaves a signed-in page anonymously.
@@ -724,6 +726,16 @@ function gisSyncFeatureList(storeKey, type, serverRows, fromServer, toPush) {
 // the line, never that the map fails to draw.
 let gisHouseholdMembers = {};
 let gisHouseholdClasses = {};
+// The other direction: a household's DATABASE building_id → the map key that
+// draws it. Residency knows a resident's building_id and nothing else, so its
+// "View on map" button has no way to name the footprint without this. Every
+// member id of a group points at the group's first key, so whichever footprint
+// a resident is attached to, the map flies to the same house.
+let gisHouseholdKeyByBuildingId = {};
+
+function gisHouseholdKeyForBuilding(buildingId) {
+  return gisHouseholdKeyByBuildingId[String(buildingId)] || null;
+}
 
 // The classifications for a building key, in priority order — the one place the
 // rest of the map asks what colour a household is.
@@ -737,6 +749,7 @@ async function gisLoadHouseholdMembers() {
     const rows = await apiGet("/api/households");
     const members = {};
     const classes = {};
+    const keyByBuilding = {};
     rows.forEach((h) => {
       const keys =
         Array.isArray(h.member_keys) && h.member_keys.length
@@ -747,12 +760,25 @@ async function gisLoadHouseholdMembers() {
         members[String(k)] = h.members || 0;
         classes[String(k)] = h.classifications || [];
       });
+      (h.member_ids || [h.building_id]).forEach((id) => {
+        if (id != null && keys[0]) keyByBuilding[String(id)] = String(keys[0]);
+      });
     });
     gisHouseholdMembers = members;
     gisHouseholdClasses = classes;
+    gisHouseholdKeyByBuildingId = keyByBuilding;
   } catch (e) {
     /* popup simply omits the member line */
   }
+}
+
+// Connecting or disconnecting a resident changes two things the map draws —
+// the "3 residents connected" line and the household's classification colour —
+// and both come from /api/households. The residents modal calls this after a
+// change so the map agrees with what the modal just did, without a reload.
+async function gisRefreshHouseholds() {
+  await gisLoadHouseholdMembers();
+  Object.values(gisInstances).forEach((inst) => inst.refreshBuildings?.());
 }
 
 // One-time full reconciliation with the shared DB (GET /api/gis/state):
@@ -2829,7 +2855,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     return !popupEl.hidden && popupEl.classList.contains("gis-popup-expanded");
   }
 
-  function attachFeatureInteraction(el, { hoverHtml, onOpen, onMovePick }) {
+  function attachFeatureInteraction(el, { hoverHtml, onOpen, onView, onMovePick }) {
     el.classList.add("gis-interactive-feature");
     el.addEventListener("mouseenter", (evt) => {
       if (state.drawTool || state.editMode || state.reportMode || state.pickMode || expandedCardOpen()) return;
@@ -2859,7 +2885,14 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       // of the map surface).
       if (state.drawTool || state.reportMode || state.pickMode) return;
       evt.stopPropagation();
-      if (!state.editMode) return;
+      // Outside edit mode a feature's click is normally nothing — the hover
+      // popup has already said everything a reader can do with it. A household
+      // is the exception: who lives there is the thing staff open the map to
+      // find out, and it cannot be put in a popup that follows the cursor.
+      if (!state.editMode) {
+        if (onView) onView(evt);
+        return;
+      }
       onOpen(evt);
     });
   }
@@ -2901,7 +2934,19 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       .concat(gisCustomBuildingFeatures());
   }
 
-  function buildingInfoHtml(buildingId) {
+  // The residents modal lives outside the engine (js/household-panel.js,
+  // loaded by the MIS pages only). The public landing map and the incident
+  // modal's pick-a-spot map never load it, so the button is simply absent
+  // there — which is the behaviour those maps want anyway.
+  function householdPanelReady() {
+    return !anonymous && typeof openHouseholdPanel === "function";
+  }
+
+  // `interactive` is true for the card a CLICK opens, which can be reached by
+  // the cursor, and false for the popup that follows the mouse on hover — a
+  // button in that one can never be pressed, so it gets a line of text telling
+  // the reader what a click would do instead.
+  function buildingInfoHtml(buildingId, interactive) {
     const tags = gisLoadBuildingTags();
     const tag = tags[buildingId];
     // The classifications shown are the derived ones, so the popup agrees with
@@ -2938,6 +2983,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
               ? "No residents connected yet"
               : `${members} resident${members === 1 ? "" : "s"} connected`
           }</div>`;
+    // Households: the roster is one click away, and the reader is told so.
+    const isHousehold = tag?.type === "households" && householdPanelReady();
+    const residentsAction = !isHousehold
+      ? ""
+      : interactive
+        ? `<button type="button" class="gis-popup-action gis-popup-residents" data-gis-household="${escapeHtml(String(buildingId))}">${gisIcon("family")} ${
+            members ? `View ${members} resident${members === 1 ? "" : "s"}` : "Connect a resident"
+          }</button>`
+        : `<div class="gis-popup-hint">${gisIcon("family")} Click the house to see who lives here</div>`;
     return tag
       ? `
       <div class="gis-popup-title">${gisIcon(displayMeta ? displayMeta.icon : "home")} ${escapeHtml(tag.name)}</div>
@@ -2945,11 +2999,25 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       ${memberLine}
       ${groupSize > 1 ? `<div class="gis-popup-cat">${gisIcon("layers")} Group of ${groupSize} buildings</div>` : ""}
       ${tag.notes ? `<div class="gis-popup-notes">${escapeHtml(tag.notes)}</div>` : ""}
+      ${residentsAction}
     `
       : `
       <div class="gis-popup-title">${gisIcon("home")} Untagged Building</div>
       <div class="gis-popup-cat">No resident info yet</div>
     `;
+  }
+
+  // Opens the residents modal for a household, from whichever card the button
+  // was pressed on. The map key is what the API takes (routes/households.js),
+  // and it is the same key the tag is stored under here.
+  function wireHouseholdButton() {
+    const btn = popupEl.querySelector("[data-gis-household]");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-gis-household");
+      hidePopup();
+      openHouseholdPanel(key);
+    });
   }
 
   // Rendered inside-boundary building paths by id — lets group-hover reach
@@ -3043,6 +3111,13 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       path.addEventListener("mouseleave", () => highlightGroupPeers(buildingId, false));
       attachFeatureInteraction(path, {
         hoverHtml: () => buildingInfoHtml(buildingId),
+        // View mode: a tagged household opens its roster, anything else keeps
+        // doing nothing (the hover popup has already said what it is).
+        onView: () => {
+          if (!(tag?.type === "households" && householdPanelReady())) return;
+          hidePopup();
+          openHouseholdPanel(String(buildingId));
+        },
         onOpen: (evt) => {
           // Group-select mode: clicks pick/unpick buildings for a shared tag
           // instead of opening the single-building popup.
@@ -3101,7 +3176,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   function showBuildingPopup(buildingId, isCustom, screenX, screenY) {
     const tag = gisLoadBuildingTags()[buildingId];
     popupEl.innerHTML =
-      buildingInfoHtml(buildingId) +
+      buildingInfoHtml(buildingId, true) +
       `
       <button type="button" class="gis-popup-action" data-gis-edit-building>${tag ? (tag.groupId ? "Edit group tag" : "Edit tag") : "+ Tag this building"}</button>
       <button type="button" class="gis-popup-action" data-gis-group-toggle>${gisIcon("layers")} ${tag?.groupId ? "Add buildings to group" : "Group tagging"}</button>
@@ -3109,6 +3184,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <button type="button" class="gis-popup-delete" data-gis-delete-building>Delete building</button>
     `;
     showEditPopup(screenX, screenY);
+    wireHouseholdButton();
 
     popupEl.querySelector("[data-gis-edit-building]").addEventListener("click", () => {
       showBuildingTagForm(buildingId, tag, screenX, screenY);
@@ -5524,7 +5600,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       // footprint, it covered the very group it had just outlined.
       const [gx, gyTop] = localToContainerPixels(cx, minY);
       const [, gyBottom] = localToContainerPixels(cx, maxY);
-      showInfoPopup(buildingInfoHtml(id), gx, gyBottom);
+      showHoverCard(buildingInfoHtml(id, true), gx, gyBottom);
+      wireHouseholdButton();
       const rect = container.getBoundingClientRect();
       const h = popupEl.offsetHeight;
       const gap = 14;
@@ -5938,6 +6015,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       };
     },
     refreshAll: renderAll,
+    // Just the buildings — what gisRefreshHouseholds() calls after a resident
+    // is connected or disconnected, since nothing else on the map moved.
+    refreshBuildings: renderBuildings,
     resetView,
     // ── Report-density heat map (Analytics "Incident Hotspots") ──
     // Narrow the cloud to one report type, or "all". Returns the fresh

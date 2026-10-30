@@ -323,6 +323,21 @@ async function renderGISPage() {
   }
   if (focusId) focusReportOnMap(instance, focusId);
 
+  // The same handoff from Barangay Residency's "View on map": a resident's
+  // record stashed the DATABASE building_id of their household, which is the
+  // only id that page has. Resolving it to the map's own key needs the
+  // household list, which the engine is still fetching at this point — so
+  // focusHouseholdOnMap waits for it the way focusReportOnMap waits for the
+  // report store.
+  let focusHouseholdId = null;
+  try {
+    focusHouseholdId = sessionStorage.getItem("ibmdss.focusHousehold");
+    if (focusHouseholdId) sessionStorage.removeItem("ibmdss.focusHousehold");
+  } catch (e) {
+    /* storage disabled — the page just opens at its default view */
+  }
+  if (focusHouseholdId) focusHouseholdOnMap(instance, focusHouseholdId);
+
   // KPIs are pulled straight from the map's own data (OSM + custom features,
   // minus soft-deletes) so they always track what's actually plotted below,
   // rather than hand-maintained placeholder numbers.
@@ -365,6 +380,36 @@ async function focusReportOnMap(instance, id) {
   }
   if (typeof showToast === "function")
     showToast("That report is no longer on the map", "<i data-icon=triangle-alert></i>");
+}
+
+// Fly to (and outline) the household Barangay Residency sent us here for.
+//
+// Residency knows the resident's building_id; the map draws buildings under
+// its own keys (an OSM id, or 'c<id>' for one drawn in the app), and only
+// /api/households knows both. gisHouseholdKeyForBuilding() reads the index the
+// engine builds from that call — so the wait here is for the households fetch,
+// not for the map.
+//
+// The camera move itself is the same one the Blotter's "View on Map" does:
+// fly, outline every footprint of the house, open its card. A group-tagged
+// household is outlined whole, whichever of its buildings the resident
+// happens to be attached to.
+async function focusHouseholdOnMap(instance, buildingId) {
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 200)));
+  const deadline = Date.now() + 4000;
+  for (;;) {
+    const key =
+      typeof gisHouseholdKeyForBuilding === "function"
+        ? gisHouseholdKeyForBuilding(buildingId)
+        : null;
+    if (key && instance.focusBuilding(key)) return;
+    if (Date.now() > deadline) break;
+    if (!key && typeof gisLoadHouseholdMembers === "function") await gisLoadHouseholdMembers();
+    await wait(400);
+  }
+  if (typeof showToast === "function")
+    showToast("That household is not on the map any more", "<i data-icon=triangle-alert></i>");
 }
 
 // ── Collapsible side panels ─────────────────────────────────────────────────

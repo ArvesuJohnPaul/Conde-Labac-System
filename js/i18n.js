@@ -377,6 +377,24 @@
     pwWeak: ["Weak", "Mahina"],
     pwFair: ["Fair", "Katamtaman"],
     pwStrong: ["Strong", "Malakas"],
+
+    // Server wake-up notice (js/api.js). Shown on every page, the staff MIS
+    // included — it is the one notice a resident and a clerk see alike.
+    wakeTitle: [
+      "Connecting to the barangay server…",
+      "Kumokonekta sa server ng barangay…",
+    ],
+    wakeBody: [
+      "The server rests when no one has used it for a while. Starting it again takes up to a minute, and this page will load by itself.",
+      "Nagpapahinga ang server kapag matagal itong hindi nagamit. Aabot nang hanggang isang minuto bago ito muling gumana, at kusang maglo-load ang pahinang ito.",
+    ],
+    wakeSlow: [
+      "This is taking longer than usual. Check your internet connection, or reload the page.",
+      "Mas matagal ito kaysa karaniwan. Tingnan ang inyong internet connection, o i-reload ang pahina.",
+    ],
+    wakeElapsed: ["Waiting {s}s", "Naghihintay {s}s"],
+    wakeReload: ["Reload", "I-reload"],
+    wakeContinue: ["Continue without waiting", "Magpatuloy nang hindi naghihintay"],
   };
 
   var listeners = [];
