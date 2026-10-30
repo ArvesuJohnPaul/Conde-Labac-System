@@ -407,10 +407,16 @@ window.CURRENT_PAGE = "content";
 
   // ═══════════ Page scaffold ═══════════
   function renderPage() {
-    // Site Content editing is staff-only (Admin / Officer). The shell calls
-    // renderPage() for every signed-in role, so guard here as well as in nav().
+    // Site Content editing is staff work, and which staff is the matrix's
+    // answer, not a list of two role names — a barangay can add a role of its
+    // own and grant it this page. The shell calls renderPage() for every
+    // signed-in role, so the question is asked here as well as in nav().
     var role = (getSession() || {}).role;
-    if (role !== "Admin" && role !== "Officer") {
+    var mayEdit =
+      role &&
+      role !== "Resident" &&
+      (typeof moduleAllowedFor === "function" ? moduleAllowedFor("content", role) : role === "Admin");
+    if (!mayEdit) {
       window.location.href = role ? "../index.html" : "../system.html";
       return;
     }

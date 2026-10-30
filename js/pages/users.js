@@ -8,13 +8,31 @@ window.CURRENT_PAGE = "users";
 let ACCOUNTS = [];
 
 // Staff & Viewer were retired — every non-admin MIS user is an Officer.
-const ACCOUNT_ROLES = ["Admin", "Officer", "Resident"];
+// Every role an account can be given: Admin, plus every column in the Role
+// Access Matrix below (Officer and Resident, and whatever an Admin added —
+// "Barangay Secretary", "Encoder"). It is a function, not a constant, because
+// the matrix is loaded from the server after this page first paints: a role
+// added last week has to appear in the Change Role dropdown, and a role added
+// in the matrix a moment ago has to appear there without a reload.
+//
+// Admin is first and never a matrix column — it is the one role the matrix
+// cannot take anything away from.
+function assignableRoles() {
+  const out = ["Admin"];
+  editableRoles.forEach((r) => {
+    if (!out.some((x) => roleKey(x) === roleKey(r))) out.push(r);
+  });
+  return out;
+}
 
 const ROLE_BADGES = {
   Admin: "badge-danger",
   Officer: "badge-gold",
   Resident: "badge-success",
 };
+// A role the barangay invented has no colour of its own; grey says "a role"
+// without pretending to rank it against the three built-in ones.
+const roleBadge = (role) => ROLE_BADGES[role] || "badge-gray";
 
 function escapeHtml(s) {
   return String(s == null ? "" : s).replace(
@@ -34,7 +52,7 @@ function renderUsers() {
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Total Accounts</div><div class="kpi-value" id="kpi-users-total">—</div><div class="kpi-trend">Live from database</div></div>
       <div class="kpi-card danger"><div class="kpi-label">Admins</div><div class="kpi-value" id="kpi-users-admin">—</div></div>
-      <div class="kpi-card info"><div class="kpi-label">Officer Accounts</div><div class="kpi-value" id="kpi-users-staff">—</div></div>
+      <div class="kpi-card info"><div class="kpi-label">Staff Accounts</div><div class="kpi-value" id="kpi-users-staff">—</div><div class="kpi-trend" id="kpi-users-staff-sub">Officers &amp; other staff roles</div></div>
       <div class="kpi-card success"><div class="kpi-label">Resident Accounts</div><div class="kpi-value" id="kpi-users-res">—</div></div>
     </div>
     <div class="card">
@@ -55,8 +73,7 @@ function renderUsers() {
                  placeholder="Search by name or email…" oninput="accountFilterChanged()"/>
         </div>
         <select class="gis-filter-select" id="acct-role" onchange="accountFilterChanged()">
-          <option>All Roles</option>
-          ${ACCOUNT_ROLES.map((r) => `<option>${r}</option>`).join("")}
+          ${roleFilterOptionsHtml()}
         </select>
         <select class="gis-filter-select" id="acct-status" onchange="accountFilterChanged()">
           <option value="">All Statuses</option>
@@ -375,6 +392,9 @@ async function loadPermissions() {
     /* keep defaults — matrix still renders with built-in access */
   }
   renderRoleMatrix();
+  // The accounts table above was painted before this landed, and its Change
+  // Role dropdown is built from the same list of roles.
+  refreshRoleChoices();
 }
 
 // Effective access for a role, honoring a stored override then the built-in
@@ -554,9 +574,14 @@ async function addMatrixRole() {
       showToast("Could not save: " + e.message, "<i data-icon=triangle-alert></i>");
     return;
   }
+  // The new role is assignable the moment it is saved — that is the point of
+  // adding one — so the Change Role dropdowns are rebuilt now rather than on
+  // the next visit to this page.
+  refreshRoleChoices();
   if (typeof logAudit === "function")
     logAudit("ROLE_ADD", `Role "${name}" added to the access matrix`, "warning", "settings");
-  if (typeof showToast === "function") showToast(`Role "${name}" added`);
+  if (typeof showToast === "function")
+    showToast(`Role "${name}" added — it can now be given to an account`);
 }
 
 async function removeMatrixRole(role) {
@@ -643,10 +668,18 @@ function updateAccountKpis() {
       ? `${suspended} suspended · live from database`
       : "Live from database";
   set("kpi-users-admin", ACCOUNTS.filter((a) => a.role === "Admin").length);
-  set(
-    "kpi-users-staff",
-    ACCOUNTS.filter((a) => a.role === "Officer").length
-  );
+  // Every staff account, not only the Officers: a barangay that added its own
+  // role ("Barangay Secretary") would otherwise see those accounts counted
+  // nowhere at all. The sub-line names the roles when there are any beyond
+  // Officer, so the number can still be taken apart.
+  const staff = ACCOUNTS.filter((a) => a.role !== "Admin" && a.role !== "Resident");
+  set("kpi-users-staff", staff.length);
+  const otherRoles = [...new Set(staff.map((a) => a.role).filter((r) => r !== "Officer"))];
+  const staffSub = document.getElementById("kpi-users-staff-sub");
+  if (staffSub)
+    staffSub.textContent = otherRoles.length
+      ? `Officers + ${otherRoles.join(", ")}`
+      : "Officers & other staff roles";
   set("kpi-users-res", ACCOUNTS.filter((a) => a.role === "Resident").length);
 }
 
@@ -654,6 +687,46 @@ function updateAccountKpis() {
 function accountFilterChanged() {
   resetPage("users");
   filterAccounts();
+}
+
+// The options for one account's Change Role dropdown. A role the account
+// already holds that is no longer in the matrix (its column was removed while
+// somebody still carried it) is listed anyway, and marked, or the dropdown
+// would silently show the wrong role as selected.
+function roleOptionsFor(a) {
+  const roles = assignableRoles();
+  const orphan = a.role && !roles.some((r) => roleKey(r) === roleKey(a.role));
+  return (orphan ? [a.role] : [])
+    .concat(roles)
+    .map((r) => {
+      const selected = roleKey(r) === roleKey(a.role) ? " selected" : "";
+      // A Resident account is a person's own account: it has to point at a
+      // resident record, and the database says so too.
+      const blocked = r === "Resident" && !a.resident_id ? " disabled" : "";
+      const label = orphan && r === a.role ? `${r} (removed role)` : r;
+      return `<option value="${escapeHtml(r)}"${selected}${blocked}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+}
+
+function roleFilterOptionsHtml() {
+  return (
+    "<option>All Roles</option>" +
+    assignableRoles().map((r) => `<option>${escapeHtml(r)}</option>`).join("")
+  );
+}
+
+// Called once the matrix has loaded, since both lists are built from it and
+// the page paints before the fetch lands.
+function refreshRoleChoices() {
+  const filter = document.getElementById("acct-role");
+  if (filter) {
+    const keep = filter.value;
+    filter.innerHTML = roleFilterOptionsHtml();
+    // A filter on a role that has since been removed falls back to all roles.
+    filter.value = [...filter.options].some((o) => o.value === keep) ? keep : "All Roles";
+  }
+  if (ACCOUNTS.length) filterAccounts();
 }
 
 function filterAccounts() {
@@ -707,10 +780,7 @@ function renderAccountRows(list) {
       const roleSelect = canChange
         ? `<select class="form-control" style="max-width:130px;display:inline-block"
              onchange="changeAccountRole(${a.account_id}, this)">
-            ${ACCOUNT_ROLES.map(
-              (r) =>
-                `<option ${r === a.role ? "selected" : ""} ${r === "Resident" && !a.resident_id ? "disabled" : ""}>${r}</option>`
-            ).join("")}
+            ${roleOptionsFor(a)}
           </select>`
         : `<span class="table-muted">${isSelf ? "Your account" : "Admin only"}</span>`;
       // Deleting your own account would sign you out of a system you may be
@@ -743,7 +813,7 @@ function renderAccountRows(list) {
       return `<tr${suspended ? ' style="opacity:.72"' : ""}>
         <td class="table-name">${escapeHtml(a.name)}</td>
         <td>${escapeHtml(a.email)}</td>
-        <td><span class="badge ${ROLE_BADGES[a.role] || "badge-gray"}">${escapeHtml(a.role)}</span></td>
+        <td><span class="badge ${roleBadge(a.role) || "badge-gray"}">${escapeHtml(a.role)}</span></td>
         <td>${statusBadge}</td>
         <td>${a.resident_id ? `#${a.resident_id}${a.purok ? " — " + escapeHtml(a.purok) : ""}` : '<span class="table-muted">—</span>'}</td>
         <td>${escapeHtml(a.created_at || "—")}</td>

@@ -298,10 +298,16 @@ const modulePermissions = {
   sms: ["Admin", "Officer"],
 };
 
-// Officer module-access overrides (settings key 'module-access'), set from
-// the User Management Role Access Matrix. null until loaded; an entry present
-// means an Admin explicitly granted/revoked that module for Officers,
-// overriding the built-in default in modulePermissions.
+// Module-access overrides (settings key 'module-access'), set from the User
+// Management Role Access Matrix: { roleKey: { moduleKey: bool } }. null until
+// loaded; an entry present means an Admin explicitly granted or revoked that
+// module for that role, overriding the built-in default in modulePermissions.
+//
+// The WHOLE map, not just the Officer row. A barangay can add a role of its
+// own in the matrix ("Barangay Secretary"), and such a role appears in no
+// built-in list here — so the matrix is the only thing that can say what it
+// reaches, and reading one role's row out of the map left every other role
+// with no access to anything.
 let moduleAccessOverrides = null;
 
 async function loadModuleAccess() {
@@ -310,7 +316,7 @@ async function loadModuleAccess() {
   // this role open the MIS at all?" row lives in the same settings blob as
   // these per-module rows.
   const map = await loadMisAccessMap();
-  moduleAccessOverrides = (map && map.officer) || {};
+  moduleAccessOverrides = map || {};
   enforceMisAccess(map);
   applyOfficerModuleVisibility();
 }
@@ -336,19 +342,22 @@ function enforceMisAccess(map) {
   }, 1200);
 }
 
-// Effective access decision for one module + role, honoring Officer overrides.
+// Effective access decision for one module + role: what the matrix says, and
+// failing that the built-in default.
+//
+// An Admin is never refused — the matrix has no Admin column to switch off,
+// and the server says the same (permissions.js). Every other role, built-in or
+// added by this barangay, is whatever the matrix stored; a role nobody has
+// stored a row for falls back to modulePermissions above, which is how the
+// built-in three behave out of the box and why a brand-new custom role reaches
+// nothing until an Admin ticks something for it.
 function moduleAllowedFor(module, role) {
+  if (role === "Admin") return true;
   const base = modulePermissions[module];
-  const baseHas = base ? base.indexOf(role) !== -1 : true;
-  if (role !== "Officer") return baseHas;
-  const def = base ? base.indexOf("Officer") !== -1 : false;
-  if (
-    moduleAccessOverrides &&
-    Object.prototype.hasOwnProperty.call(moduleAccessOverrides, module)
-  ) {
-    return moduleAccessOverrides[module] === true;
-  }
-  return def;
+  const stored = moduleAccessOverrides && moduleAccessOverrides[String(role || "").toLowerCase()];
+  if (stored && Object.prototype.hasOwnProperty.call(stored, module))
+    return stored[module] === true;
+  return base ? base.indexOf(role) !== -1 : true;
 }
 
 // ════════════════ DIALOGS (confirm / prompt) ════════════════
@@ -575,11 +584,18 @@ function highlightNavItem() {
 }
 window.addEventListener("hashchange", highlightNavItem);
 
-// Hide sidebar + topbar module entries an Officer may not open (cosmetic; the
-// hard block is in nav()). No-op for Admin/Resident.
+// Hide sidebar + topbar module entries the signed-in role may not open
+// (cosmetic; the hard block is in nav()). No-op for an Admin, who may open
+// everything. Every other role is asked about — including a role this barangay
+// added itself, which is exactly the case the old "is it an Officer?" test
+// could not answer.
 function applyOfficerModuleVisibility() {
   const session = getSession();
   const role = session ? session.role : null;
+  if (!role || role === "Admin") {
+    hideEmptyModuleGroups();
+    return;
+  }
   document
     .querySelectorAll(".nav-item, .topbar-module-item")
     .forEach((n) => {
@@ -588,8 +604,7 @@ function applyOfficerModuleVisibility() {
       // module name rather than expecting the closing bracket after it.
       const m = oc.match(/nav\((?:this|null),\s*'([a-z]+)'/);
       if (!m) return;
-      const allow = role !== "Officer" || moduleAllowedFor(m[1], "Officer");
-      n.style.display = allow ? "" : "none";
+      n.style.display = moduleAllowedFor(m[1], role) ? "" : "none";
     });
   hideEmptyModuleGroups();
 }
