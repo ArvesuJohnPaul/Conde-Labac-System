@@ -2672,7 +2672,7 @@ html:not(.has-motion) .gis-side-panel.is-collapsed > :not(.card-header) {
   background: #ea580c;
 }
 .gis-hz-live {
-  margin-left: 6px;
+  margin-left: 0;
   padding: 1px 6px;
   border-radius: 100px;
   border: 1px solid rgba(234, 88, 12, 0.35);
@@ -2681,6 +2681,79 @@ html:not(.has-motion) .gis-side-panel.is-collapsed > :not(.card-header) {
   font-size: 9px;
   letter-spacing: 0.06em;
   vertical-align: 1px;
+}
+/* The hazard section's header is a button now (it folds the section), so it
+   sheds the browser's button styling and lays out its own two rows: the title
+   with the chevron opposite it, and under that the zone count and the Live
+   chip. Two rows rather than one because this panel is a narrow column beside
+   the map — on one line the title, the count and the chip wrapped into three
+   ragged lines of their own. */
+.gis-hz-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.gis-hz-toggle-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* The accent bar belongs beside the title, not above the column, so it moves
+   off .gis-ai-section-head (which is now the flex column itself). */
+.gis-ai-section-hazard .gis-ai-section-head::before {
+  display: none;
+}
+.gis-hz-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 2px;
+  background: rgba(234, 88, 12, 0.75);
+}
+.gis-hz-toggle-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 9px;
+}
+.gis-hz-count {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+}
+.gis-hz-chev {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--text-muted, #64748b);
+  transition: transform 0.18s ease;
+}
+.gis-hz-chev .gis-icon {
+  width: 14px;
+  height: 14px;
+}
+.gis-ai-section-hazard.is-collapsed .gis-hz-chev {
+  transform: rotate(-90deg);
+}
+.gis-ai-section-hazard.is-collapsed .gis-hz-fold {
+  display: none;
+}
+.gis-hz-fold {
+  margin-top: 3px;
 }
 .gis-hz-list {
   display: flex;

@@ -514,6 +514,31 @@ let GIS_HZ_REFRESH_TIMER = null;
 let GIS_HZ_BOUND = false;
 // Zones whose full household list is open, kept across re-renders.
 const GIS_HZ_EXPANDED = new Set();
+// The hazard section folds, and starts folded.
+//
+// It is the longest thing in the panel — a card per zone, each with its
+// building types, its people tiles and its named buildings — and on a day with
+// three zones it pushed the AI's own briefing off the screen. Zones are also
+// the part staff already know about: they drew them. So the section arrives
+// shut, with the count on its header, and opens on a click; the choice is
+// remembered per browser, and an officer who likes it open keeps it open.
+const GIS_HZ_SECTION_KEY = "ibmdss.gisHazardSectionOpen";
+
+function gisHzSectionOpen() {
+  try {
+    return localStorage.getItem(GIS_HZ_SECTION_KEY) === "1";
+  } catch (e) {
+    return false; // storage off: the default, which is collapsed
+  }
+}
+
+function gisHzSectionWrite(open) {
+  try {
+    localStorage.setItem(GIS_HZ_SECTION_KEY, open ? "1" : "0");
+  } catch (e) {
+    /* a failed write only costs the preference next visit */
+  }
+}
 // Tagged buildings listed by name on a zone card before "+N more".
 const GIS_HZ_BLDGS_SHOWN = 6;
 
@@ -734,11 +759,29 @@ function gisHazardSectionHtml(fil) {
   const liveTip = fil
     ? "Mga bilang mula mismo sa mapa ngayon — hindi gawa ng AI"
     : "Zone figures straight from the map, right now — not AI-generated";
+  const open = gisHzSectionOpen();
+  const zones = hz.zones.length;
+  // The count is on the header so the folded section still says how much is
+  // behind it — "Active Hazard Zones" alone would not say whether opening it
+  // is worth the click.
+  const count = `${zones} ${zones === 1 ? "zone" : "zones"}`;
   return `
-    <section class="gis-ai-section gis-ai-section-hazard">
-      <h4 class="gis-ai-section-head">${fil ? "Mga Aktibong Hazard Zone" : "Active Hazard Zones"}<span class="gis-hz-live" title="${liveTip}">Live</span></h4>
-      <p class="gis-ai-section-body">${gisPageEscapeHtml(gisHazardSummary(hz, fil))}</p>
-      <div class="gis-hz-list">${hz.zones.map((z) => gisHazardCardHtml(z, fil)).join("")}</div>
+    <section class="gis-ai-section gis-ai-section-hazard${open ? "" : " is-collapsed"}">
+      <button type="button" class="gis-ai-section-head gis-hz-toggle" data-gis-hz-section
+              aria-expanded="${open ? "true" : "false"}">
+        <span class="gis-hz-toggle-top">
+          <span class="gis-hz-title">${fil ? "Mga Aktibong Hazard Zone" : "Active Hazard Zones"}</span>
+          <span class="gis-hz-chev">${gisIcon("chevronDown")}</span>
+        </span>
+        <span class="gis-hz-toggle-sub">
+          <span class="gis-hz-count">${count}</span>
+          <span class="gis-hz-live" title="${liveTip}">Live</span>
+        </span>
+      </button>
+      <div class="gis-hz-fold">
+        <p class="gis-ai-section-body">${gisPageEscapeHtml(gisHazardSummary(hz, fil))}</p>
+        <div class="gis-hz-list">${hz.zones.map((z) => gisHazardCardHtml(z, fil)).join("")}</div>
+      </div>
     </section>`;
 }
 
@@ -930,6 +973,16 @@ function gisNarrativeCopyText(n) {
 // survives every re-render (language switch, refreshes) without re-binding.
 function onGisAiBodyClick(evt) {
   const fil = window.L && L.isFilipino;
+  // Fold / unfold the whole hazard section.
+  const fold = evt.target.closest("[data-gis-hz-section]");
+  if (fold) {
+    const section = fold.closest(".gis-ai-section-hazard");
+    const open = section.classList.contains("is-collapsed");
+    section.classList.toggle("is-collapsed", !open);
+    fold.setAttribute("aria-expanded", open ? "true" : "false");
+    gisHzSectionWrite(open);
+    return;
+  }
   // "+N more" / "Show less" on a zone's household list — toggled in place, so
   // the panel keeps its scroll position.
   const more = evt.target.closest("[data-gis-hz-more]");
