@@ -5610,8 +5610,17 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       // positionFloatingEl puts the top 10px above the point it is handed.
       positionFloatingEl(popupEl, gx - popupEl.offsetWidth / 2, top + 10, container);
       buildingFocusPaths = [...memberIds].map((m) => buildingPathsById.get(m)).filter(Boolean);
-      buildingFocusPaths.forEach((p) => p.classList.add("gis-building-focus"));
-      buildingFocusTimer = setTimeout(clearBuildingFocus, 3200);
+      buildingFocusPaths.forEach((p) => {
+        p.classList.add("gis-building-focus");
+        // SVG has no z-index: what is painted last is on top. A house hemmed
+        // in by its neighbours had their fills drawn over its highlight, so
+        // the arrival from Residency landed on a building that looked no
+        // different from the ones around it. Moving the path to the end of
+        // the layer puts the highlight in front of everything it touches;
+        // the next render rebuilds the layer in its normal order anyway.
+        p.parentNode.appendChild(p);
+      });
+      buildingFocusTimer = setTimeout(clearBuildingFocus, 6000);
     });
     return true;
   }

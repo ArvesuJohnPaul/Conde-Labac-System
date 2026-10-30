@@ -903,10 +903,33 @@
     stroke-opacity: 0.15;
   }
 }
-/* ...and a household inside it, outlined in the same colour. */
+/* ...and a building the map was sent to — the household behind Residency's
+   "View on map", or a house inside a hazard zone the briefing flew to.
+   An outline alone was not enough to find it: at street zoom a 3px stroke on
+   a small footprint, among a hundred other footprints, is something you have
+   to hunt for. So the building is FILLED in the same orange and pulses a few
+   times, which is what the eye actually lands on, and the stroke stays as the
+   edge of it. The whole group lights up when the house is several footprints.
+   Every member has been raised to the top of the layer (focusBuilding), so
+   nothing is painted over the highlight. */
 .gis-building.gis-building-focus {
-  stroke: #ea580c;
+  fill: #f97316;
+  stroke: #9a3412;
   stroke-width: 3;
+  animation: gisBuildingFocus 1s ease-in-out 5 alternate both;
+}
+@keyframes gisBuildingFocus {
+  from {
+    fill-opacity: 1;
+  }
+  to {
+    fill-opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gis-building.gis-building-focus {
+    animation: none;
+  }
 }
 .gis-hazard-severity-low {
   fill-opacity: 0.32;
