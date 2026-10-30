@@ -518,32 +518,13 @@ let GIS_HZ_REFRESH_TIMER = null;
 let GIS_HZ_BOUND = false;
 // Zones whose full household list is open, kept across re-renders.
 const GIS_HZ_EXPANDED = new Set();
-// The hazard section folds, and starts folded.
-//
-// It is the longest thing in the panel — a card per zone, each with its
-// building types, its people tiles and its named buildings — and on a day with
-// three zones it pushed the AI's own briefing off the screen. Zones are also
-// the part staff already know about: they drew them. So the section arrives
-// shut, with the count on its header, and opens on a click; the choice is
-// remembered per browser, and an officer who likes it open keeps it open.
-const GIS_HZ_SECTION_KEY = "ibmdss.gisHazardSectionOpen";
+// Which zone cards are open. Each card arrives folded to its heading — the
+// zone's name, how bad it is, how wide and how many buildings — so three
+// active zones are three lines a reader can take in, and the one being worked
+// on is opened. Kept in a Set rather than written to the card, so a refresh of
+// the panel (the briefing re-renders on a timer) leaves open what was open.
+const GIS_HZ_CARD_OPEN = new Set();
 
-function gisHzSectionOpen() {
-  try {
-    return localStorage.getItem(GIS_HZ_SECTION_KEY) === "1";
-  } catch (e) {
-    return false; // storage off: the default, which is collapsed
-  }
-}
-
-function gisHzSectionWrite(open) {
-  try {
-    localStorage.setItem(GIS_HZ_SECTION_KEY, open ? "1" : "0");
-  } catch (e) {
-    /* a failed write only costs the preference next visit */
-  }
-}
-// Tagged buildings listed by name on a zone card before "+N more".
 const GIS_HZ_BLDGS_SHOWN = 6;
 
 // How often the page ASKS for a refresh. The server decides whether that
@@ -763,29 +744,11 @@ function gisHazardSectionHtml(fil) {
   const liveTip = fil
     ? "Mga bilang mula mismo sa mapa ngayon — hindi gawa ng AI"
     : "Zone figures straight from the map, right now — not AI-generated";
-  const open = gisHzSectionOpen();
-  const zones = hz.zones.length;
-  // The count is on the header so the folded section still says how much is
-  // behind it — "Active Hazard Zones" alone would not say whether opening it
-  // is worth the click.
-  const count = `${zones} ${zones === 1 ? "zone" : "zones"}`;
   return `
-    <section class="gis-ai-section gis-ai-section-hazard${open ? "" : " is-collapsed"}">
-      <button type="button" class="gis-ai-section-head gis-hz-toggle" data-gis-hz-section
-              aria-expanded="${open ? "true" : "false"}">
-        <span class="gis-hz-toggle-top">
-          <span class="gis-hz-title">${fil ? "Mga Aktibong Hazard Zone" : "Active Hazard Zones"}</span>
-          <span class="gis-hz-chev">${gisIcon("chevronDown")}</span>
-        </span>
-        <span class="gis-hz-toggle-sub">
-          <span class="gis-hz-count">${count}</span>
-          <span class="gis-hz-live" title="${liveTip}">Live</span>
-        </span>
-      </button>
-      <div class="gis-hz-fold">
-        <p class="gis-ai-section-body">${gisPageEscapeHtml(gisHazardSummary(hz, fil))}</p>
-        <div class="gis-hz-list">${hz.zones.map((z) => gisHazardCardHtml(z, fil)).join("")}</div>
-      </div>
+    <section class="gis-ai-section gis-ai-section-hazard">
+      <h4 class="gis-ai-section-head">${fil ? "Mga Aktibong Hazard Zone" : "Active Hazard Zones"}<span class="gis-hz-live" title="${liveTip}">Live</span></h4>
+      <p class="gis-ai-section-body">${gisPageEscapeHtml(gisHazardSummary(hz, fil))}</p>
+      <div class="gis-hz-list">${hz.zones.map((z) => gisHazardCardHtml(z, fil)).join("")}</div>
     </section>`;
 }
 
@@ -809,17 +772,29 @@ function gisHazardCardHtml(z, fil) {
   const expanded = GIS_HZ_EXPANDED.has(id);
   const s = (count, one, many) => (fil || count === 1 ? one : many);
 
+  const cardOpen = GIS_HZ_CARD_OPEN.has(id);
+  // Two buttons in one row, because the heading has two jobs: the zone's name
+  // folds its details, and the pin beside it flies the map to it. They used to
+  // be one button that only flew, which left nothing to press to read a zone.
   const head = `
-    <button type="button" class="gis-hz-head" data-gis-hazard="${esc(id)}" title="${fil ? "Ipakita ang zone sa mapa" : "Show this zone on the map"}">
-      <span class="gis-hz-icon">${gisIcon(meta.icon)}</span>
-      <span class="gis-hz-name">${esc(z.label)}</span>
-      <span class="gis-hz-sev gis-hz-sev-${esc(sev)}">${esc(sev)}</span>
-    </button>`;
+    <div class="gis-hz-top">
+      <button type="button" class="gis-hz-head" data-gis-hz-card="${esc(id)}"
+              aria-expanded="${cardOpen ? "true" : "false"}"
+              title="${fil ? "Buksan ang detalye ng zone" : "Open this zone's details"}">
+        <span class="gis-hz-icon">${gisIcon(meta.icon)}</span>
+        <span class="gis-hz-name">${esc(z.label)}</span>
+        <span class="gis-hz-chev">${gisIcon("chevronDown")}</span>
+      </button>
+      <button type="button" class="gis-hz-locate" data-gis-hazard="${esc(id)}"
+              title="${fil ? "Ipakita ang zone sa mapa" : "Show this zone on the map"}"
+              aria-label="${fil ? "Ipakita sa mapa" : "Show on the map"}">${gisIcon("pin")}</button>
+    </div>`;
 
   if (!z.located) {
     return `
-      <article class="gis-hz-card" style="--hz-color:${meta.color}">
+      <article class="gis-hz-card gis-hz-card-plain" style="--hz-color:${meta.color}">
         ${head}
+        <div class="gis-hz-meta"><span class="gis-hz-sev gis-hz-sev-${esc(sev)}">${esc(sev)}</span></div>
         <div class="gis-hz-empty">${
           fil
             ? "Hindi makuha kung sino ang nasa loob — wala sa database ang hangganan ng barangay."
@@ -898,20 +873,29 @@ function gisHazardCardHtml(z, fil) {
     ? `<button type="button" class="gis-hz-more" data-gis-hz-more="${esc(id)}" data-hidden="${hidden}">${gisHzMoreLabel(expanded, hidden, fil)}</button>`
     : "";
 
+  // The heading and the one-line measure stay visible whether the card is open
+  // or shut — folded, a zone still says what it is, how bad, how wide and how
+  // many buildings it covers. Everything that takes room to read is inside the
+  // fold: the kinds of building, the people, the named houses.
   return `
-    <article class="gis-hz-card${expanded ? " is-expanded" : ""}" style="--hz-color:${meta.color}">
+    <article class="gis-hz-card${expanded ? " is-expanded" : ""}${cardOpen ? "" : " is-shut"}" style="--hz-color:${meta.color}">
       ${head}
-      <div class="gis-hz-meta">${esc([meters, total].filter(Boolean).join(" · "))}</div>
-      ${pills ? `<div class="gis-hz-types">${pills}</div>` : ""}
-      ${peopleHtml}
-      ${named.length ? `<div class="gis-hz-bldgs">${chips}${more}</div>` : ""}
-      ${
-        buildings
-          ? ""
-          : `<div class="gis-hz-empty">${
-              fil ? "Walang gusali sa loob ng zone na ito." : "No mapped buildings inside this zone."
-            }</div>`
-      }
+      <div class="gis-hz-meta">
+        <span class="gis-hz-sev gis-hz-sev-${esc(sev)}">${esc(sev)}</span>
+        <span>${esc([meters, total].filter(Boolean).join(" · "))}</span>
+      </div>
+      <div class="gis-hz-body">
+        ${pills ? `<div class="gis-hz-types">${pills}</div>` : ""}
+        ${peopleHtml}
+        ${named.length ? `<div class="gis-hz-bldgs">${chips}${more}</div>` : ""}
+        ${
+          buildings
+            ? ""
+            : `<div class="gis-hz-empty">${
+                fil ? "Walang gusali sa loob ng zone na ito." : "No mapped buildings inside this zone."
+              }</div>`
+        }
+      </div>
     </article>`;
 }
 
@@ -977,14 +961,16 @@ function gisNarrativeCopyText(n) {
 // survives every re-render (language switch, refreshes) without re-binding.
 function onGisAiBodyClick(evt) {
   const fil = window.L && L.isFilipino;
-  // Fold / unfold the whole hazard section.
-  const fold = evt.target.closest("[data-gis-hz-section]");
-  if (fold) {
-    const section = fold.closest(".gis-ai-section-hazard");
-    const open = section.classList.contains("is-collapsed");
-    section.classList.toggle("is-collapsed", !open);
-    fold.setAttribute("aria-expanded", open ? "true" : "false");
-    gisHzSectionWrite(open);
+  // Fold / unfold one zone's details, in place.
+  const cardFold = evt.target.closest("[data-gis-hz-card]");
+  if (cardFold) {
+    const id = cardFold.getAttribute("data-gis-hz-card");
+    const card = cardFold.closest(".gis-hz-card");
+    const open = card.classList.contains("is-shut");
+    card.classList.toggle("is-shut", !open);
+    cardFold.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) GIS_HZ_CARD_OPEN.add(id);
+    else GIS_HZ_CARD_OPEN.delete(id);
     return;
   }
   // "+N more" / "Show less" on a zone's household list — toggled in place, so
