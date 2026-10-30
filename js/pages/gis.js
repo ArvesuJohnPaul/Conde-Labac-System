@@ -293,8 +293,12 @@ async function renderGISPage() {
   `);
   // Editing is an MIS-only capability — this is the only embed of the map
   // that gets it; the public landing page and resident-portal preview modal
-  // stay read-only.
-  const instance = await initGisMap("gis-map-page", { editable: true });
+  // stay read-only. It is also a Role Access Matrix row of its own ("Map edit
+  // mode", under GIS Mapping): a role without it gets the same map without
+  // Edit Mode, and the server refuses the writes regardless.
+  if (typeof actionPermissionsReady === "function") await actionPermissionsReady();
+  const canEditMap = typeof actionAllowed === "function" ? actionAllowed("map_edit") : false;
+  const instance = await initGisMap("gis-map-page", { editable: canEditMap });
   if (!instance || typeof instance.getStats !== "function") return;
   gisMapInstance = instance;
 

@@ -150,6 +150,18 @@ const ACTION_ROWS = [
     "Account Claiming — connect an applicant to a record, create one, or deny",
     true,
   ],
+  [
+    "map_edit",
+    "Map edit mode",
+    "GIS Mapping — draw, tag, move and delete what is on the map. Without it the map opens read-only.",
+    true,
+  ],
+  [
+    "household_residents",
+    "Connect residents to households",
+    "GIS Mapping — add a resident to a household, or take one out, from the house's roster. Reading the roster comes with the module.",
+    true,
+  ],
 ];
 
 // SMS rows — stored separately under 'sms-permissions', and separate from each

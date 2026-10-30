@@ -40,16 +40,16 @@ const HH_CLASS_LABELS = {
   indigent: "Indigent",
 };
 
-// Writing is Residency work — connecting a resident to a house edits the
-// resident's record, not the map. An Admin always has it; anyone else has it
-// if the Role Access Matrix says so. Fails closed: with no session helper
-// loaded the panel is read-only, and the server would refuse the write anyway.
+// Connecting a resident to a house is its own row in the Role Access Matrix
+// ("Connect residents to households", under GIS Mapping) — seeing who lives
+// somewhere and deciding who lives there are different amounts of trust. The
+// server enforces the same row on both writes; this only decides whether the
+// controls are offered. Fails closed while the permission is still loading,
+// and reloads the panel once it lands so a permitted officer gets them.
 function hhCanEdit() {
   try {
-    const role = typeof getSession === "function" ? (getSession() || {}).role : null;
-    if (!role) return false;
-    if (role === "Admin") return true;
-    return typeof moduleAllowedFor === "function" ? moduleAllowedFor("residency", role) : false;
+    if (typeof actionAllowed !== "function") return false;
+    return actionAllowed("household_residents");
   } catch (e) {
     return false;
   }
@@ -124,6 +124,10 @@ async function openHouseholdPanel(key) {
   document.getElementById("hh-title").textContent = "Household";
   document.getElementById("hh-body").innerHTML =
     `<p class="table-muted" style="text-align:center;padding:28px">Loading residents…</p>`;
+  // Wait for the matrix before drawing, or the panel would render read-only
+  // for an officer who does hold the permission and only get its controls on
+  // the second open.
+  if (typeof actionPermissionsReady === "function") await actionPermissionsReady();
   await loadHouseholdPanel();
 }
 

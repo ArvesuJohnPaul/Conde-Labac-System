@@ -393,6 +393,62 @@ async function loadDeletePermissions() {
     renderPage();
 }
 
+// ════════════════ ACTION PERMISSIONS (shared) ════════════════
+// The matrix rows that are not modules and not Delete: approving an account
+// application, texting a resident, editing the map, connecting a resident to
+// a household. The SERVER enforces every one of them (permissions.js reads
+// the same settings key); this is so a page can avoid offering a button that
+// would come back 403.
+//
+// Defaults mirror ACTIONS in conde-labak-server/permissions.js, and they
+// apply to the built-in Officer column only — a custom role starts with every
+// action off and is granted them one at a time, exactly as the matrix shows.
+const ACTION_OFFICER_DEFAULTS = {
+  approve_applications: true,
+  receive_reports: true,
+  text_resident: true,
+  send_sms_announcements: false,
+  map_edit: true,
+  household_residents: true,
+};
+
+// { roleKey: { action: bool } }. null until loaded, and actionAllowed() fails
+// closed while it is — the same rule deleteRecordsAllowed() follows, so a slow
+// fetch can never flash a control the role may not use.
+let actionPermissionOverrides = null;
+let actionPermissionsPromise = null;
+
+function loadActionPermissions() {
+  if (actionPermissionsPromise) return actionPermissionsPromise;
+  if (typeof apiGet !== "function") return Promise.resolve();
+  actionPermissionsPromise = apiGet("/api/settings/action-permissions")
+    .then((r) => {
+      actionPermissionOverrides = (r && r.value) || {};
+    })
+    .catch(() => {
+      actionPermissionOverrides = {};
+    });
+  return actionPermissionsPromise;
+}
+
+// For a page that must know BEFORE it draws (the GIS map decides whether to
+// build its editing tools at all): await this, then ask actionAllowed().
+function actionPermissionsReady() {
+  return loadActionPermissions() || Promise.resolve();
+}
+
+function actionAllowed(action) {
+  const session = getSession();
+  const role = session ? session.role : null;
+  if (!role || role === "Resident") return false;
+  if (role === "Admin") return true;
+  if (!actionPermissionOverrides) return false;
+  const perms = actionPermissionOverrides[String(role).toLowerCase()];
+  if (perms && Object.prototype.hasOwnProperty.call(perms, action))
+    return perms[action] === true;
+  return role === "Officer" && ACTION_OFFICER_DEFAULTS[action] === true;
+}
+
 // Can the signed-in user delete records? Admin: always. Anyone else: only
 // when the matrix says so.
 function deleteRecordsAllowed() {
@@ -1697,6 +1753,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Same for the "Delete Records" permission — it decides whether the record
     // pages render their per-row Delete buttons at all.
     loadDeletePermissions();
+    // ...and the action rows (map editing, household connections, the rest),
+    // which pages ask about through actionAllowed().
+    loadActionPermissions();
     // Live counts for the sidebar pills, refreshed while the tab is open so a
     // request approved on another device stops showing here as outstanding.
     refreshNavBadges();
