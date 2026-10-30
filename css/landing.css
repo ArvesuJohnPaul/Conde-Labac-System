@@ -2200,11 +2200,19 @@ html:not(.is-visitor) .services-footnote {
 .gis-svg:active {
   cursor: grabbing;
 }
+/* The land tint. Its outline is drawn separately, after the base layers, so
+   that nothing laid on the map can cover the border — see .gis-boundary-edge
+   and the second path in the SVG. */
 .gis-boundary {
   fill: var(--gis-land);
+  stroke: none;
+}
+.gis-boundary-edge {
+  fill: none;
   stroke: var(--gis-land-edge);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+  pointer-events: none;
 }
 /* Any feature wired up via attachFeatureInteraction (buildings, roads,
    vegetation, construction, hazards, accidents) gets a pointer cursor —

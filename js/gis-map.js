@@ -2337,6 +2337,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
           <g class="gis-roads-layer"></g>
           <g class="gis-buildings-layer"></g>
           </g>
+          <!-- The barangay outline, drawn a second time ON TOP of the base
+               layers. The first copy (above) is there for the land tint
+               underneath everything; this one is the border itself.
+               SVG paints in document order, so a wood or a field that runs
+               past the boundary — and several of them do, the extractor keeps
+               a few hundred metres of surroundings — was painted over the
+               border and swallowed whole stretches of it. Stroke only, and
+               inert, so it changes nothing but what can be seen. -->
+          <path class="gis-boundary-edge" d="${boundaryPathD}"></path>
           <!-- Density cloud: over the base map so it reads, under the pins so
                an individual report can still be clicked through it. Clipped to
                the boundary in heatmap mode — a cloud spilling past
