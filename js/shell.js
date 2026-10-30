@@ -118,15 +118,7 @@ function applySessionToApp(session) {
   }
 
   // Highlight correct sidebar nav item
-  if (window.CURRENT_PAGE) {
-    document.querySelectorAll(".nav-item").forEach((n) => {
-      n.classList.remove("active");
-      const oc = n.getAttribute("onclick") || "";
-      if (oc.includes(`'${window.CURRENT_PAGE}'`)) {
-        n.classList.add("active");
-      }
-    });
-  }
+  highlightNavItem();
 
   if (currentRole === "Resident") {
     // Resident: no module sidebar, but the topbar stays — it carries the user
@@ -508,6 +500,25 @@ function actingAccountId() {
   return (getSession() || {}).account_id || "";
 }
 
+// Which sidebar entry is lit. Normally the one for this page — but a module
+// whose entries are its TABS (Site Content) has four of them, all naming the
+// same module, so an entry that names a tab is lit only when the page is on
+// that tab. The hash is where the page keeps that, so switching tabs moves the
+// highlight without a reload (the listener below).
+function highlightNavItem() {
+  if (!window.CURRENT_PAGE) return;
+  const hashTab = (window.location.hash || "").replace(/^#/, "");
+  document.querySelectorAll(".nav-item").forEach((n) => {
+    n.classList.remove("active");
+    const oc = n.getAttribute("onclick") || "";
+    if (!oc.includes(`'${window.CURRENT_PAGE}'`)) return;
+    const itemTab = n.getAttribute("data-tab");
+    if (itemTab && itemTab !== (hashTab || "announcements")) return;
+    n.classList.add("active");
+  });
+}
+window.addEventListener("hashchange", highlightNavItem);
+
 // Hide sidebar + topbar module entries an Officer may not open (cosmetic; the
 // hard block is in nav()). No-op for Admin/Resident.
 function applyOfficerModuleVisibility() {
@@ -517,7 +528,9 @@ function applyOfficerModuleVisibility() {
     .querySelectorAll(".nav-item, .topbar-module-item")
     .forEach((n) => {
       const oc = n.getAttribute("onclick") || "";
-      const m = oc.match(/nav\((?:this|null),\s*'([a-z]+)'\)/);
+      // Tabbed entries pass a third argument, so the match stops at the
+      // module name rather than expecting the closing bracket after it.
+      const m = oc.match(/nav\((?:this|null),\s*'([a-z]+)'/);
       if (!m) return;
       const allow = role !== "Officer" || moduleAllowedFor(m[1], "Officer");
       n.style.display = allow ? "" : "none";
@@ -543,7 +556,10 @@ function hideEmptyModuleGroups() {
     });
 }
 
-function nav(el, module) {
+// `tab` is for a module whose sidebar entries are its tabs (Site Content).
+// It travels as the URL's hash, which is also what the page reads when it
+// opens and what tells the sidebar which of its four items to light.
+function nav(el, module, tab) {
   const dest = PAGE_MAP[module];
   const session = getSession();
   const role = session ? session.role : null;
@@ -562,9 +578,16 @@ function nav(el, module) {
     return;
   }
 
-  if (dest) {
-    window.location.href = dest; // relative within pages/
+  if (!dest) return;
+  const href = tab ? dest.split("#")[0] + "#" + tab : dest;
+  // Already on the page: changing the hash switches the tab in place rather
+  // than reloading everything the page has already fetched.
+  const here = window.location.pathname.split("/").pop();
+  if (tab && here === dest.split("#")[0]) {
+    window.location.hash = tab;
+    return;
   }
+  window.location.href = href; // relative within pages/
 }
 
 function setContent(html) {

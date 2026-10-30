@@ -65,7 +65,22 @@
           badge: "acc-badge",
         },
         { id: "analytics", icon: "chart", label: "Analytics" },
-        { id: "content", icon: "pencil", label: "Site Content" },
+      ],
+    },
+    {
+      // Site Content is one page of four tabs, and the tabs are four different
+      // jobs — writing an advisory, editing the barangay's story, keeping the
+      // council list, keeping the emergency numbers. As a single sidebar entry
+      // they were invisible: you had to open the page to find out it held the
+      // hotline directory at all. So the section IS the page, and its tabs are
+      // its items. Every one of them still carries data-module="content" —
+      // one module, one permission, four ways in.
+      label: "Site Content",
+      items: [
+        { id: "content", tab: "announcements", icon: "megaphone", label: "Announcements" },
+        { id: "content", tab: "history", icon: "file-text", label: "History" },
+        { id: "content", tab: "officials", icon: "users", label: "Officials" },
+        { id: "content", tab: "hotlines", icon: "phone", label: "Hotlines" },
       ],
     },
     {
@@ -119,6 +134,10 @@
   // applyOfficerModuleVisibility() regex-matches it to hide revoked modules,
   // and applySessionToApp() matches it to set .active.
   function sidebarNav(active) {
+    // Which tab the page is on, for the tabbed section above. The hash is the
+    // page's own record of it (js/pages/content.js), and an empty hash means
+    // the first tab.
+    var activeTab = (location.hash || "").replace(/^#/, "") || "announcements";
     return SECTIONS.map(function (sec) {
       var items = sec.items
         .map(function (m) {
@@ -129,15 +148,22 @@
               esc(m.badgeText || "") +
               "</span>"
             : "";
+          // A tabbed item navigates to its tab, and says which tab it is, so
+          // the shell can light the right one of four (applySessionToApp).
+          var isActive = m.id === active && (!m.tab || m.tab === activeTab);
           return (
             '<button type="button" class="nav-item' +
-            (m.id === active ? " active" : "") +
+            (isActive ? " active" : "") +
             '" onclick="nav(this, \'' +
             m.id +
-            "')\" data-module=\"" +
+            "'" +
+            (m.tab ? ", '" + m.tab + "'" : "") +
+            ")\" data-module=\"" +
             m.id +
             '"' +
-            (m.id === active ? ' aria-current="page"' : "") +
+            (m.tab ? ' data-tab="' + m.tab + '"' : "") +
+            (m.tabDefault ? " data-tab-default" : "") +
+            (isActive ? ' aria-current="page"' : "") +
             ">" +
             '<span class="nav-icon">' +
             ico(m.icon) +
@@ -212,7 +238,9 @@
             (m.id === active ? " is-current" : "") +
             '" onclick="nav(null, \'' +
             m.id +
-            "')\" data-label=\"" +
+            "'" +
+            (m.tab ? ", '" + m.tab + "'" : "") +
+            ")\" data-label=\"" +
             esc(m.label.toLowerCase()) +
             '">' +
             '<span class="topbar-module-icon">' +

@@ -98,7 +98,15 @@ window.CURRENT_PAGE = "content";
   var hist = null;
   var histSaving = false;
   var openRows = {}; // uid → true, survives list re-renders
-  var tab = "announcements";
+  // The open tab, which is also in the URL's hash — the sidebar's four Site
+  // Content entries navigate by it, and it is what lights the right one.
+  var TABS = ["announcements", "history", "officials", "hotlines"];
+  var tab = tabFromHash();
+
+  function tabFromHash() {
+    var h = (window.location.hash || "").replace(/^#/, "");
+    return TABS.indexOf(h) === -1 ? "announcements" : h;
+  }
   var filters = {
     annText: "",
     annStatus: "",
@@ -436,6 +444,7 @@ window.CURRENT_PAGE = "content";
       "</div>"
     );
     hydrate(document.getElementById("page-content"));
+    tab = tabFromHash();
     applyTab();
     load();
   }
@@ -1599,7 +1608,7 @@ window.CURRENT_PAGE = "content";
   }
 
   function applyTab() {
-    ["announcements", "history", "officials", "hotlines"].forEach(function (id) {
+    TABS.forEach(function (id) {
       var on = id === tab;
       var btn = document.getElementById("sc-tab-" + id);
       var panel = document.getElementById("sc-panel-" + id);
@@ -1616,7 +1625,16 @@ window.CURRENT_PAGE = "content";
     if (tab === id) return;
     tab = id;
     applyTab();
+    // Record it in the URL so the sidebar lights the matching entry, and so a
+    // reload (or a bookmark) comes back to the tab that was open.
+    if (tabFromHash() !== id) window.location.hash = id;
   };
+
+  // Arriving from a sidebar entry while the page is already open: the shell
+  // sets the hash rather than reloading, so the tab change comes through here.
+  window.addEventListener("hashchange", function () {
+    UI.setTab(tabFromHash());
+  });
 
   UI.filter = function (key, value) {
     filters[key] = value;
