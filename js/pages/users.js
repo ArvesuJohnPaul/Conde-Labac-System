@@ -96,30 +96,204 @@ function renderUsers() {
 // deleteRecordsAllowed() for delete).
 // [key, label, hint?]. "MIS Access" leads because it is the door the rest of
 // the rows are inside: switch it off and the role never reaches any module.
-const MATRIX_MODULES = [
-  [
-    "mis",
-    "MIS Access",
-    "Whether the MIS appears in the navbar and can be opened at all",
-  ],
-  ["dashboard", "Dashboard"],
-  ["residency", "Barangay Residency"],
-  ["certificates", "Certificate Processing"],
-  ["incidents", "Blotter / Incidents"],
-  ["feedback", "Feedback"],
-  ["gis", "GIS Mapping"],
-  ["accounts", "Account Claiming"],
-  ["analytics", "Analytics"],
-  ["content", "Site Content", "Announcements & barangay officials page"],
-  ["users", "User Management"],
-  ["audit", "Audit Logs"],
-  ["archive", "Archive"],
-  [
-    "sms",
-    "SMS Log",
-    "Every text the system sent — holds residents' phone numbers. The server enforces this row.",
-  ],
+// ── THE ROLE ACCESS MATRIX ──────────────────────────────────────────────────
+// One table, laid out like the sidebar, because that is the thing an Admin is
+// actually granting: the sections and their order are the MIS's own
+// (js/app-shell.js SECTIONS), so "what can this role open?" is read in the
+// same shape as the screen they will open it from.
+//
+// Three kinds of row:
+//   module  — a page in the sidebar. Hides the screen; `mis` and `sms` are
+//             also enforced by the server.
+//   action  — something done INSIDE a module, enforced by the server
+//             (conde-labak-server/permissions.js reads the same settings
+//             keys). These are the indented rows, under the module they
+//             belong to: editing the map sits under GIS Mapping, approving an
+//             application under Account Claiming, the three text-message rows
+//             under the SMS Log.
+//   delete  — the one row that is not about a screen at all.
+//
+// Every row carries a description. The old matrix had hints on four of
+// twenty-two rows, and an Admin granting "Feedback" to a new role had no way
+// of knowing what that reaches.
+//
+// `officer` is the built-in default for the Officer column (action and SMS
+// rows only — module defaults live in DEFAULT_MODULE_ACCESS below). A custom
+// role starts with every action off and is granted them one at a time.
+const MATRIX_SECTIONS = [
+  {
+    label: "Across the MIS",
+    rows: [
+      {
+        cat: "module",
+        key: "mis",
+        label: "MIS Access",
+        desc: "The door the rest of this table is inside. Off, and the role never reaches any module — the MIS link disappears from the portal, and typing a page's address does nothing.",
+      },
+      {
+        cat: "delete",
+        key: "records",
+        label: "Delete Records",
+        desc: "Whether the per-row Delete buttons appear at all, in every module. Deleting never destroys: the record is snapshotted into the Archive, where an Admin can restore it.",
+      },
+    ],
+  },
+  {
+    label: "Core Services",
+    rows: [
+      {
+        cat: "module",
+        key: "dashboard",
+        label: "Dashboard",
+        desc: "The opening screen: today's counts, the AI briefing, and what is waiting to be acted on.",
+      },
+      {
+        cat: "module",
+        key: "residency",
+        label: "Barangay Residency",
+        desc: "The resident directory — adding and editing records, classifications, contact numbers, and the edit requests residents file against their own.",
+      },
+      {
+        cat: "module",
+        key: "certificates",
+        label: "Certificate Processing",
+        desc: "Certificate requests end to end: issuing, declining, the printed documents and their requirement photos.",
+      },
+      {
+        cat: "module",
+        key: "incidents",
+        label: "Blotter / Incidents",
+        desc: "The blotter: every incident report filed from the map, the portal or the hotline, and the work of resolving them.",
+      },
+      {
+        cat: "module",
+        key: "feedback",
+        label: "Feedback",
+        desc: "Residents' ratings and comments, the topics the AI groups them under, and the urgent ones it raises.",
+      },
+      {
+        cat: "module",
+        key: "gis",
+        label: "GIS Mapping",
+        desc: "The barangay map: buildings, households, hazard zones and incident pins — and who lives in a tagged house.",
+        children: [
+          {
+            cat: "action",
+            key: "map_edit",
+            label: "Map edit mode",
+            desc: "Draw, tag, move and delete what is on the map. Without it the map opens read-only — everything can be seen, nothing can be changed.",
+            officer: true,
+          },
+          {
+            cat: "action",
+            key: "household_residents",
+            label: "Connect residents to households",
+            desc: "Add a resident to a household, or take one out, from the house's roster on the map. Moving a resident re-colours the house, so this is kept apart from simply reading the roster, which comes with the module.",
+            officer: true,
+          },
+        ],
+      },
+      {
+        cat: "module",
+        key: "accounts",
+        label: "Account Claiming",
+        desc: "Account applications: the queue, the submitted IDs, and the record each applicant is matched to.",
+        children: [
+          {
+            cat: "action",
+            key: "approve_applications",
+            label: "Approve account applications",
+            desc: "Connect an applicant to a resident record, create the record, or deny the application — the step that turns an application into a working account.",
+            officer: true,
+          },
+        ],
+      },
+      {
+        cat: "module",
+        key: "analytics",
+        label: "Analytics",
+        desc: "Trends across the whole system — incident hotspots, certificate volume, population figures. Reading only; nothing here changes a record.",
+      },
+    ],
+  },
+  {
+    label: "Site Content",
+    rows: [
+      {
+        cat: "module",
+        key: "content",
+        label: "Site Content",
+        desc: "Everything the public portal shows: announcements, the barangay's history, the council list and the emergency hotline numbers. One permission for all four tabs.",
+      },
+    ],
+  },
+  {
+    label: "Administration",
+    rows: [
+      {
+        cat: "module",
+        key: "users",
+        label: "User Management",
+        desc: "Staff accounts, their roles, and this matrix. An Admin-level reach: whoever holds it decides what every other role may do.",
+      },
+      {
+        cat: "module",
+        key: "audit",
+        label: "Audit Logs",
+        desc: "The trail of who did what, and when. It names residents and the records that were touched.",
+      },
+      {
+        cat: "module",
+        key: "sms",
+        label: "SMS Log",
+        desc: "Every text the system sent, with the numbers it went to — residents' personal numbers, so the server enforces this row and not only the screen.",
+        children: [
+          {
+            cat: "sms",
+            key: "receive_reports",
+            label: "Receive incident reports",
+            desc: "Lets the role switch report texts on for their own account, in “My SMS alerts”. An emergency report reaches them at any hour, with the caller's number and where they are.",
+            officer: true,
+          },
+          {
+            cat: "sms",
+            key: "text_resident",
+            label: "Text a resident",
+            desc: "One-off texts sent from a resident's record. The number is theirs, not the barangay's, and the message costs a credit.",
+            officer: true,
+          },
+          {
+            cat: "sms",
+            key: "send_sms_announcements",
+            label: "Send announcements by SMS",
+            desc: "One press reaches every textable resident at once and spends the barangay's credits doing it. Off for Officers by default.",
+            officer: false,
+          },
+        ],
+      },
+      {
+        cat: "module",
+        key: "archive",
+        label: "Archive",
+        desc: "Deleted records, until their retention timer runs out — restoring them, and destroying them for good.",
+      },
+    ],
+  },
 ];
+
+// Every row, flattened, for the lookups that do not care about the layout.
+const MATRIX_ROWS = MATRIX_SECTIONS.reduce(function (all, sec) {
+  sec.rows.forEach(function (row) {
+    all.push(row);
+    (row.children || []).forEach(function (child) {
+      all.push(child);
+    });
+  });
+  return all;
+}, []);
+
+const matrixRowDef = (category, key) =>
+  MATRIX_ROWS.find((r) => r.cat === category && r.key === key);
 
 // Built-in module-access defaults per built-in role (custom roles start off).
 // `mis` mirrors what the landing page did before this was configurable: staff
@@ -137,62 +311,6 @@ let modulePerms = {}; // { roleKey: { moduleKey: bool } }
 let deletePerms = {}; // { roleKey: { moduleKey: bool } }
 let actionPerms = {}; // { roleKey: { actionKey: bool } }
 let smsPerms = {}; // { roleKey: { smsRowKey: bool } }
-
-// Action rows — permissions the SERVER enforces too (conde-labak-server/
-// permissions.js reads the same settings key), unlike the module rows, which
-// only hide screens. [key, label, hint, default for Officer]. The Resident
-// column is locked off for every one of them: each creates accounts or shows
-// other residents' personal data.
-const ACTION_ROWS = [
-  [
-    "approve_applications",
-    "Approve account applications",
-    "Account Claiming — connect an applicant to a record, create one, or deny",
-    true,
-  ],
-  [
-    "map_edit",
-    "Map edit mode",
-    "GIS Mapping — draw, tag, move and delete what is on the map. Without it the map opens read-only.",
-    true,
-  ],
-  [
-    "household_residents",
-    "Connect residents to households",
-    "GIS Mapping — add a resident to a household, or take one out, from the house's roster. Reading the roster comes with the module.",
-    true,
-  ],
-];
-
-// SMS rows — stored separately under 'sms-permissions', and separate from each
-// other because they are different risks: receiving a report is a phone
-// ringing at 2 AM, sending an announcement spends the barangay's credits on
-// every resident at once. Same shape, same server enforcement
-// (SMS-HOTLINE-PLAN.md §4.3 point 2).
-//
-// "View SMS log" is NOT here: it opens a page, so it is a module row above,
-// one row for the screen and the server alike. A1–A2 (certificate texts) are
-// not rows either — nobody sends those, they are switches in SMS settings.
-const SMS_ROWS = [
-  [
-    "receive_reports",
-    "Receive incident reports",
-    "Lets the role switch report texts on for their own account, in “My SMS alerts”",
-    true,
-  ],
-  [
-    "text_resident",
-    "Text a resident",
-    "One-off texts from a resident\u2019s record — the number is theirs, not the barangay’s",
-    true,
-  ],
-  [
-    "send_sms_announcements",
-    "Send announcements by SMS",
-    "Costs credits and reaches every textable resident at once. Off for Officers by default",
-    false,
-  ],
-];
 
 // Which settings key holds each category of row.
 const PERM_SETTING = {
@@ -272,12 +390,11 @@ function effectiveAccess(category, role, moduleKey) {
     return !!(def && def[moduleKey]);
   }
   if (category === "action" || category === "sms") {
-    const rows = category === "action" ? ACTION_ROWS : SMS_ROWS;
-    const row = rows.find((r) => r[0] === moduleKey);
     // Built-in defaults apply to the built-in Officer column only; a custom
     // role starts with every action and SMS row off, and is granted them one
     // at a time.
-    return !!(row && rk === "officer" && row[3]);
+    const row = matrixRowDef(category, moduleKey);
+    return !!(row && rk === "officer" && row.officer);
   }
   return false;
 }
@@ -290,7 +407,7 @@ function permCell(on, onclick) {
   return `<td class="text-center ${cls}" style="cursor:pointer" title="Tap to switch access" onclick="${onclick}"><i data-icon=${icon}></i></td>`;
 }
 
-function matrixRow(category, key, label, hint) {
+function matrixRow(category, key, label, hint, isChild) {
   const admin = isAdminSession();
   const cells = editableRoles
     .map((role) => {
@@ -305,10 +422,29 @@ function matrixRow(category, key, label, hint) {
     })
     .join("");
   const sub = hint
-    ? `<div class="table-muted" style="font-size:12px;font-weight:400">${escapeHtml(hint)}</div>`
+    ? `<div class="perm-row-desc">${escapeHtml(hint)}</div>`
     : "";
   // Admin column is always ✓ and locked; every other role is tappable.
-  return `<tr><td>${escapeHtml(label)}${sub}</td>${permCell(true)}${cells}</tr>`;
+  return `<tr${isChild ? ' class="perm-sub"' : ""}><td><span class="perm-row-label">${escapeHtml(
+    label,
+  )}</span>${sub}</td>${permCell(true)}${cells}</tr>`;
+}
+
+// A section of the table: its heading, its module rows, and under each module
+// the actions that live inside it.
+function matrixSectionHtml(sec, colCount) {
+  const body = sec.rows
+    .map(
+      (row) =>
+        matrixRow(row.cat, row.key, row.label, row.desc) +
+        (row.children || [])
+          .map((child) => matrixRow(child.cat, child.key, child.label, child.desc, true))
+          .join(""),
+    )
+    .join("");
+  return (
+    `<tr class="perm-group"><td colspan="${colCount}">${escapeHtml(sec.label)}</td></tr>` + body
+  );
 }
 
 function renderRoleMatrix() {
@@ -319,8 +455,8 @@ function renderRoleMatrix() {
   const help = document.getElementById("role-matrix-help");
   if (help)
     help.textContent = admin
-      ? "Admins always have full access. Tap a ✓ or ✗ to switch a role's access to a module or delete action. Use “Add Role” to create a new role column."
-      : "Set by an Administrator. Each role's access is shown below.";
+      ? "Laid out like the sidebar. A plain row is a screen the role can open; an indented row is something done inside that screen, and the server enforces those. Tap a ✓ or ✗ to switch one. Use “Add Role” to create a new role column."
+      : "Set by an Administrator. Each role's access is shown below — a plain row is a screen, an indented row is something done inside it.";
 
   const roleHead = editableRoles
     .map((role) => {
@@ -336,17 +472,9 @@ function renderRoleMatrix() {
   if (!el) return;
   el.innerHTML = `
     <table class="perm-table">
-      <thead><tr><th class="text-left">Module / Action</th><th>Admin</th>${roleHead}</tr></thead>
+      <thead><tr><th class="text-left">Module &amp; what it allows</th><th>Admin</th>${roleHead}</tr></thead>
       <tbody>
-        ${MATRIX_MODULES.map(([k, l, hint]) => matrixRow("module", k, l, hint)).join("")}
-        ${matrixRow("delete", "records", "Delete Records")}
-        ${ACTION_ROWS.map(([k, l, hint]) => matrixRow("action", k, l, hint)).join("")}
-        <tr class="perm-group"><td colspan="${editableRoles.length + 2}">
-          Text messages (SMS)
-          <span class="table-muted" style="font-weight:400">
-            — enforced by the server. The SMS Log is a module row above.</span>
-        </td></tr>
-        ${SMS_ROWS.map(([k, l, hint]) => matrixRow("sms", k, l, hint)).join("")}
+        ${MATRIX_SECTIONS.map((sec) => matrixSectionHtml(sec, editableRoles.length + 2)).join("")}
       </tbody>
     </table>`;
   if (typeof hydrateIcons === "function") hydrateIcons(el);

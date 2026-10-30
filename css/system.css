@@ -1598,6 +1598,42 @@ body.drawer-open {
   color: var(--text-secondary);
 }
 
+/* The matrix is laid out like the sidebar: a heading per section, a row per
+   screen, and under a screen the things done inside it. The indent and the
+   tick mark are what say "this one lives in the row above" — without them an
+   action row reads as another module and the grouping is lost. */
+.perm-table .perm-sub > td:first-child {
+  padding-left: var(--space-8);
+  position: relative;
+}
+.perm-table .perm-sub > td:first-child::before {
+  content: "";
+  position: absolute;
+  left: var(--space-5);
+  top: 1.05em;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.perm-row-label {
+  font-weight: var(--weight-semibold, 600);
+}
+.perm-table .perm-sub .perm-row-label {
+  font-weight: var(--weight-regular, 400);
+}
+/* Every row explains itself now, so the description is a real part of the row
+   rather than an afterthought: readable, and capped so a long one does not
+   stretch the table past the ticks. */
+.perm-row-desc {
+  margin-top: 2px;
+  max-width: 62ch;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular, 400);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .perm-check {
   color: var(--success-solid);
   font-size: 1rem;
