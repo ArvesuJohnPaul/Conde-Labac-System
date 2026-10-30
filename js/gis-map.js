@@ -142,7 +142,7 @@ function gisIcon(name, cls) {
 const GIS_BUILDING_TYPE_META = {
   government: { label: "Government Building", icon: "landmark", color: "#e9c6a4" },
   business: { label: "Business", icon: "building", color: "#a8d5d8" },
-  households: { label: "Household", icon: "home", color: "#b3c6ea" },
+  households: { label: "Household", icon: "home", color: "#6d93dd" },
 };
 
 // Household classification — which priority groups live in a tagged household.

@@ -331,7 +331,7 @@
   background: #a8d5d8;
 }
 .gis-dot-households {
-  background: #b3c6ea;
+  background: #6d93dd;
 }
 .gis-dot-seniors {
   background: #f3c98b;
@@ -433,7 +433,10 @@
   --gis-road-casing: #e1e4d6;
   --gis-road-major: #f8dca2;
   --gis-road-major-casing: #e9c47f;
-  --gis-bldg: #c9d0e0;
+  /* Untagged buildings are the ground the tagged ones stand on: light, flat
+     and a little greyer than they were, so a tagged house is told apart from
+     them at the zoom staff actually work at rather than only up close. */
+  --gis-bldg: #ccd3dd;
   --gis-bldg-edge: rgba(255, 255, 255, 0.7);
   position: relative;
   width: 100%;
@@ -859,8 +862,12 @@
 .gis-building-cat-business {
   --bldg-fill: #a8d5d8;
 }
+/* A household is the one tag the map is mostly made of, and its old pastel
+   blue sat a shade away from the untagged grey-blue — at any distance the two
+   were one colour. This is a proper blue: still flat, still in the palette,
+   but unmistakably "somebody tagged this". */
 .gis-building-cat-households {
-  --bldg-fill: #b3c6ea;
+  --bldg-fill: #6d93dd;
 }
 /* A household someone vulnerable lives in — a senior citizen, a PWD, a solo
    parent, an indigent family — is filled, whole, in that classification's
