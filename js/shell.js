@@ -310,15 +310,31 @@ const modulePermissions = {
 // with no access to anything.
 let moduleAccessOverrides = null;
 
-async function loadModuleAccess() {
-  if (typeof loadMisAccessMap !== "function") return;
+let moduleAccessPromise = null;
+
+function loadModuleAccess() {
+  if (typeof loadMisAccessMap !== "function") return Promise.resolve();
+  if (moduleAccessPromise) return moduleAccessPromise;
   // One fetch for the whole matrix, shared with js/mis-access.js — the "may
   // this role open the MIS at all?" row lives in the same settings blob as
   // these per-module rows.
-  const map = await loadMisAccessMap();
-  moduleAccessOverrides = map || {};
-  enforceMisAccess(map);
-  applyOfficerModuleVisibility();
+  moduleAccessPromise = loadMisAccessMap().then((map) => {
+    moduleAccessOverrides = map || {};
+    enforceMisAccess(map);
+    applyOfficerModuleVisibility();
+    return moduleAccessOverrides;
+  });
+  return moduleAccessPromise;
+}
+
+// For a page that decides whether to render AT ALL from the matrix. Until the
+// fetch lands, moduleAllowedFor() has only the built-in lists to go on — and a
+// role this barangay added itself appears in none of them, so a page that
+// asked too early turned an Admin's grant into "you may not open this" and
+// sent the user back to the portal. Waiting costs one request on first load
+// and is shared with every other caller.
+function moduleAccessReady() {
+  return loadModuleAccess() || Promise.resolve();
 }
 
 // The "MIS Access" matrix row, enforced. Revoking it hides the MIS link on the

@@ -406,18 +406,34 @@ window.CURRENT_PAGE = "content";
   }
 
   // ═══════════ Page scaffold ═══════════
-  function renderPage() {
+  // Set while the gate below is waiting for the matrix, so the second
+  // renderPage() the shell makes (when the delete-permission fetch lands)
+  // cannot start a second copy of the page before the first has drawn.
+  var opening = false;
+
+  async function renderPage() {
     // Site Content editing is staff work, and which staff is the matrix's
     // answer, not a list of two role names — a barangay can add a role of its
     // own and grant it this page. The shell calls renderPage() for every
     // signed-in role, so the question is asked here as well as in nav().
     var role = (getSession() || {}).role;
+    if (!role) {
+      window.location.href = "../system.html";
+      return;
+    }
+    if (opening || document.getElementById("sc-page")) return;
+    opening = true;
+    // The matrix arrives a fetch after the page does. Asking before it lands
+    // leaves only the built-in role lists to answer from, which a role the
+    // barangay added itself is not in — so the grant an Admin had just made
+    // read as a refusal and bounced them to the portal.
+    if (typeof moduleAccessReady === "function") await moduleAccessReady();
+    opening = false;
     var mayEdit =
-      role &&
       role !== "Resident" &&
       (typeof moduleAllowedFor === "function" ? moduleAllowedFor("content", role) : role === "Admin");
     if (!mayEdit) {
-      window.location.href = role ? "../index.html" : "../system.html";
+      window.location.href = "../index.html";
       return;
     }
     // shell.js calls renderPage() a second time when the delete-permission
