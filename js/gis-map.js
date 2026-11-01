@@ -2407,30 +2407,48 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   ) {
     container.nextElementSibling.remove();
   }
-  const legendItemHtml = (dotKey, label, layer) =>
-    `<div class="gis-legend-item"${layer ? ` data-legend-layer="${layer}"` : ""}><div class="gis-dot gis-dot-${dotKey}"></div>${label}</div>`;
+  // THE KEY'S SHAPES. A legend of identical dots makes a reader match colours
+  // and nothing else — and on this map the colours are the least of it: a road
+  // is a thin line, a report is a pin standing on a spot, a household is a
+  // filled footprint. So each entry is drawn as the thing it stands for, and
+  // the eye can go looking for a shape instead of a shade.
+  //
+  //   line   roads, one entry per kind, at the width the map draws it
+  //   pin    incident reports, the same teardrop the map drops
+  //   square areas — buildings, classifications, vegetation, water
+  const legendItemHtml = (dotKey, label, layer, shape) =>
+    `<div class="gis-legend-item"${layer ? ` data-legend-layer="${layer}"` : ""}><div class="gis-key gis-key-${shape || "square"} gis-dot-${dotKey}"></div>${label}</div>`;
+  // One road kind: a short line of its own colour and weight, so "service" and
+  // "main" are told apart in the key the same way they are on the map.
+  const legendRoadHtml = (kind, label) =>
+    `<div class="gis-legend-item" data-legend-layer="roads"><div class="gis-key gis-key-line gis-key-road-${kind}"></div>${label}</div>`;
+  // A pin, drawn from the same path the map's markers use.
+  const legendPinHtml = (cls, label) =>
+    `<div class="gis-legend-item" data-legend-layer="reports"><svg class="gis-key gis-key-pin ${cls}" viewBox="0 0 24 34" aria-hidden="true"><path d="${GIS_PIN_PATH}"></path></svg>${label}</div>`;
   // A classification is the colour the whole household is painted, so its
-  // swatch is a plain dot like the Building Type column's — taken from
+  // swatch is a footprint like the Building Type column's — taken from
   // GIS_HOUSEHOLD_SUBCAT_META, the same value renderBuildings() fills with.
   const legendClassHtml = (key, label) =>
-    `<div class="gis-legend-item" data-legend-layer="buildings"><div class="gis-dot" style="background:${GIS_HOUSEHOLD_SUBCAT_META[key].color}"></div>${label}</div>`;
+    `<div class="gis-legend-item" data-legend-layer="buildings"><div class="gis-key gis-key-square" style="background:${GIS_HOUSEHOLD_SUBCAT_META[key].color}"></div>${label}</div>`;
   const legendColumnHtml = (title, itemsHtml) =>
     `<div class="gis-legend-col"><div class="gis-legend-col-title">${title}</div>${itemsHtml}</div>`;
   const legendHtml = `<div class="gis-legend gis-legend-overlay">
     ${legendColumnHtml(
       "Map Layers",
       [
-        legendItemHtml("vegetation", "Vegetation", "vegetation"),
-        legendItemHtml("water", "Water", "water"),
-        legendItemHtml("roads", "Roads", "roads"),
-        legendItemHtml("reports", "Incident Reports", "reports"),
-        legendItemHtml("reports-official", "Official Report", "reports"),
+        legendItemHtml("vegetation", "Vegetation", "vegetation", "square"),
+        legendItemHtml("water", "Water", "water", "square"),
+        legendRoadHtml("major", "Main Road"),
+        legendRoadHtml("local", "Local Road"),
+        legendRoadHtml("service", "Service Road"),
+        legendPinHtml("gis-key-pin-report", "Incident Report"),
+        legendPinHtml("gis-key-pin-official", "Official Report"),
       ].join(""),
     )}
     ${legendColumnHtml(
       "Building Type",
       Object.entries(GIS_BUILDING_TYPE_META)
-        .map(([key, m]) => legendItemHtml(key, m.label, "buildings"))
+        .map(([key, m]) => legendItemHtml(key, m.label, "buildings", "square"))
         .join(""),
     )}
     ${
