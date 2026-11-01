@@ -2081,6 +2081,33 @@ body.drawer-open {
   border-radius: var(--radius-sm);
 }
 
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+.skeleton-panel {
+  padding: var(--space-4);
+}
+
+/* Sized like the number it stands in for, so the card does not resize under
+   the reader when the real figure arrives. */
+.skeleton-kpi {
+  display: inline-block;
+  width: 72px;
+  height: 26px;
+  vertical-align: -4px;
+}
+
+/* One of the map's filter dropdowns, before the engine puts the real ones in. */
+.skeleton-pill {
+  width: 116px;
+  height: 32px;
+  border-radius: 100px;
+}
+
 @keyframes shimmer {
   from {
     background-position: 100% 50%;

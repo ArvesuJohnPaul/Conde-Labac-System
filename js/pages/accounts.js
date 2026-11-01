@@ -84,7 +84,7 @@ function renderAccountsPage() {
           <div class="modal-title"><div class="modal-title-icon"><i data-icon=key></i></div> <span id="app-review-title">Account Application</span></div>
           <button class="modal-close" onclick="closeApplicationReview()"><i data-icon=x></i></button>
         </div>
-        <div class="modal-body" id="app-review-body"><p class="table-muted" style="text-align:center;padding:24px">Loading…</p></div>
+        <div class="modal-body" id="app-review-body">${skeletonPanel()}</div>
         <div class="modal-footer" id="app-review-footer">
           <button class="btn btn-outline" onclick="closeApplicationReview()">Close</button>
         </div>
@@ -193,7 +193,7 @@ async function openApplicationReview(ref) {
   const modal = document.getElementById("modal-app-review");
   const body = document.getElementById("app-review-body");
   REVIEW = null;
-  body.innerHTML = `<p class="table-muted" style="text-align:center;padding:24px">Loading…</p>`;
+  body.innerHTML = skeletonPanel();
   document.getElementById("app-review-footer").innerHTML =
     `<button class="btn btn-outline" onclick="closeApplicationReview()">Close</button>`;
   document.getElementById("app-review-title").textContent = ref;

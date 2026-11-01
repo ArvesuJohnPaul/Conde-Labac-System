@@ -1925,6 +1925,18 @@ async function initGisMap(targetId, opts = {}) {
   const container = document.getElementById(targetId);
   if (!container) return;
 
+  // The boundary, the buildings, the roads, the water and the vegetation are
+  // five files, and until they arrive this element is a flat coloured block —
+  // which looks exactly like a map that failed to draw. Say what is happening
+  // instead. gisCreateMap() overwrites the whole container when it builds the
+  // map, so there is nothing to clean up; a cached instance returns before
+  // this, and so never flickers.
+  if (!gisInstances[targetId] || !container.classList.contains("gis-custom-map")) {
+    container.innerHTML =
+      '<div class="gis-map-loading"><span class="gis-map-loading-bar"></span>' +
+      "<span>Drawing the barangay map…</span></div>";
+  }
+
   // One-time write-back of any old-shape {category} building tags.
   gisMigrateBuildingTags();
 
@@ -2380,6 +2392,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       ? container.previousElementSibling
       : null;
   if (filterRowEl) {
+    // The page may have seeded this row with shimmering placeholders for the
+    // controls about to go in it (js/pages/gis.js). They are stand-ins, not
+    // content, so they come out before the real thing goes in — appending
+    // around them left three ghost pills on the row for good.
+    filterRowEl.querySelectorAll(".skeleton").forEach((el) => el.remove());
     filterRowEl.insertAdjacentHTML(
       "beforeend",
       layerToggleButtonsHtml + typeFilterHtml + sectorFilterMarkup + searchMarkup,

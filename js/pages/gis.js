@@ -231,11 +231,15 @@ async function renderGISPage() {
       <p class="page-desc">Interactive zone and hazard mapping for Barangay Conde Labac</p>
     </div>
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-label">Mapped Buildings</div><div class="kpi-value" id="gis-kpi-buildings">—</div><div class="kpi-trend" id="gis-kpi-buildings-trend">Loading…</div></div>
-      <div class="kpi-card success"><div class="kpi-label">Tagged Households</div><div class="kpi-value" id="gis-kpi-households">—</div><div class="kpi-trend" id="gis-kpi-households-trend"></div></div>
-      <div class="kpi-card danger"><div class="kpi-label">Active Hazard Zones</div><div class="kpi-value" id="gis-kpi-hazards">—</div></div>
-      <div class="kpi-card warning"><div class="kpi-label">Recorded Incidents</div><div class="kpi-value" id="gis-kpi-incidents">—</div></div>
-      <div class="kpi-card info"><div class="kpi-label">Community Reports</div><div class="kpi-value" id="gis-kpi-reports">—</div><div class="kpi-trend">Resident-submitted pins</div></div>
+      ${/* The counts come from the map once it has drawn itself, which is a
+            few hundred milliseconds of fetching away. A shimmering block the
+            size of the number says so; a dash did not. Each is replaced by
+            .textContent when the real figure lands. */ ""}
+      <div class="kpi-card"><div class="kpi-label">Mapped Buildings</div><div class="kpi-value" id="gis-kpi-buildings">${kpiSkeleton()}</div><div class="kpi-trend" id="gis-kpi-buildings-trend">Reading the map…</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Tagged Households</div><div class="kpi-value" id="gis-kpi-households">${kpiSkeleton()}</div><div class="kpi-trend" id="gis-kpi-households-trend"></div></div>
+      <div class="kpi-card danger"><div class="kpi-label">Active Hazard Zones</div><div class="kpi-value" id="gis-kpi-hazards">${kpiSkeleton()}</div></div>
+      <div class="kpi-card warning"><div class="kpi-label">Recorded Incidents</div><div class="kpi-value" id="gis-kpi-incidents">${kpiSkeleton()}</div></div>
+      <div class="kpi-card info"><div class="kpi-label">Community Reports</div><div class="kpi-value" id="gis-kpi-reports">${kpiSkeleton()}</div><div class="kpi-trend">Resident-submitted pins</div></div>
     </div>
     <div class="gis-page-layout">
       <aside class="gis-side-col">
@@ -259,7 +263,7 @@ async function renderGISPage() {
             </button>
             <button type="button" class="btn btn-sm btn-outline gis-view-all-btn" id="gis-view-all-reports">Open Blotter <i data-icon=arrow-right></i></button>
           </div>
-          <div class="gis-report-feed" id="gis-report-feed"></div>
+          <div class="gis-report-feed" id="gis-report-feed">${skeletonRows(4)}</div>
         </div>
         <div class="card gis-side-panel gis-side-ai" id="gis-panel-ai">
           <div class="card-header">
@@ -269,12 +273,7 @@ async function renderGISPage() {
             </button>
             <button type="button" class="btn btn-sm btn-outline" id="gis-ai-generate" disabled>Generate</button>
           </div>
-          <div class="gis-ai-body" id="gis-ai-body">
-            <div class="gis-ai-placeholder">
-              ${gisIcon("layers")}
-              <div>Loading…</div>
-            </div>
-          </div>
+          <div class="gis-ai-body" id="gis-ai-body">${skeletonLines(5)}</div>
         </div>
         </div>
       </aside>
@@ -286,7 +285,13 @@ async function renderGISPage() {
              Classification dropdowns plus the household search. Must stay
              the immediate previous sibling of the map embed. The legend is
              also engine-generated, as an overlay inside the map. -->
-        <div class="gis-filter-row"></div>
+        ${/* The engine injects the real controls here and draws the map
+              below; until then both are the shape of what is coming. */ ""}
+        <div class="gis-filter-row">
+          <div class="skeleton skeleton-pill" aria-hidden="true"></div>
+          <div class="skeleton skeleton-pill" aria-hidden="true"></div>
+          <div class="skeleton skeleton-pill" aria-hidden="true"></div>
+        </div>
         <div class="gis-map-embed" id="gis-map-page"></div>
       </div>
     </div>
@@ -357,6 +362,11 @@ async function renderGISPage() {
 
   initGisSidePanels();
   initGisNarrativePanel();
+}
+
+// A KPI's number, before there is one.
+function kpiSkeleton() {
+  return '<span class="skeleton skeleton-kpi" aria-hidden="true"></span>';
 }
 
 // Fly to (and highlight) the report the Blotter sent us here for.

@@ -52,7 +52,7 @@ const archiveAccountId = () => (getSession() || {}).account_id || null;
 
 async function loadDeletedRecords() {
   const list = document.getElementById("deleted-records-list");
-  if (list) list.innerHTML = `<div class="resident-summary">Loading…</div>`;
+  if (list) list.innerHTML = skeletonRows(4);
   try {
     deletedRecords = await apiGet("/api/archive");
   } catch (e) {
@@ -212,7 +212,7 @@ function renderArchive() {
         <button class="btn btn-sm btn-outline" onclick="loadDeletedRecords()"><i data-icon=refresh></i> Refresh</button>
       </div>
       <p class="modal-help-text">Deleted records from across the system. Restoring puts one back exactly where it was; every delete, restore and permanent-delete is logged. Items are kept <strong>30 days</strong>, then deleted automatically — <strong>cleared audit entries for 90 days</strong>, and those can only leave by their timer.</p>
-      <div id="deleted-records-list"><div class="resident-summary">Loading…</div></div>
+      <div id="deleted-records-list">${skeletonRows(4)}</div>
     </div>
 
     <div class="card">

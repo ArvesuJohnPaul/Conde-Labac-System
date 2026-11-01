@@ -502,6 +502,58 @@
   background: var(--gis-land-outside);
   overflow: hidden;
 }
+/* The map while its five layer files are still arriving. A flat block of
+   ground colour is what a map that failed to draw looks like; this says the
+   difference out loud, and the bar under it keeps moving while it waits. */
+.gis-map-loading {
+  /* Fills the embed rather than being positioned inside it: at this point the
+     container is still a plain .gis-map-embed — the engine has not added the
+     class that makes it a positioning context. */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--gis-land-outside, #d9ddcd);
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.gis-map-loading-bar {
+  width: 148px;
+  height: 6px;
+  border-radius: 100px;
+  background: rgba(27, 42, 74, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+.gis-map-loading-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: 100px;
+  background: var(--gold, #c9a227);
+  animation: gisMapLoading 1.1s ease-in-out infinite;
+}
+@keyframes gisMapLoading {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(345%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gis-map-loading-bar::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
+
 .gis-map-toolbar {
   position: absolute;
   top: 10px;

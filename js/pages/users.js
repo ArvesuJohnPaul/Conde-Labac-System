@@ -97,7 +97,7 @@ function renderUsers() {
         <button class="btn btn-sm btn-gold" id="matrix-add-role" style="display:none" onclick="addMatrixRole()"><i data-icon=plus></i> Add Role</button>
       </div>
       <p class="modal-help-text" id="role-matrix-help"></p>
-      <div class="table-wrap" id="role-matrix"><div class="resident-summary">Loading…</div></div>
+      <div class="table-wrap" id="role-matrix">${skeletonRows(6)}</div>
     </div>
   `);
   loadAccounts();

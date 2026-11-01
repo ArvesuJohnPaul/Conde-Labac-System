@@ -100,7 +100,7 @@ function renderPage() {
           ${Object.entries(SMS_STATUS_BADGES).map(([k, [, l]]) => `<option value="${k}">${l}</option>`).join("")}
         </select>
       </div>
-      <div id="sms-log-wrap"><div class="resident-summary">Loading…</div></div>
+      <div id="sms-log-wrap">${skeletonRows(5)}</div>
     </div>
   `);
   loadSmsPage();

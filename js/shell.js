@@ -418,6 +418,51 @@ async function loadDeletePermissions() {
     renderPage();
 }
 
+// ════════════════ LOADING SKELETONS (shared) ════════════════
+// A screen that is waiting should look like it is waiting. The MIS used to say
+// so with a word — "Loading…" in the middle of an empty card, a dash where a
+// number goes — which from across a desk is indistinguishable from a page that
+// has finished and found nothing, or from one that has quietly broken.
+//
+// These draw the shape of what is coming instead, shimmering (.skeleton in
+// css/system.css): rows where rows will be, lines where a paragraph will be, a
+// block the size of the number. The movement is the message — it says the
+// screen is still working — and because each stands in at roughly the right
+// size, the content does not jump when it lands.
+//
+// Nothing here needs tearing down: every caller fills the same element with
+// the real thing, which replaces the skeleton.
+function skeletonRows(n = 4) {
+  return (
+    '<div class="skeleton-stack" aria-hidden="true">' +
+    Array.from({ length: n }, () => '<div class="skeleton skeleton-row"></div>').join("") +
+    "</div>"
+  );
+}
+
+// Lines of a paragraph, the last one short the way a real one ends.
+function skeletonLines(n = 3) {
+  return (
+    '<div class="skeleton-stack" aria-hidden="true">' +
+    Array.from(
+      { length: n },
+      (_, i) =>
+        `<div class="skeleton skeleton-text"${i === n - 1 ? ' style="width:62%"' : ""}></div>`,
+    ).join("") +
+    "</div>"
+  );
+}
+
+// For a modal body or a card that is about to hold one record.
+function skeletonPanel() {
+  return (
+    '<div class="skeleton-stack skeleton-panel" aria-hidden="true">' +
+    '<div class="skeleton skeleton-title"></div>' +
+    skeletonLines(4) +
+    "</div>"
+  );
+}
+
 // ════════════════ ACTION PERMISSIONS (shared) ════════════════
 // The matrix rows that are not modules and not Delete: approving an account
 // application, texting a resident, editing the map, connecting a resident to

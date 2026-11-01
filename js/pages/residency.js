@@ -365,7 +365,7 @@ function renderResidencyPage() {
           <button class="modal-close" onclick="closeViewResident()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body" id="view-resident-body">
-          <p class="table-muted" style="text-align:center;padding:24px">Loading…</p>
+          ${skeletonPanel()}
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="closeViewResident()">Close</button>
@@ -590,7 +590,7 @@ async function openViewResident(id) {
   const modal = document.getElementById("modal-view-resident");
   const body = document.getElementById("view-resident-body");
   if (!modal || !body) return;
-  body.innerHTML = `<p class="table-muted" style="text-align:center;padding:24px">Loading…</p>`;
+  body.innerHTML = skeletonPanel();
   modal.classList.add("open");
   try {
     const r = await apiGet("/api/residents/" + id);
