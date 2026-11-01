@@ -1734,13 +1734,24 @@
           if (toTop) toTop.classList.toggle("is-visible", y > 700);
 
           let current = "";
-          sections.forEach((sec) => {
+          const visible = sections.filter((sec) => !sec.hidden);
+          visible.forEach((sec) => {
             // A hidden section (the history, when its story is empty) has an
             // offsetTop of 0 and would otherwise claim every scroll position
             // after the one before it.
-            if (sec.hidden) return;
             if (y >= sec.offsetTop - 140) current = sec.id;
           });
+          // The last section can never win this on its own. "Visit" is shorter
+          // than the viewport, so the page runs out of scroll before its top
+          // rises past the threshold — and the navbar went on pointing at
+          // Officials while Contact filled the screen. Reaching the bottom of
+          // the page IS being at the last section, so say so.
+          if (
+            visible.length &&
+            window.innerHeight + y >= document.documentElement.scrollHeight - 2
+          ) {
+            current = visible[visible.length - 1].id;
+          }
           links.forEach((link) => {
             const active = link.getAttribute("href") === "#" + current;
             link.classList.toggle("is-active", active);
