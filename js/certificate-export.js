@@ -660,23 +660,32 @@ async function certOpenSheet(request, opts) {
   });
   // A type with no printable form still shows its details; the sheet half of
   // the modal just says so instead of showing an empty frame.
-  set("cert-fields-heading", (el) => (el.style.display = printable ? "" : "none"));
+  //
+  // THE BLANKS ARE STAFF FURNITURE. The requester is shown the certificate,
+  // not a form to fill: what they typed went in with the filing and is already
+  // printed on the sheet beside this. A column of boxes nobody can type into
+  // only pushes the two things they came to check — what they asked for, and
+  // which requirements arrived — off the top of the panel. So for them the
+  // left column is the request's details and its documents, and nothing else.
+  const showFields = printable && !CERT_EXPORT_STATE.locked;
+  set("cert-fields-heading", (el) => (el.style.display = showFields ? "" : "none"));
   set("cert-export-help", (el) => (el.style.display = printable ? "" : "none"));
-  set("cert-export-fields", (el) => (el.style.display = printable ? "" : "none"));
+  set("cert-export-fields", (el) => (el.style.display = showFields ? "" : "none"));
   set("cert-export-stage", (el) => (el.style.display = printable ? "" : "none"));
   set("cert-export-no-template", (el) => (el.style.display = printable ? "none" : ""));
   // Same rule as the queue's Export button: nothing gets printed before the
   // request has been approved, whoever is looking at it.
   const released = request.status === "approved" || request.status === "issued";
   set("cert-print-btn", (el) => (el.style.display = printable && released ? "" : "none"));
-  const resetBtn = document.querySelector("#cert-export-grid .btn-group .btn");
-  if (resetBtn)
-    resetBtn.style.display = printable && !CERT_EXPORT_STATE.locked ? "" : "none";
+  // The whole group, not just the button inside it — an empty row still takes
+  // its margin.
+  const resetGroup = document.querySelector("#cert-export-grid .btn-group");
+  if (resetGroup) resetGroup.style.display = showFields ? "" : "none";
 
-  if (printable) {
-    certRenderFields();
-    certRenderPreview();
-  }
+  // No inputs are built when none are shown: nothing else reads them (the
+  // sheet is rendered from the values, not from the DOM).
+  if (showFields) certRenderFields();
+  if (printable) certRenderPreview();
   certShowPane("form");
   modal.classList.add("open");
   if (printable) certFitPreview();
