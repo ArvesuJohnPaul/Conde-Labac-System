@@ -691,12 +691,36 @@
       );
     toast(`${certName} request submitted! Ref: ${res.request_no}`, "<i data-icon=file-text></i>");
 
-    // The requester used to be shown the printed form here, editable, to fill
-    // in the blanks only they know. Those are asked on the request form now,
-    // before filing (renderCertBlanks), and a filed request is the barangay's
-    // to change — so this ends on where to find the request again, and View in
-    // My Activity shows the form read-only.
-    showSubmittedNotice(certName, res.request_no);
+    // Then show them what they just asked for: the barangay's own form, with
+    // their details on it, READ-ONLY.
+    //
+    // The requester used to be shown this editable, to fill in the blanks only
+    // they know — those are asked on the request form now, before filing
+    // (renderCertBlanks), and a filed request is the barangay's to change.
+    // Seeing it is a different thing from changing it, though: a resident who
+    // has just filed wants to know what is going to be printed with their name
+    // on it, and "go to My Activity and press View" is a poor answer to that.
+    // So the same locked sheet My Activity opens is opened here, and the
+    // where-to-find-it notice follows when they close it.
+    //
+    // mode:"requester" is what locks it — the blanks are readonly, Reset is
+    // gone, and Print only appears once the barangay has approved the request
+    // (certOpenSheet in js/certificate-export.js). The server refuses the edit
+    // regardless of what the screen offers (PUT /api/certificates/:id/fields).
+    const filed = Object.assign({ resident_id: s?.resident_id || null }, res);
+    const notice = () => showSubmittedNotice(certName, res.request_no);
+    if (typeof certOpenSheet === "function" && typeof certHasTemplate === "function" && certHasTemplate(res.type)) {
+      try {
+        await certOpenSheet(filed, { mode: "requester", openDetails: true, onClose: notice });
+      } catch (e) {
+        // A sheet that cannot be built is not a failed request — it is filed
+        // either way, so fall back to telling them where it lives.
+        notice();
+      }
+    } else {
+      // A certificate type with no printed form yet has nothing to show.
+      notice();
+    }
   };
 
   // Back to a blank form: every field emptied, every dropdown back to its
