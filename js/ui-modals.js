@@ -85,7 +85,18 @@ function uiDialog(opts) {
   return new Promise((resolve) => {
     // One dialog at a time — a second call supersedes the first rather than
     // stacking two backdrops.
-    if (uiDialogEl) uiDialogEl.remove();
+    //
+    // The superseded dialog is ANSWERED (as a cancel), not just removed. Its
+    // caller is sitting in `await uiConfirm(...)`, and a promise that never
+    // resolves leaves that call wedged forever: the handler never finishes,
+    // never releases its button, never reports anything. Cancelling is the
+    // truthful answer — the question left the screen without being answered.
+    if (uiDialogEl) {
+      const superseded = uiDialogEl;
+      uiDialogEl = null;
+      if (typeof superseded.uiDialogCancel === "function") superseded.uiDialogCancel();
+      else superseded.remove();
+    }
     const lastFocus = document.activeElement;
 
     const el = document.createElement("div");
@@ -154,6 +165,8 @@ function uiDialog(opts) {
       resolve(value);
     };
     const cancel = () => finish(isPrompt ? null : false);
+    // Reachable from the next uiDialog() call, which supersedes this one.
+    el.uiDialogCancel = cancel;
     const submit = () => {
       if (!isPrompt) return finish(true);
       const value = (input.value || "").trim();

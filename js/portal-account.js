@@ -545,7 +545,47 @@
     return (card && card.dataset.slug) || certSlugForName(selectedCertName()) || "";
   }
 
+  // ── One press, one request ───────────────────────────────────────────
+  // Filing is a POST, and a POST to Render that has been asleep can take the
+  // better part of a minute. Nothing on the form said so: the button stayed
+  // lit and lettered "Submit Request", and the boxes still held everything
+  // typed into them. So the natural thing to do — press it again — filed the
+  // same request a second time, and the resident found two of their
+  // certificate in My Activity under two different numbers, with the barangay
+  // looking at two rows in the queue for one certificate.
+  //
+  // Two things stop that here. The button is held while the request is in the
+  // air (certSubmitBusy, which also says it is working), and this flag closes
+  // the handler to a second call for as long as the first is running — which
+  // covers the ways a press arrives that are not a click on that button,
+  // Enter among them. The server has the last word on it either way
+  // (routes/certificates.js hands back the request already on file).
+  let certFiling = false;
+
+  // The press, held or released. Releasing hands the button back to
+  // paintResidencyNotice rather than simply enabling it — a disabled Submit is
+  // also how a certificate this resident cannot have yet is held back, and
+  // that must survive a filing.
+  function certSubmitBusy(on) {
+    const btn = document.querySelector('#modal-certificates [onclick="submitCertificate()"]');
+    if (!btn) return;
+    if (window.Motion) Motion.busy(btn, !!on);
+    btn.disabled = !!on;
+    if (!on) paintResidencyNotice(selectedCertSlug());
+  }
+
   window.submitCertificate = async function () {
+    if (certFiling) return;
+    certFiling = true;
+    try {
+      await fileCertificate();
+    } finally {
+      certFiling = false;
+      certSubmitBusy(false);
+    }
+  };
+
+  async function fileCertificate() {
     const modal = document.getElementById("modal-certificates");
     const val = (id) => (document.getElementById(id)?.value || "").trim();
     if (
@@ -641,6 +681,7 @@
 
     const s = session();
     let res;
+    certSubmitBusy(true);
     try {
       res = await post("/api/certificates", {
         type: type,
@@ -721,7 +762,7 @@
       // A certificate type with no printed form yet has nothing to show.
       notice();
     }
-  };
+  }
 
   // Back to a blank form: every field emptied, every dropdown back to its
   // "Select …" line (which clears the requirement list, the blanks and any
