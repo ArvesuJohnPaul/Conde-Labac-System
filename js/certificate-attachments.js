@@ -212,11 +212,25 @@ async function certAttachPending(certificateId, accountId) {
 // A block for the Certificate Request modal: every declared document, whether it
 // arrived, and what has become of it.
 //
-// The same modal opens for the requester straight after filing. They can View
-// their own documents, but the retention hold is a barangay decision about a
-// contested request, so opts.canHold is only set when staff open it in the MIS.
+// The same modal opens for the requester — straight after filing, and again
+// from My Activity. Three things differ there:
+//
+//   opts.canHold    off. The retention hold is a barangay decision about a
+//                   contested request, so it is only offered when staff open
+//                   this in the MIS.
+//   opts.canUpload  on while the request is still pending: each document that
+//                   has NOT arrived gets a file box, and choosing a file sends
+//                   it straight to the request. A resident who filed without
+//                   their barangay ID to hand can find it that evening and
+//                   send it in, instead of the request waiting on a trip to
+//                   the hall. Replacing one already sent is not offered — that
+//                   changes a request staff may have checked, and the server
+//                   refuses it (routes/certificates.js).
+//   opts.closed     the request has moved on; say so where the file boxes were.
 async function certAttachmentsPanelHtml(request, opts) {
   const canHold = !!(opts && opts.canHold);
+  const canUpload = !!(opts && opts.canUpload);
+  const closed = !!(opts && opts.closed);
   const reqs = certRequirements(request.type);
   let rows = [];
   try {
@@ -237,7 +251,7 @@ async function certAttachmentsPanelHtml(request, opts) {
   // Anything uploaded against a requirement the type no longer lists still shows.
   const extra = rows.filter((r) => !reqs.some((q) => q.key === r.requirement_key));
 
-  const item = (label, required, sensitivity, a) => {
+  const item = (key, label, required, sensitivity, a) => {
     let state;
     if (!a)
       state = required
@@ -268,6 +282,20 @@ async function certAttachmentsPanelHtml(request, opts) {
              ${canHold ? certHoldButtonHtml(request.id, a) : ""}
            </div>`
         : "";
+    // The box for a document that never came. It uploads on choosing a file,
+    // with no second button to press: there is one file and one place for it,
+    // and a "Send" next to it would only be a way to forget to press it.
+    const box =
+      !a && canUpload
+        ? '<input class="form-control cert-req-input" type="file"' +
+          ' accept="image/jpeg,image/png,image/webp,application/pdf"' +
+          ' onchange="certUploadRequirement(this, ' +
+          request.id +
+          ", '" +
+          certAttEsc(key) +
+          "')\" />" +
+          '<div class="cert-req-status" data-up-status-for="' + certAttEsc(key) + '"></div>'
+        : "";
     return (
       '<div class="cert-req">' +
       '<div class="cert-req-head"><span class="cert-req-label">' +
@@ -278,12 +306,35 @@ async function certAttachmentsPanelHtml(request, opts) {
       "</div>" +
       meta +
       actions +
+      box +
       "</div>"
     );
   };
 
+  // Still wanted, and still possible to send: that is worth opening the block
+  // for, since a requester cannot act on what is folded away. Everything else
+  // stays folded, the way it was.
+  const wanted = reqs.filter((r) => r.required && !byKey[r.key]).length;
+  const open = opts && opts.open != null ? !!opts.open : canUpload && wanted > 0;
+  const note = canUpload
+    ? '<p class="cert-req-note" style="margin:0 0 10px">' +
+      (wanted
+        ? "You can still send what is missing — choose a file and it goes " +
+          "straight to this request, no need to file it again."
+        : "Everything asked for has been sent.") +
+      " Clear phone photos are fine." +
+      "</p>"
+    : closed
+      ? '<p class="cert-req-note" style="margin:0 0 10px">' +
+        "The barangay is working on this request, so documents can no longer " +
+        "be added here. Please bring anything missing to the barangay hall." +
+        "</p>"
+      : "";
+
   return (
-    '<details class="cert-details" id="cert-attachments-block">' +
+    '<details class="cert-details" id="cert-attachments-block"' +
+    (open ? " open" : "") +
+    ">" +
     '<summary class="cert-field-group-title">Requirements — ' +
     got +
     " of " +
@@ -291,11 +342,78 @@ async function certAttachmentsPanelHtml(request, opts) {
     " submitted" +
     (disposed ? " · " + disposed + " disposed of" : "") +
     "</summary>" +
+    note +
     '<div class="cert-req-list">' +
-    reqs.map((r) => item(r.label, r.required, r.sensitivity, byKey[r.key])).join("") +
-    extra.map((a) => item(a.label, false, a.sensitivity, a)).join("") +
+    reqs.map((r) => item(r.key, r.label, r.required, r.sensitivity, byKey[r.key])).join("") +
+    extra.map((a) => item(a.requirement_key, a.label, false, a.sensitivity, a)).join("") +
     "</div></details>"
   );
+}
+
+// Sends one document to a request that is already filed — the file box drawn
+// above, from the requester's own copy of the request.
+//
+// It is checked here the way certPickFile() checks a file chosen before
+// filing, so a file the server would refuse is refused while the requester is
+// still looking at it, and with the same words.
+async function certUploadRequirement(input, certificateId, key) {
+  const say = (msg, bad) => {
+    const el = document.querySelector(`[data-up-status-for="${key}"]`);
+    if (el) {
+      el.textContent = msg || "";
+      el.className = "cert-req-status" + (msg ? (bad ? " cert-req-bad" : " cert-req-ok") : "");
+    }
+  };
+  const file = input.files && input.files[0];
+  if (!file) return say("", false);
+  if (!CERT_FILE_MIME.includes(file.type)) {
+    input.value = "";
+    return say("That has to be a JPEG, PNG or WebP photo, or a PDF.", true);
+  }
+  if (file.size > CERT_FILE_MAX_BYTES) {
+    input.value = "";
+    return say(
+      `That file is ${certFileSize(file.size)} — the limit is ${CERT_FILE_MAX_BYTES / 1048576} MB.`,
+      true
+    );
+  }
+  input.disabled = true;
+  say(`Sending ${file.name}…`, false);
+  let dataUrl;
+  try {
+    dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("That file could not be read — try again."));
+      reader.readAsDataURL(file);
+    });
+    await apiPost(`/api/certificates/${certificateId}/attachments`, {
+      requirement_key: key,
+      label: certRequirementLabel(key),
+      file_name: file.name,
+      sensitivity: certRequirementSensitivity(key),
+      data_url: dataUrl,
+    });
+  } catch (err) {
+    input.disabled = false;
+    input.value = "";
+    return say(err.message, true);
+  }
+  if (typeof showToast === "function")
+    showToast(
+      `${certRequirementLabel(key)} sent to the barangay.`,
+      "<i data-icon=check></i>"
+    );
+  if (typeof logAudit === "function")
+    logAudit(
+      "CERT_ATTACHMENT",
+      `${certRequirementLabel(key)} attached to certificate request #${certificateId}`,
+      "info",
+      "certificate"
+    );
+  // Redrawn rather than patched in place: the row now has an upload date, a
+  // deletion date and a View, and the count in the heading has moved.
+  if (typeof certRefreshAttachments === "function") certRefreshAttachments();
 }
 
 // A pressed toggle rather than a button whose label flips: the hold is a state

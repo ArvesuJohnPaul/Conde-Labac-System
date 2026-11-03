@@ -380,6 +380,24 @@ const CERT_UI_CSS = `
     border-bottom: 1px solid var(--border, rgba(0, 0, 0, .07));
   }
   .cert-detail-value { text-align: right; font-weight: 500; }
+  /* One requirement, in the Requirements block: what was asked for, whether it
+     arrived, and — for the requester, while the request is still pending — a
+     box to send it from. The rows were unstyled blocks before, which read as
+     one long column; the rule and the spacing are what separate them. */
+  .cert-req { padding: 8px 0; border-bottom: 1px solid var(--border, rgba(0,0,0,.07)); }
+  .cert-req:last-child { border-bottom: 0; }
+  .cert-req-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cert-req-label { font-size: 13px; font-weight: 600; }
+  .cert-req-note { font-size: 12px; color: var(--text-secondary, #5b6472); margin-top: 3px; }
+  .cert-req-input { margin-top: 8px; font-size: 12px; }
+  /* Said in words as well as colour: a line that only turns red says nothing
+     to a reader who cannot see that it has. */
+  .cert-req-status { font-size: 12px; margin-top: 5px; }
+  /* Nothing to say yet: the line is there for every box, and an empty one
+     would still take its margin under each of them. */
+  .cert-req-status:empty { display: none; }
+  .cert-req-ok { color: var(--success, #12805c); }
+  .cert-req-bad { color: var(--danger, #b42318); }
   /* A fixed box that centers the whole sheet inside it. certFitPreview() picks
      a scale that fits both dimensions, so nothing here ever needs to scroll —
      the even margin around the sheet is this padding. */
@@ -706,7 +724,20 @@ async function certRefreshAttachments() {
     wrap.innerHTML = "";
     return;
   }
-  wrap.innerHTML = await certAttachmentsPanelHtml(r, { canHold: st.mode === "staff" });
+  // The requester may send a document that never arrived, for as long as the
+  // request is still pending — which is exactly what the server allows
+  // (routes/certificates.js POST /:id/attachments). Once it has been opened
+  // and the block is redrawn after an upload, it stays however the reader left
+  // it rather than folding itself away again.
+  const pending = (r.status || "pending") === "pending";
+  const requester = st.mode === "requester";
+  const block = document.getElementById("cert-attachments-block");
+  wrap.innerHTML = await certAttachmentsPanelHtml(r, {
+    canHold: st.mode === "staff",
+    canUpload: requester && pending,
+    closed: requester && !pending,
+    open: block ? block.open : null,
+  });
   if (typeof hydrateIcons === "function") hydrateIcons(wrap);
 }
 
