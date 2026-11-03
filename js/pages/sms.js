@@ -242,7 +242,7 @@ async function sendSmsSetupCheck() {
   const to = await uiPrompt({
     icon: "phone",
     title: "Send a setup check",
-    message: 'Texts "Brgy Conde Labac: SMS setup check…" to one number, to prove the key, sender name and credits work.',
+    message: 'Texts "Brgy Conde Labak: SMS setup check…" to one number, to prove the key, sender name and credits work.',
     field: { label: "Mobile number", placeholder: "09XX XXX XXXX" },
     validate: (v) =>
       /^(?:\+?63|0)?9\d{9}$/.test(v.replace(/[^\d+]/g, "")) ? null : "Enter a mobile number like 0917 123 4567.",
