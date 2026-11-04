@@ -130,7 +130,7 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertReject()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The applicant is told their request was turned down, and the remarks below are sent with it so they know what to fix. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
+          <p class="modal-help-text">The applicant is told their request was turned down, and the reason below is sent with it in full so they know what to fix — a long one runs to a second text. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
           <div class="form-group">
             <label class="form-label">Reason for rejection</label>
             <textarea class="form-control" id="cert-reject-remarks" rows="4" placeholder="e.g. The barangay ID presented has expired — please bring a valid ID and re-file."></textarea>
@@ -152,11 +152,16 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertMessage()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The message is delivered to the requester's C.A.R.E.S. account — it shows up in their notifications.</p>
+          <p class="modal-help-text">The message lands in the requester's C.A.R.E.S. notifications. Tick the box below to send it to their phone as well — a requester with no online account is only ever reached that way.</p>
           <div class="form-group">
             <label class="form-label">Message</label>
-            <textarea class="form-control" id="cert-message-text" rows="4" placeholder="e.g. Please bring a valid ID when picking up your certificate."></textarea>
+            <textarea class="form-control" id="cert-message-text" rows="4" placeholder="e.g. Please bring a valid ID when picking up your certificate." oninput="certMessageCount()"></textarea>
           </div>
+          <label class="acc-consent" id="cert-message-sms-row" style="margin:0 0 8px">
+            <input type="checkbox" id="cert-message-sms" checked onchange="certMessageCount()"/>
+            <span>Also send it as a text message, to the mobile number on the requester's record.</span>
+          </label>
+          <div class="modal-help-text" id="cert-message-count" style="margin:0 0 6px"></div>
           <div id="cert-message-error" style="color:#b91c1c;font-size:13px;min-height:16px"></div>
         </div>
         <div class="modal-footer">
@@ -410,8 +415,8 @@ async function setCertStatus(id, status, remarks) {
       "info",
       "certificate"
     );
-  // Issuing or rejecting texts the requester (the server says what happened),
-  // so the toast says whether a text is on its way — or why not.
+  // Approving or rejecting texts the requester (the server says what
+  // happened), so the toast says whether a text is on its way — or why not.
   const smsNote = certSmsNote(result && result.sms);
   showToast(
     status === "pending"
@@ -434,6 +439,8 @@ function certSmsNote(sms) {
       "setting-off": "No text: the requester turned certificate texts off.",
       duplicate: "Requester was already texted.",
       "no-key": "No text: SMS is not set up on the server.",
+      "not-allowlisted": "No text: live sending is still limited to the test number.",
+      error: "No text: the message could not be queued.",
     }[sms.outcome] || null
   );
 }
@@ -522,7 +529,38 @@ async function confirmCertReject() {
 // ── Message the requester ──────────────────────────────────────────────────
 let CERT_MESSAGE_TARGET = null;
 
-function openCertMessage(id) {
+// The head the server puts in front of every one of these texts
+// (sms-templates.js, A11), so the character count on screen is the real one.
+const CERT_SMS_HEAD = "Brgy Conde Labak: Re request ";
+const CERT_SMS_MAX = 306;
+
+// What the text will cost, while it is still being typed. Semaphore bills by
+// part — one up to 160 characters, then two of 153 — and these are the
+// barangay's credits, so the number belongs on the screen rather than in a
+// surprise on the SMS Log afterwards.
+function certMessageCount() {
+  const el = document.getElementById("cert-message-count");
+  if (!el) return;
+  const box = document.getElementById("cert-message-sms");
+  const text = (document.getElementById("cert-message-text")?.value || "").trim();
+  if (!box || !box.checked) {
+    el.textContent = "Notification only — no credits spent.";
+    return;
+  }
+  if (!text) {
+    el.textContent = "Also sent as a text — one credit, or two past 160 characters.";
+    return;
+  }
+  const ref = CERT_MESSAGE_TARGET ? CERT_MESSAGE_TARGET.request_no : "";
+  const full = `${CERT_SMS_HEAD}${ref}: ${text}`;
+  const len = Math.min(full.length, CERT_SMS_MAX);
+  const parts = len <= 160 ? 1 : Math.ceil(len / 153);
+  el.textContent =
+    `${len} of ${CERT_SMS_MAX} characters — ${parts} credit${parts > 1 ? "s" : ""}.` +
+    (full.length > CERT_SMS_MAX ? " The rest will be cut off." : "");
+}
+
+async function openCertMessage(id) {
   const r = CERT_REQUESTS.find((x) => x.id === id);
   if (!r) return;
   CERT_MESSAGE_TARGET = r;
@@ -533,6 +571,16 @@ function openCertMessage(id) {
   const err = document.getElementById("cert-message-error");
   if (err) err.textContent = "";
   document.getElementById("modal-cert-message")?.classList.add("open");
+  // "Text a resident" is its own row in the Role Access Matrix: a role without
+  // it keeps the Message button and loses the phone. The server refuses the
+  // text either way — this is so the box is not offered and then rejected.
+  if (typeof actionPermissionsReady === "function") await actionPermissionsReady();
+  const may = typeof actionAllowed === "function" ? actionAllowed("text_resident") : false;
+  const row = document.getElementById("cert-message-sms-row");
+  const box = document.getElementById("cert-message-sms");
+  if (box) box.checked = may;
+  if (row) row.style.display = may ? "" : "none";
+  certMessageCount();
 }
 
 function closeCertMessage(e) {
@@ -550,14 +598,13 @@ async function sendCertMessage() {
     if (errEl) errEl.textContent = "Please write a message first.";
     return;
   }
+  const wantsSms = !!document.getElementById("cert-message-sms")?.checked;
   if (btn) btn.disabled = true;
+  let result = null;
   try {
-    await apiPost("/api/notifications", {
-      resident_id: r.resident_id,
-      title: "Message from the Barangay Office",
+    result = await apiPost(`/api/certificates/${r.id}/message`, {
       body: text,
-      kind: "message",
-      ref: r.request_no,
+      sms: wantsSms,
     });
   } catch (err) {
     if (errEl) errEl.textContent = "Could not send: " + err.message;
@@ -573,5 +620,18 @@ async function sendCertMessage() {
       "info",
       "certificate"
     );
-  showToast(`Message sent to ${r.applicant_name.split(",")[0]}`, "<i data-icon=mail></i>");
+  // Neither half is a given: a requester may have no account, no number, or
+  // texts switched off. Saying "Message sent" over all three is how a message
+  // nobody received gets ticked off as done.
+  const who = r.applicant_name.split(",")[0];
+  const smsNote = wantsSms ? certSmsNote(result && result.sms) : null;
+  const notified = !result || result.notified;
+  showToast(
+    notified
+      ? `Message sent to ${who}.${smsNote ? " " + smsNote : ""}`
+      : smsNote && /will be texted|would be texted/.test(smsNote)
+        ? `${who} has no online account — sent as a text instead.`
+        : `${who} has no online account.${smsNote ? " " + smsNote : " Nothing was sent."}`,
+    "<i data-icon=mail></i>"
+  );
 }
