@@ -193,6 +193,7 @@ async function openApplicationReview(ref) {
   const modal = document.getElementById("modal-app-review");
   const body = document.getElementById("app-review-body");
   REVIEW = null;
+  APP_SEARCH_RESULTS = [];
   body.innerHTML = skeletonPanel();
   document.getElementById("app-review-footer").innerHTML =
     `<button class="btn btn-outline" onclick="closeApplicationReview()">Close</button>`;
@@ -214,6 +215,7 @@ function closeApplicationReview(e) {
   if (e && e.target !== document.getElementById("modal-app-review")) return;
   document.getElementById("modal-app-review").classList.remove("open");
   REVIEW = null;
+  APP_SEARCH_RESULTS = [];
 }
 
 function renderReview() {
@@ -254,46 +256,7 @@ function renderReview() {
       : true;
 
   const cand = candidates.length
-    ? candidates
-        .map((c) => {
-          const why = [
-            c.same_birthdate ? "same birthdate" : "different birthdate",
-            c.same_last ? "same surname" : "different surname",
-            c.same_first ? "same first name" : "different first name",
-          ].join(" · ");
-          const claimed = c.claimed
-            ? `<div class="alert alert-warning" style="margin:8px 0 0">
-                 <span class="alert-icon"><i data-icon=triangle-alert></i></span>
-                 Already claimed by <strong>${accEsc(c.claimed_email)}</strong> since ${accDate(c.claimed_since)}.
-                 Either this applicant or that account holder is not who they say. Release the claim only once you are sure it is not theirs.
-               </div>`
-            : "";
-          const actions = !pending
-            ? ""
-            : c.claimed
-              ? `<button class="btn btn-sm btn-outline btn-danger-outline" onclick="releaseClaim(${c.claimed_account_id}, '${accEsc(c.claimed_email)}', ${c.resident_id})"><i data-icon=lock></i> Release claim</button>`
-              : `<button class="btn btn-sm btn-gold" onclick="connectApplication(${c.resident_id})"><i data-icon=check></i> Connect to this record</button>`;
-          return `
-            <div class="app-candidate">
-              <div class="app-candidate-photo">${c.photo ? `<img src="${accEsc(c.photo)}" alt=""/>` : '<i data-icon=user></i>'}</div>
-              <div class="app-candidate-main">
-                <div class="table-name">${accEsc(c.full_name)} <span class="table-muted">#${c.resident_id}</span></div>
-                <div class="table-muted" style="font-size:12px">${accEsc(c.birthdate || "no birthdate")} · ${accEsc(c.purok || "no purok")}${c.household ? " · " + accEsc(c.household) : ""}</div>
-                <div class="table-muted" style="font-size:12px">${why}</div>
-                <div style="font-size:12px;margin-top:4px">Number on file: ${c.contact_no ? accEsc(c.contact_no) : '<span class="table-muted">none</span>'}
-                  ${
-                    c.mobile_matches
-                      ? '<span class="badge badge-success" style="margin-left:6px">matches the applicant\'s mobile</span>'
-                      : c.contact_no
-                        ? '<span class="badge badge-gray" style="margin-left:6px">differs from the applicant\'s</span>'
-                        : ""
-                  }</div>
-                ${claimed}
-              </div>
-              <div class="app-candidate-actions">${actions}</div>
-            </div>`;
-        })
-        .join("")
+    ? candidates.map((c) => appCandidateCardHtml(c, pending)).join("")
     : `<div class="resident-summary" style="margin:0">No barangay record matches this name and birthdate.${pending ? " If the applicant lives in the barangay, add a record for them." : ""}</div>`;
 
   document.getElementById("app-review-body").innerHTML = `
@@ -322,12 +285,32 @@ function renderReview() {
     </div>
     <div class="card-title" style="margin:18px 0 8px">Barangay records this could be</div>
     <p class="modal-help-text" style="margin-top:0">Shown to you only — the applicant is never told whether a record was found. Nothing is linked until you choose.</p>
-    ${pending && candidates.some((c) => !c.claimed) ? `
+    ${pending ? `
       <label class="acc-consent" style="margin:0 0 10px">
         <input type="checkbox" id="app-replace-contact"/>
         <span>When connecting, replace the record's number on file with the applicant's mobile (${accEsc(a.mobile_local)}).</span>
       </label>` : ""}
     <div class="app-candidates">${cand}</div>
+    ${pending ? `
+      <!-- The fallback. A surname spelled differently on the two sides, or a
+           birthdate typed wrong, matches nothing above — and the record is
+           still there. Searching is how a reviewer reaches it instead of
+           creating a second record for somebody who already has one. -->
+      <div class="card-title" style="margin:18px 0 8px">Search for the record yourself</div>
+      <p class="modal-help-text" style="margin-top:0">
+        Use this when the list above is empty or wrong — a name spelled differently
+        ("Dela Cruz" against "Delacruz"), a married name against a maiden name, or a
+        birthdate entered wrong. Searches every active resident by name or mobile number.
+      </p>
+      <div class="gis-filter-row" style="margin-bottom:10px">
+        <div class="gis-search-wrap" style="flex:1">
+          ${typeof gisIcon === "function" ? gisIcon("search", "gis-search-icon") : ""}
+          <input type="text" class="gis-search-input" id="app-resident-q" autocomplete="off"
+                 placeholder="Surname, first name, or mobile number…"
+                 oninput="appResidentSearchSoon()"/>
+        </div>
+      </div>
+      <div class="app-candidates" id="app-search-results"></div>` : ""}
     <div id="app-create-form"></div>
   `;
 
@@ -381,11 +364,112 @@ function applicationSmsNote(sms) {
   return " — the text could not be queued; tell them another way.";
 }
 
+// One record the application might belong to.
+//
+// Drawn for the records the server matched AND for whatever a search turns
+// up, so the two lists cannot drift apart: the same three comparisons
+// against the application, the same claimed warning, the same buttons.
+function appCandidateCardHtml(c, pending) {
+  const why = [
+    c.same_birthdate ? "same birthdate" : "different birthdate",
+    c.same_last ? "same surname" : "different surname",
+    c.same_first ? "same first name" : "different first name",
+  ].join(" · ");
+  const claimed = c.claimed
+    ? `<div class="alert alert-warning" style="margin:8px 0 0">
+         <span class="alert-icon"><i data-icon=triangle-alert></i></span>
+         Already claimed by <strong>${accEsc(c.claimed_email)}</strong> since ${accDate(c.claimed_since)}.
+         Either this applicant or that account holder is not who they say. Release the claim only once you are sure it is not theirs.
+       </div>`
+    : "";
+  const actions = !pending
+    ? ""
+    : c.claimed
+      ? `<button class="btn btn-sm btn-outline btn-danger-outline" onclick="releaseClaim(${c.claimed_account_id}, '${accEsc(c.claimed_email)}', ${c.resident_id})"><i data-icon=lock></i> Release claim</button>`
+      : `<button class="btn btn-sm btn-gold" onclick="connectApplication(${c.resident_id})"><i data-icon=check></i> Connect to this record</button>`;
+  return `
+    <div class="app-candidate">
+      <div class="app-candidate-photo">${c.photo ? `<img src="${accEsc(c.photo)}" alt=""/>` : '<i data-icon=user></i>'}</div>
+      <div class="app-candidate-main">
+        <div class="table-name">${accEsc(c.full_name)} <span class="table-muted">#${c.resident_id}</span></div>
+        <div class="table-muted" style="font-size:12px">${accEsc(c.birthdate || "no birthdate")} · ${accEsc(c.purok || "no purok")}${c.household ? " · " + accEsc(c.household) : ""}</div>
+        <div class="table-muted" style="font-size:12px">${why}</div>
+        <div style="font-size:12px;margin-top:4px">Number on file: ${c.contact_no ? accEsc(c.contact_no) : '<span class="table-muted">none</span>'}
+          ${
+            c.mobile_matches
+              ? '<span class="badge badge-success" style="margin-left:6px">matches the applicant\'s mobile</span>'
+              : c.contact_no
+                ? '<span class="badge badge-gray" style="margin-left:6px">differs from the applicant\'s</span>'
+                : ""
+          }</div>
+        ${claimed}
+      </div>
+      <div class="app-candidate-actions">${actions}</div>
+    </div>`;
+}
+
+// ── Searching for the record by hand ───────────────────────────────
+let APP_SEARCH_RESULTS = [];
+let appSearchTimer = null;
+let appSearchSeq = 0;
+
+function appResidentSearchSoon() {
+  clearTimeout(appSearchTimer);
+  appSearchTimer = setTimeout(appResidentSearch, 250);
+}
+
+async function appResidentSearch() {
+  const box = document.getElementById("app-search-results");
+  const input = document.getElementById("app-resident-q");
+  if (!box || !input || !REVIEW) return;
+  const q = input.value.trim();
+  if (q.length < 2) {
+    APP_SEARCH_RESULTS = [];
+    box.innerHTML = "";
+    return;
+  }
+  // Typing is faster than the server; only the newest answer may draw.
+  const seq = ++appSearchSeq;
+  let r;
+  try {
+    r = await apiGet(
+      `/api/account-applications/${encodeURIComponent(REVIEW.application.ref)}` +
+        `/resident-search?q=${encodeURIComponent(q)}&account_id=${actingAccountId()}`
+    );
+  } catch (err) {
+    if (seq !== appSearchSeq) return;
+    box.innerHTML = `<div class="resident-summary" style="margin:0;color:#b91c1c">${accEsc(err.message)}</div>`;
+    return;
+  }
+  if (seq !== appSearchSeq) return;
+  APP_SEARCH_RESULTS = r.items || [];
+  box.innerHTML = APP_SEARCH_RESULTS.length
+    ? APP_SEARCH_RESULTS.map((c) => appCandidateCardHtml(c, true)).join("")
+    : `<div class="resident-summary" style="margin:0">No active resident matches “${accEsc(q)}”. If the applicant lives in the barangay and has no record, add one.</div>`;
+  if (typeof hydrateIcons === "function") hydrateIcons(box);
+}
+
+// A record can be reached from either list, so Connect looks in both.
+function appCandidateById(residentId) {
+  return (
+    (REVIEW ? REVIEW.candidates : []).find((x) => x.resident_id === residentId) ||
+    APP_SEARCH_RESULTS.find((x) => x.resident_id === residentId) ||
+    null
+  );
+}
+
 async function connectApplication(residentId) {
   if (!REVIEW) return;
   const a = REVIEW.application;
-  const c = REVIEW.candidates.find((x) => x.resident_id === residentId);
+  const c = appCandidateById(residentId);
   const replace = !!document.getElementById("app-replace-contact")?.checked;
+  const mismatch = !c
+    ? []
+    : [
+        c.same_last ? null : "different surname",
+        c.same_first ? null : "different first name",
+        c.same_birthdate ? null : "different birthdate",
+      ].filter(Boolean);
   const ok = await uiConfirm({
     tone: "accent",
     icon: "check",
@@ -394,6 +478,18 @@ async function connectApplication(residentId) {
     target: { icon: "user", label: `${c ? c.full_name : "#" + residentId} — resident #${residentId}` },
     notes: [
       { icon: "info", text: "Only do this if the ID and the selfie show the same person, and the ID matches this record." },
+      // Searching reaches records that do not match the application at all,
+      // which is the point of it — and the reason the mismatch is named here
+      // rather than left on a card the reviewer has scrolled past. Connecting
+      // the wrong record hands somebody another resident's certificates.
+      ...(mismatch.length
+        ? [
+            {
+              icon: "triangle-alert",
+              text: `This record does not match the application: ${mismatch.join(", ")}. Make sure the ID says otherwise.`,
+            },
+          ]
+        : []),
       ...(replace ? [{ icon: "phone", text: `The record's number becomes ${a.mobile_local}.` }] : []),
       { icon: "phone", text: `${a.mobile_local} is texted that the application was approved.` },
       { icon: "clipboard", text: "The approval is recorded in the Audit Log under your name." },
