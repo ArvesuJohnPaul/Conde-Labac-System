@@ -49,6 +49,7 @@ const SMS_SKIP_REASONS = {
   "not-mobile": "Not a mobile number",
   "setting-off": "The resident turned these texts off",
   "not-allowlisted": "Not on the test allowlist",
+  "allowlist-unreadable": "SMS_ALLOWLIST is set but unreadable — nothing was sent",
   "no-key": "No Semaphore API key on the server",
   "hourly-cap": "Hourly limit on report texts reached",
 };
