@@ -1009,6 +1009,16 @@ window.CURRENT_PAGE = "content";
         (d.on
           ? '<div class="sc-sms-body">' +
               '<div class="sc-sms-row"><span class="sc-sms-label">Who</span><div class="sc-chips">' +
+                // "Everyone" was always what picking nothing meant, and nobody
+                // reading the screen could tell that picking nothing was a
+                // choice rather than a step not yet done. Now it is a chip
+                // that is on until a purok is picked, and picking it clears
+                // the puroks again.
+                '<label class="sc-chip-pick sc-chip-all' +
+                  (d.purok_ids.length ? "" : " is-on") + '">' +
+                  '<input type="checkbox"' + (d.purok_ids.length ? "" : " checked") +
+                  " onchange=\"SiteContentUI.smsAllPuroks('" + u + "')\" />" +
+                  "Everyone</label>" +
                 (puroks.length
                   ? puroks
                       .map(function (pk) {
@@ -1031,8 +1041,12 @@ window.CURRENT_PAGE = "content";
               '<p class="sc-hint sc-sms-scope">' +
                 esc(
                   !d.purok_ids.length && !d.classifications.length
-                    ? "Nothing picked: every resident with a mobile number on file."
-                    : "Residents who match the puroks AND the groups picked."
+                    ? "Going to every resident with a mobile number on file."
+                    : !d.purok_ids.length
+                      ? "Going to residents in the groups picked, in every purok."
+                      : !d.classifications.length
+                        ? "Going to every resident in the puroks picked."
+                        : "Going to residents in the puroks picked who are ALSO in the groups picked."
                 ) +
               "</p>" +
               '<label class="sc-sms-emergency">' +
@@ -1053,18 +1067,28 @@ window.CURRENT_PAGE = "content";
                     "</div>" +
                   "</div>"
                 : "") +
+              // Two steps, numbered, and the one you are on is the gold one.
+              // Nothing reaches a phone from the first button — it only works
+              // out who and how much — but it is the way in, and as a quiet
+              // outline button beside nothing else it read as optional. Staff
+              // filled the panel in, found no Send, and assumed it was broken.
               '<div class="sc-sms-actions">' +
-                '<button type="button" class="btn btn-sm btn-outline"' +
+                '<button type="button" class="btn btn-sm ' + (p ? "btn-outline" : "btn-gold") + '"' +
                   (d.busy ? " disabled" : "") +
                   " onclick=\"SiteContentUI.smsPreview('" + u + "')\">" +
-                  '<i data-icon="search"></i> ' + (p ? "Check again" : "Check who and what it costs") +
+                  '<i data-icon="search"></i> ' +
+                  (p ? "Check again" : "Step 1 — Check who gets it and what it costs") +
                 "</button>" +
                 (p && p.recipients
                   ? '<button type="button" class="btn btn-sm btn-gold"' +
                     (d.busy ? " disabled" : "") +
                     " onclick=\"SiteContentUI.smsSend('" + u + "')\">" +
-                    '<i data-icon="phone"></i> Send to ' + p.recipients + " people</button>"
+                    '<i data-icon="phone"></i> Step 2 — Send to ' + p.recipients + " people</button>"
                   : "") +
+                (p
+                  ? ""
+                  : '<span class="sc-hint">Nothing is sent yet. This shows you the ' +
+                    "message, who it reaches and the price first — then a Send button appears.</span>") +
                 (sms.mode !== "live"
                   ? '<span class="sc-hint">Texting is in ' + esc(sms.mode) +
                     " mode: the message is written to the SMS Log and not sent.</span>"
@@ -2120,6 +2144,17 @@ window.CURRENT_PAGE = "content";
   // ── Announcements by SMS ─────────────────────────────────
   UI.smsToggle = function (uid, on) {
     smsOf(uid).on = !!on;
+    renderRow(uid);
+  };
+
+  // "Everyone" is the absence of a purok choice, so turning it on is clearing
+  // them. Turning it OFF would mean nothing — everyone minus everyone — so it
+  // stays on until a purok is picked, and clicking it while on does nothing.
+  UI.smsAllPuroks = function (uid) {
+    var d = smsOf(uid);
+    if (!d.purok_ids.length) return renderRow(uid);
+    d.purok_ids = [];
+    d.preview = null;
     renderRow(uid);
   };
 

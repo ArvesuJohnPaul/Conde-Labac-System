@@ -31,15 +31,21 @@ const SMS_KIND_LABELS = {
   test: "Setup check",
 };
 
+// The words a desk officer reads, not the words the provider uses. "With the
+// network" was accurate and meant nothing to the person asking whether a
+// resident got their text — Semaphore has accepted it and has not yet told us
+// it arrived, which in plain terms is on its way.
 const SMS_STATUS_BADGES = {
-  queued: ["badge-info", "Queued"],
-  sending: ["badge-info", "Sending"],
-  submitted: ["badge-gold", "With the network"],
+  queued: ["badge-info", "Waiting to send"],
+  sending: ["badge-info", "Sending now"],
+  submitted: ["badge-gold", "On its way"],
+  // Not "Delivered": Semaphore reports that it sent the text, which is not the
+  // same as a handset having received it, and the log must not claim more.
   sent: ["badge-success", "Sent"],
-  failed: ["badge-danger", "Failed"],
+  failed: ["badge-danger", "Did not send"],
   refunded: ["badge-gray", "Refunded"],
   skipped: ["badge-gray", "Not sent"],
-  expired: ["badge-warning", "Expired"],
+  expired: ["badge-warning", "Too old to send"],
 };
 
 // Why a row was never sent, in words a desk officer can act on.
@@ -102,6 +108,23 @@ function renderPage() {
         </select>
       </div>
       <div id="sms-log-wrap">${skeletonRows(5)}</div>
+    </div>
+
+    <!-- One announcement, opened back up -->
+    <div class="modal-backdrop" id="modal-sms-broadcast" onclick="closeSmsBroadcast(event)">
+      <div class="modal-box" style="max-width:860px">
+        <div class="modal-header">
+          <div class="modal-title">
+            <div class="modal-title-icon"><i data-icon=users></i></div>
+            <span id="sms-bcast-title">Announcement</span>
+          </div>
+          <button class="modal-close" onclick="closeSmsBroadcast()"><i data-icon=x></i></button>
+        </div>
+        <div class="modal-body" id="sms-bcast-body"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeSmsBroadcast()">Close</button>
+        </div>
+      </div>
     </div>
   `);
   loadSmsPage();
@@ -182,6 +205,10 @@ function renderSmsLog() {
   const page = paginate("sms", SMS_ROWS, repaintSmsLog);
   const rows = page.items
     .map((m) => {
+      // An announcement arrives here as one line standing for every copy of
+      // it, so it gets a line of its own shape: how many people, how they
+      // fared between them, and a way into the list.
+      if (m.broadcast_id) return smsBroadcastRowHtml(m);
       const [badge, label] = SMS_STATUS_BADGES[m.status] || ["badge-gray", m.status];
       const why =
         m.status === "skipped"
@@ -190,7 +217,9 @@ function renderSmsLog() {
             ? m.error || (m.status === "expired" ? "Not sent in time — an emergency text is never sent late" : "")
             : m.status === "queued" && new Date(m.next_attempt_at) > new Date()
               ? (m.error ? `Retrying at ${smsWhen(m.next_attempt_at)} — ${m.error}` : `Waiting until ${smsWhen(m.next_attempt_at)}`)
-              : m.network || "";
+              : m.network
+                ? `Through ${m.network}`
+                : "";
       const retry =
         isAdmin && (m.status === "failed" || m.status === "expired")
           ? `<button class="btn btn-sm btn-outline" onclick="retrySms(${m.sms_id})"><i data-icon=refresh></i> Retry</button>`
@@ -217,11 +246,155 @@ function renderSmsLog() {
     ${page.html}`;
 }
 
+// One announcement, one line. `status_counts` is { status: howMany } over the
+// copies that survived the current filters, so the badge is the worst thing
+// that happened to any of them and the count beside it says how many.
+const SMS_STATUS_CONCERN = [
+  "failed",
+  "expired",
+  "queued",
+  "sending",
+  "submitted",
+  "sent",
+  "skipped",
+  "refunded",
+];
+
+function smsWorstStatus(counts) {
+  for (const st of SMS_STATUS_CONCERN) if (counts && counts[st]) return st;
+  return "sent";
+}
+
+function smsCountSummary(counts) {
+  return SMS_STATUS_CONCERN.filter((st) => counts && counts[st])
+    .map((st) => `${counts[st]} ${(SMS_STATUS_BADGES[st] || ["", st])[1].toLowerCase()}`)
+    .join(" · ");
+}
+
+function smsBroadcastRowHtml(m) {
+  const counts = m.status_counts || {};
+  const worst = smsWorstStatus(counts);
+  const [badge, label] = SMS_STATUS_BADGES[worst] || ["badge-gray", worst];
+  const summary = smsCountSummary(counts);
+  const people = `${m.recipients} ${m.recipients === 1 ? "person" : "people"}`;
+  return `<tr class="sms-row-group">
+    <td class="table-muted" style="white-space:nowrap">${smsWhen(m.created_at)}</td>
+    <td>
+      <button class="btn btn-sm btn-outline" onclick="openSmsBroadcast(${m.broadcast_id})">
+        <i data-icon=users></i> ${people}
+      </button>
+    </td>
+    <td>Announcement${m.is_emergency ? ' <span class="badge badge-danger">emergency</span>' : ""}</td>
+    <td class="table-mono">${smsEsc(m.ref || "—")}</td>
+    <td style="max-width:360px">${m.body ? smsEsc(m.body) : '<span class="table-muted">Removed after the retention period</span>'}</td>
+    <td class="table-muted">${m.segments} · ${m.credits} cr</td>
+    <td>
+      <span class="badge ${badge}">${label}</span>
+      ${summary && Object.keys(counts).length > 1 ? `<div class="table-muted" style="font-size:12px;max-width:220px">${smsEsc(summary)}</div>` : ""}
+    </td>
+    <td><button class="btn btn-sm btn-outline" onclick="openSmsBroadcast(${m.broadcast_id})">Open</button></td>
+  </tr>`;
+}
+
 function repaintSmsLog() {
   const wrap = document.getElementById("sms-log-wrap");
   if (!wrap) return;
   wrap.innerHTML = renderSmsLog();
   if (typeof hydrateIcons === "function") hydrateIcons(wrap);
+}
+
+// ── One announcement, opened back up ──────────────────────────────────
+// The log shows an announcement as one line; this is where its recipients
+// live. Worst first, because "did everyone get it?" is the question being
+// asked, and the two who did not are the answer.
+let SMS_BROADCAST = null;
+
+async function openSmsBroadcast(id) {
+  const back = document.getElementById("modal-sms-broadcast");
+  const body = document.getElementById("sms-bcast-body");
+  if (!back || !body) return;
+  body.innerHTML = typeof skeletonRows === "function" ? skeletonRows(4) : "Loading…";
+  back.classList.add("open");
+  try {
+    SMS_BROADCAST = await apiGet(
+      `/api/sms/broadcasts/${id}?account_id=${actingAccountId()}`
+    );
+  } catch (err) {
+    body.innerHTML = `<div class="resident-summary" style="color:#b91c1c">${smsEsc(err.message)}</div>`;
+    return;
+  }
+  renderSmsBroadcast();
+}
+
+function closeSmsBroadcast(e) {
+  if (e && e.target !== document.getElementById("modal-sms-broadcast")) return;
+  document.getElementById("modal-sms-broadcast")?.classList.remove("open");
+}
+
+function renderSmsBroadcast() {
+  const body = document.getElementById("sms-bcast-body");
+  if (!body || !SMS_BROADCAST) return;
+  const b = SMS_BROADCAST.broadcast;
+  const items = SMS_BROADCAST.items || [];
+  const title = document.getElementById("sms-bcast-title");
+  if (title)
+    title.textContent = b.announcement_title
+      ? `Announcement · ${b.announcement_title}`
+      : `Announcement · ${smsWhen(b.created_at)}`;
+
+  const counts = b.status_counts || {};
+  const chips = SMS_STATUS_CONCERN.filter((st) => counts[st])
+    .map((st) => {
+      const [badge, label] = SMS_STATUS_BADGES[st] || ["badge-gray", st];
+      return `<span class="badge ${badge}">${counts[st]} ${label.toLowerCase()}</span>`;
+    })
+    .join(" ");
+
+  const rows = items
+    .map((r) => {
+      const [badge, label] = SMS_STATUS_BADGES[r.status] || ["badge-gray", r.status];
+      const why =
+        r.status === "skipped"
+          ? SMS_SKIP_REASONS[r.skip_reason] || r.skip_reason || ""
+          : r.status === "failed" || r.status === "expired"
+            ? r.error || ""
+            : r.network
+              ? `Through ${r.network}`
+              : "";
+      return `<tr>
+        <td>${smsEsc(r.name || "—")}${r.is_official ? ' <span class="badge badge-gold">official</span>' : ""}</td>
+        <td class="table-mono">${smsEsc(r.recipient_local)}</td>
+        <td class="table-muted">${smsEsc(r.purok || (r.is_official ? "—" : "no purok"))}</td>
+        <td><span class="badge ${badge}">${label}</span></td>
+        <td class="table-muted" style="font-size:12px;max-width:240px">${smsEsc(why)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  body.innerHTML = `
+    <p class="modal-help-text">
+      Sent ${smsEsc(smsWhen(b.created_at))}${b.created_by_name ? ` by ${smsEsc(b.created_by_name)}` : ""}.
+      ${b.is_emergency ? "Marked <strong>Emergency</strong>, so it also reached residents who turned announcements off." : ""}
+    </p>
+    <div class="resident-summary" style="margin-bottom:12px">${smsEsc(b.body)}</div>
+    <div class="form-group">
+      <label class="form-label">Who it went to</label>
+      <div>${smsEsc(b.audience_text || "—")}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">How it went</label>
+      <div>${chips || "—"}</div>
+      <div class="table-muted" style="font-size:12px;margin-top:4px">
+        ${items.length} ${items.length === 1 ? "copy" : "copies"} · ${b.credits} credit${b.credits === 1 ? "" : "s"}
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:340px;overflow:auto">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Number</th><th>Purok</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  if (typeof hydrateIcons === "function") hydrateIcons(body);
 }
 
 async function retrySms(id) {

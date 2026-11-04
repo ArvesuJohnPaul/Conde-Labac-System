@@ -5705,6 +5705,17 @@ textarea.sc-textarea {
   font-weight: var(--weight-semibold);
 }
 
+/* "Everyone" sits at the head of the purok chips and is the state the panel
+   starts in, so it is marked off from the puroks that narrow it. */
+.sc-chip-pick.sc-chip-all {
+  margin-right: var(--space-2);
+  border-style: dashed;
+}
+
+.sc-chip-pick.sc-chip-all.is-on {
+  border-style: solid;
+}
+
 .sc-sms-scope {
   margin: 0;
 }
