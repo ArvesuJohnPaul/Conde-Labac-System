@@ -3,7 +3,7 @@
 // ► SET THIS to your permanent ngrok (or Cloudflare) domain once you have it.
 //   Then GitHub Pages "just works" with no ?api= parameter, forever.
 //   Leave "" if you only run locally. Example:
-//     var PERMANENT_API_BASE = "https://conde-labac-8842.ngrok-free.app";
+//     var PERMANENT_API_BASE = "https://conde-labak-8842.ngrok-free.app";
 var PERMANENT_API_BASE = "https://conde-labak.onrender.com";
 
 // Resolution priority — on a HOSTED page (GitHub Pages, the tunnel, Railway):

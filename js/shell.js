@@ -1240,7 +1240,7 @@ function renderResidentPortal() {
       <div class="portal-welcome">
         <div class="portal-welcome-content">
           <h2>Mabuhay, <span class="gold">${portalName}</span>!</h2>
-          <p>Welcome to the Barangay Conde Labac Resident Portal. Access your barangay services below — request certificates, file reports, and stay connected with your community.</p>
+          <p>Welcome to the Barangay Conde Labak Resident Portal. Access your barangay services below — request certificates, file reports, and stay connected with your community.</p>
         </div>
       </div>
 
@@ -1315,7 +1315,7 @@ function renderResidentPortal() {
             <div class="service-icon-wrap"><i data-icon=map></i></div>
             <div>
               <div class="service-title">GIS Map</div>
-              <div class="service-desc">View the interactive map of Barangay Conde Labac — showing puroks, hazard zones, health centers, and key landmarks.</div>
+              <div class="service-desc">View the interactive map of Barangay Conde Labak — showing puroks, hazard zones, health centers, and key landmarks.</div>
             </div>
             <div class="service-arrow">View map <i data-icon=arrow-right></i></div>
           </div>

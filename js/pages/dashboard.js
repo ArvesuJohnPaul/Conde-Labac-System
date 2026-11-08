@@ -128,7 +128,7 @@ function renderDashboard() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title"><span id="dash-greeting">${dashGreeting()}</span>, ${currentRole === "Officer" ? "Officer Reyes" : "Administrator"}! <i data-icon=wave></i></h2>
-      <p class="page-desc">Here's what's happening in Barangay Conde Labac today</p>
+      <p class="page-desc">Here's what's happening in Barangay Conde Labak today</p>
     </div>
 
     <div class="kpi-grid">

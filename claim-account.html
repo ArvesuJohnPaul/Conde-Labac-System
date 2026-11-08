@@ -3,9 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Apply for a resident account on the Barangay Conde Labak portal, Batangas City." />
-    <title>Apply for an Account | Brgy. Conde Labac</title>
-    <link rel="icon" type="image/x-icon" href="img/conde_labac_icon.ico" />
+    <meta
+      name="description"
+      content="Apply for a resident account on the Barangay Conde Labak portal, Batangas City."
+    />
+    <title>Apply for an Account | Brgy. Conde Labak</title>
+    <link rel="icon" type="image/x-icon" href="img/conde_labak_icon.ico" />
     <script src="js/theme.js"></script>
     <script src="js/i18n.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,14 +25,14 @@
     <link rel="stylesheet" href="css/motion.css" />
     <!-- This page's own layout: the card and the step dots. -->
     <link rel="stylesheet" href="css/claim-account.css" />
-      <script src="js/api-config.js"></script>
-      <script src="js/api.js"></script>
-      <script src="js/icons.js"></script>
-      <script src="js/preferences.js"></script>
-      <script src="js/account-edit.js"></script>
-      <script src="js/sms-settings.js"></script>
+    <script src="js/api-config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/preferences.js"></script>
+    <script src="js/account-edit.js"></script>
+    <script src="js/sms-settings.js"></script>
     <script src="js/sms-alerts.js"></script>
-      <script src="js/change-password.js"></script>
+    <script src="js/change-password.js"></script>
     <script src="js/audit-log.js"></script>
     <script src="js/account-application.js"></script>
   </head>
@@ -37,7 +40,7 @@
     <div class="claim-card">
       <div class="claim-head">
         <div class="claim-seal">
-          <img src="img/conde%20labac%20logo.png" alt="Conde Labac Seal" />
+          <img src="img/conde%20labak%20logo.png" alt="Conde Labak Seal" />
         </div>
         <h1 class="claim-title">Apply for an Account</h1>
         <p class="claim-subtitle">
@@ -50,12 +53,14 @@
            shared with the portal's service modal. -->
       <div id="acc-app-root"></div>
 
-      <a href="system.html" class="claim-back-link"><i data-icon=arrow-left></i> Back to Sign In</a>
+      <a href="system.html" class="claim-back-link"
+        ><i data-icon="arrow-left"></i> Back to Sign In</a
+      >
     </div>
 
     <!-- -- SUCCESS TOAST -- -->
     <div id="toast" class="toast">
-      <span id="toast-icon"><i data-icon=check></i></span>
+      <span id="toast-icon"><i data-icon="check"></i></span>
       <span id="toast-msg">Success</span>
     </div>
 
@@ -71,7 +76,9 @@
           t.style.opacity = "0";
         }, 3500);
       }
-      AccountApplication.mount(document.getElementById("acc-app-root"), { mode: "page" });
+      AccountApplication.mount(document.getElementById("acc-app-root"), {
+        mode: "page",
+      });
     </script>
     <!-- Motion runtime: collapse/validation/exit animations. Last, so it
          observes a DOM every other script has already set up. -->

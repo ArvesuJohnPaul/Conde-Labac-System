@@ -161,7 +161,7 @@ function apiWakeNotice(onContinue) {
   el.setAttribute("role", "status");
   el.innerHTML = `
     <div class="server-wake-card">
-      <img class="server-wake-seal" src="${prefix}img/conde%20labac%20logo.png" alt="" />
+      <img class="server-wake-seal" src="${prefix}img/conde%20labak%20logo.png" alt="" />
       <h2 class="server-wake-title"></h2>
       <p class="server-wake-body"></p>
       <div class="server-wake-wait"><span class="server-wake-spinner"></span><span class="server-wake-elapsed"></span></div>

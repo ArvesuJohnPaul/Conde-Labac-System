@@ -38,12 +38,12 @@
       "Paano kayo matutulungan ng barangay ngayon?",
     ],
     servicesSub: [
-      "Transact with Barangay Conde Labac without lining up at the hall.",
-      "Makipagtransaksyon sa Barangay Conde Labac nang hindi pumipila sa hall.",
+      "Transact with Barangay Conde Labak without lining up at the hall.",
+      "Makipagtransaksyon sa Barangay Conde Labak nang hindi pumipila sa hall.",
     ],
     heroDescription: [
-      "The official service platform of Barangay Conde Labac — request certificates, file blotter reports, explore the community GIS map, and reach your barangay from anywhere.",
-      "Ang opisyal na serbisyong plataporma ng Barangay Conde Labac — humiling ng sertipiko, mag-file ng blotter report, tingnan ang community GIS map, at maabot ang inyong barangay kahit saan.",
+      "The official service platform of Barangay Conde Labak — request certificates, file blotter reports, explore the community GIS map, and reach your barangay from anywhere.",
+      "Ang opisyal na serbisyong plataporma ng Barangay Conde Labak — humiling ng sertipiko, mag-file ng blotter report, tingnan ang community GIS map, at maabot ang inyong barangay kahit saan.",
     ],
     announcements: ["Announcements", "Mga Anunsyo"],
     citizenServices: ["Citizen Services", "Serbisyo sa Mamamayan"],
@@ -62,8 +62,8 @@
     // Landing page (index.html)
     skipToContent: ["Skip to main content", "Lumaktaw sa pangunahing nilalaman"],
     officialPortal: [
-      "The Official Web Portal of Barangay Conde Labac, Batangas City",
-      "Ang Opisyal na Web Portal ng Barangay Conde Labac, Batangas City",
+      "The Official Web Portal of Barangay Conde Labak, Batangas City",
+      "Ang Opisyal na Web Portal ng Barangay Conde Labak, Batangas City",
     ],
     republic: ["Republic of the Philippines", "Republika ng Pilipinas"],
     navBulletin: ["Bulletin", "Bulletin"],
@@ -131,8 +131,8 @@
     ],
     gisTitle: ["Community GIS Map", "Mapa ng Komunidad"],
     gisDesc: [
-      "Explore households, hazard zones, roads, and community concerns across Barangay Conde Labac. Toggle the layers to view specific datasets on the interactive map.",
-      "Tingnan ang mga kabahayan, hazard zone, kalsada, at alalahanin ng komunidad sa buong Barangay Conde Labac. I-toggle ang mga layer upang matingnan ang partikular na datos sa interactive na mapa.",
+      "Explore households, hazard zones, roads, and community concerns across Barangay Conde Labak. Toggle the layers to view specific datasets on the interactive map.",
+      "Tingnan ang mga kabahayan, hazard zone, kalsada, at alalahanin ng komunidad sa buong Barangay Conde Labak. I-toggle ang mga layer upang matingnan ang partikular na datos sa interactive na mapa.",
     ],
     gisFactBuildings: [
       "Every mapped household and building in the barangay",
@@ -174,8 +174,8 @@
     leadershipKicker: ["Leadership", "Pamunuan"],
     officialsTitle: ["Barangay Officials", "Mga Opisyal ng Barangay"],
     officialsDesc: [
-      "The current elected officials serving Barangay Conde Labac.",
-      "Ang mga kasalukuyang nahalal na opisyal na nagseserbisyo sa Barangay Conde Labac.",
+      "The current elected officials serving Barangay Conde Labak.",
+      "Ang mga kasalukuyang nahalal na opisyal na nagseserbisyo sa Barangay Conde Labak.",
     ],
 
     visitKicker: ["Get in touch", "Makipag-ugnayan"],

@@ -192,7 +192,7 @@
           </div>
           <label class="acc-consent">
             <input type="checkbox" id="aa-consent" />
-            <span>I agree that Barangay Conde Labac may use these photos only to
+            <span>I agree that Barangay Conde Labak may use these photos only to
             confirm who I am for this application. They are seen only by the
             officials who review it and are deleted 30 days after the decision
             (Data Privacy Act of 2012, RA 10173).</span>

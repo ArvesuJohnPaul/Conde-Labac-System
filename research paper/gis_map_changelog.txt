@@ -1,5 +1,5 @@
 GIS MAP MODULE — CHANGELOG (for AI context ingestion, not human prose)
-System: Conde Labac Barangay MIS prototype. No backend; all data persists via localStorage. Vanilla JS/HTML/CSS, no framework.
+System: Conde Labak Barangay MIS prototype. No backend; all data persists via localStorage. Vanilla JS/HTML/CSS, no framework.
 
 SCOPE OF WORK: 4 rounds of changes to the GIS map feature (js/gis-map.js + css/system.css + css/landing.css + js/pages/gis.js + pages/gis.html + index.html + js/shell.js + js/pages/archive.js).
 

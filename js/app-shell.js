@@ -199,10 +199,10 @@
       '<div class="sidebar-head">' +
       '<a class="sidebar-brand" href="../index.html" title="Back to the public portal">' +
       '<span class="brand-seal">' +
-      '<img src="../img/conde%20labac%20logo.png" alt="" />' +
+      '<img src="../img/conde%20labak%20logo.png" alt="" />' +
       "</span>" +
       '<span class="brand-name">C.A.R.E.S.' +
-      "<span>Conde Labac MIS</span>" +
+      "<span>Conde Labak MIS</span>" +
       "</span>" +
       "</a>" +
       "</div>" +

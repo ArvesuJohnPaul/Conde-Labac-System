@@ -228,7 +228,7 @@ async function renderGISPage() {
   setContent(`
     <div class="page-header gis-page-header">
       <h2 class="page-title">GIS Mapping</h2>
-      <p class="page-desc">Interactive zone and hazard mapping for Barangay Conde Labac</p>
+      <p class="page-desc">Interactive zone and hazard mapping for Barangay Conde Labak</p>
     </div>
     <div class="kpi-grid">
       ${/* The counts come from the map once it has drawn itself, which is a
