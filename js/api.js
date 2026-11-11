@@ -93,6 +93,15 @@ function apiLastContact() {
   }
 }
 
+// The server turned out to be asleep after all, so the stamp that said
+// otherwise is wrong and has to go — otherwise the check below keeps being
+// skipped for the rest of the fourteen minutes it claims.
+function apiForgetContact() {
+  try {
+    localStorage.removeItem(API_CONTACT_KEY);
+  } catch (e) {}
+}
+
 let apiWaking = null; // the wake-up in progress, if there is one
 let apiWakeDismissed = false; // "Continue without waiting" — once per page
 
@@ -209,7 +218,44 @@ function apiWakeNotice(onContinue) {
   };
 }
 
-async function apiRequest(method, path, body) {
+// Did this request fail because the API is not answering, as opposed to
+// answering with a refusal? Render's proxy in front of a sleeping or starting
+// server replies 502/503/504; a fetch that throws at all never reached one
+// (DNS, the connection, the host being down — the browser will not say which).
+// Both mean the same thing here: wake it and ask again.
+function apiLooksAsleep(err, status) {
+  if (!window.API_BASE) return false; // served by the API itself (local dev)
+  // "Continue without waiting" was pressed. The visitor has chosen to see
+  // whatever the page can manage without the server; putting the notice back
+  // over them would take that choice away.
+  if (apiWakeDismissed) return false;
+  if (status) return status === 502 || status === 503 || status === 504;
+  return err instanceof TypeError;
+}
+
+// The wake-up notice was missing exactly when it was most needed.
+//
+// apiServerReady() skips its health check whenever this browser spoke to the
+// server less than API_IDLE_MS ago — and that stamp is a guess about a server
+// nobody here controls. It is wrong after a redeploy, after Render stops the
+// instance early, when the stamp was written by another tab against a server
+// that has since gone down, and whenever the clock moved. In every one of
+// those cases the page asked for its data, the proxy answered 502 in a few
+// milliseconds, each page turned its skeletons into dashes, and the visitor
+// got the site with nothing in it and no word of why — the "loading screen
+// did not show" symptom.
+//
+// So a failure that looks like a sleeping server is no longer the end of the
+// request. The stamp is dropped, the wake runs for real (which is what puts
+// the notice on screen and polls /api/health until it answers), and the
+// request is retried once. Once, deliberately: a server that is up and
+// genuinely returning 502 must still surface as an error rather than loop.
+async function apiWakeAndRetry() {
+  apiForgetContact();
+  await apiServerReady();
+}
+
+async function apiRequest(method, path, body, retried) {
   await apiServerReady();
   const headers = {
     // Skips free-ngrok's "You are about to visit..." interstitial for fetch
@@ -219,21 +265,34 @@ async function apiRequest(method, path, body) {
   if (body) headers["Content-Type"] = "application/json";
   const token = apiToken();
   if (token) headers.Authorization = "Bearer " + token;
-  const res = await fetch((window.API_BASE || "") + path, {
-    method: method,
-    headers: headers,
-    body: body ? JSON.stringify(body) : undefined,
-    // Never serve an API response from the browser's disk cache. Express sends
-    // an ETag on every JSON response, so a GET is otherwise cacheable — and a
-    // barangay record read from cache is a record that may already be wrong.
-    // It also removes a whole class of "the server is fine but the browser
-    // shows something else" failure, where a corrupted cache entry is replayed
-    // in place of the live response.
-    cache: "no-store",
-  });
+  let res;
+  try {
+    res = await fetch((window.API_BASE || "") + path, {
+      method: method,
+      headers: headers,
+      body: body ? JSON.stringify(body) : undefined,
+      // Never serve an API response from the browser's disk cache. Express
+      // sends an ETag on every JSON response, so a GET is otherwise cacheable
+      // — and a barangay record read from cache is a record that may already
+      // be wrong. It also removes a whole class of "the server is fine but the
+      // browser shows something else" failure, where a corrupted cache entry
+      // is replayed in place of the live response.
+      cache: "no-store",
+    });
+  } catch (err) {
+    if (retried || !apiLooksAsleep(err, 0)) throw err;
+    await apiWakeAndRetry();
+    return apiRequest(method, path, body, true);
+  }
   // Any answer short of a 5xx came from the running API, not from Render's
   // proxy in front of a sleeping one.
   if (res.status < 500) apiNoteContact();
+  // ...and one of those proxy answers means the wake-up check was skipped on a
+  // stamp that had gone stale. Wake it properly and ask again.
+  if (!retried && apiLooksAsleep(null, res.status)) {
+    await apiWakeAndRetry();
+    return apiRequest(method, path, body, true);
+  }
   if (!res.ok) {
     let msg = res.status + " " + res.statusText;
     let code = "";
