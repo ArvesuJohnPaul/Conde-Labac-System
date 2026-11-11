@@ -238,7 +238,7 @@ async function renderGISPage() {
       <div class="kpi-card"><div class="kpi-label">Mapped Buildings</div><div class="kpi-value" id="gis-kpi-buildings">${kpiSkeleton()}</div><div class="kpi-trend" id="gis-kpi-buildings-trend">Reading the map…</div></div>
       <div class="kpi-card success"><div class="kpi-label">Tagged Households</div><div class="kpi-value" id="gis-kpi-households">${kpiSkeleton()}</div><div class="kpi-trend" id="gis-kpi-households-trend"></div></div>
       <div class="kpi-card danger"><div class="kpi-label">Active Hazard Zones</div><div class="kpi-value" id="gis-kpi-hazards">${kpiSkeleton()}</div></div>
-      <div class="kpi-card warning"><div class="kpi-label">Recorded Incidents</div><div class="kpi-value" id="gis-kpi-incidents">${kpiSkeleton()}</div></div>
+      <div class="kpi-card warning"><div class="kpi-label">Recorded Incidents</div><div class="kpi-value" id="gis-kpi-incidents">${kpiSkeleton()}</div><div class="kpi-trend" id="gis-kpi-incidents-trend"></div></div>
       <div class="kpi-card info"><div class="kpi-label">Community Reports</div><div class="kpi-value" id="gis-kpi-reports">${kpiSkeleton()}</div><div class="kpi-trend">Resident-submitted pins</div></div>
     </div>
     <div class="gis-page-layout">
@@ -350,18 +350,48 @@ async function renderGISPage() {
   // KPIs are pulled straight from the map's own data (OSM + custom features,
   // minus soft-deletes) so they always track what's actually plotted below,
   // rather than hand-maintained placeholder numbers.
-  const stats = instance.getStats();
-  const pct = stats.totalBuildings ? Math.round((stats.taggedHouseholds / stats.totalBuildings) * 100) : 0;
-  document.getElementById("gis-kpi-buildings").textContent = stats.totalBuildings.toLocaleString();
-  document.getElementById("gis-kpi-buildings-trend").textContent = "Footprints on the map";
-  document.getElementById("gis-kpi-households").textContent = stats.taggedHouseholds.toLocaleString();
-  document.getElementById("gis-kpi-households-trend").textContent = `${pct}% of mapped buildings`;
-  document.getElementById("gis-kpi-hazards").textContent = stats.hazardZones.toLocaleString();
-  document.getElementById("gis-kpi-incidents").textContent = stats.incidents.toLocaleString();
-  document.getElementById("gis-kpi-reports").textContent = stats.communityReports.toLocaleString();
+  renderGisKpis(instance);
+  // Only the building count is ready at this point. The hazards, the tags and
+  // the incidents all come from stores that initGisMap fills in the background
+  // — so the first read above is of an empty cache in a fresh browser, and
+  // these numbers would sit at zero for the rest of the visit. Draw them again
+  // when the data actually arrives.
+  if (!GIS_KPI_BOUND) {
+    GIS_KPI_BOUND = true;
+    document.addEventListener("gis:map-data", () => {
+      if (gisMapInstance) renderGisKpis(gisMapInstance);
+    });
+  }
 
   initGisSidePanels();
   initGisNarrativePanel();
+}
+
+// The KPI row. Safe to call again at any time — it re-reads every figure from
+// the map, which is the point: see the gis:map-data listener above.
+let GIS_KPI_BOUND = false;
+function renderGisKpis(instance) {
+  if (!instance || typeof instance.getStats !== "function") return;
+  const el = (id) => document.getElementById(id);
+  // The page may have been repainted (navigated away and back) since the
+  // listener was attached — the cards this would write into are gone.
+  if (!el("gis-kpi-buildings")) return;
+  const stats = instance.getStats();
+  const pct = stats.totalBuildings ? Math.round((stats.taggedHouseholds / stats.totalBuildings) * 100) : 0;
+  el("gis-kpi-buildings").textContent = stats.totalBuildings.toLocaleString();
+  el("gis-kpi-buildings-trend").textContent = "Footprints on the map";
+  el("gis-kpi-households").textContent = stats.taggedHouseholds.toLocaleString();
+  el("gis-kpi-households-trend").textContent = `${pct}% of mapped buildings`;
+  el("gis-kpi-hazards").textContent = stats.hazardZones.toLocaleString();
+  el("gis-kpi-incidents").textContent = stats.incidents.toLocaleString();
+  // How many of them are still somebody's job — the figure a staff member
+  // opening this page is actually after.
+  el("gis-kpi-incidents-trend").textContent = !stats.incidents
+    ? "Nothing filed yet"
+    : stats.openIncidents
+      ? `${stats.openIncidents.toLocaleString()} still open`
+      : "All cases closed";
+  el("gis-kpi-reports").textContent = stats.communityReports.toLocaleString();
 }
 
 // A KPI's number, before there is one.

@@ -1010,6 +1010,18 @@
 .gis-hazard-ping {
   cursor: pointer;
   transition: fill-opacity 0.15s ease;
+  /* A hazard zone is painted UNDER the roads and the buildings on purpose —
+     seeing which houses stand inside it is the point of drawing it at all.
+     But at that depth the fill is a faint wash, and on a map this busy the
+     zone was something you had to already know was there. So its edge is a
+     dashed ring in the same red the legend's Hazard Area swatch uses, at a
+     fixed screen width (non-scaling-stroke), which keeps the extent findable
+     at every zoom without covering the barangay underneath. */
+  stroke: #ef4444;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  stroke-opacity: 0.9;
+  vector-effect: non-scaling-stroke;
 }
 /* The zone the AI briefing's hazard watch just flew the map to — pulsed a few
    times so the eye lands on the right circle among several. */
@@ -1639,6 +1651,25 @@
 .gis-report-incident-btn:hover {
   background: rgba(185, 28, 28, 0.08);
   border-color: #b91c1c;
+}
+/* "Mark Hazard" — beside it. Marking a hazard area no longer means going
+   through Edit Mode and the Add to Map dock, so the control is out here where
+   it can be seen. Amber rather than red: a hazard is a warning about a place,
+   where a report is a case about an event. .active is the armed state, while
+   the two clicks that place the ping are pending. */
+.gis-mark-hazard-btn {
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.45);
+  font-weight: 700;
+}
+.gis-mark-hazard-btn:hover {
+  background: rgba(180, 83, 9, 0.08);
+  border-color: #b45309;
+}
+.gis-mark-hazard-btn.active {
+  background: #b45309;
+  border-color: #b45309;
+  color: #fff;
 }
 /* Interactive report cards must accept the cursor — unlike the read-only
    hover popup, which is pointer-events:none so it can follow the mouse. */

@@ -562,6 +562,20 @@ function gisNotifyExposureChanged() {
   document.dispatchEvent(new CustomEvent("gis:exposure-changed"));
 }
 
+// The reconcile with the server (gisSyncMapState, then the incident fetch) is
+// what actually FILLS the hazard, report and building-tag stores. initGisMap
+// deliberately does not wait for it: the map draws from its base layers and
+// repaints itself when the rest lands.
+//
+// Anything outside the map that counts those stores has no such repaint. The
+// GIS page reads its KPI row once, immediately after the map resolves — which
+// is before any of this has arrived, so on a first visit in a fresh browser
+// every figure taken from a synced store is computed from an empty cache and
+// nothing ever recomputes it. This event is what says "look again".
+function gisNotifyMapDataReady() {
+  document.dispatchEvent(new CustomEvent("gis:map-data"));
+}
+
 // Features deleted while their create-POST was still in flight: remember the
 // temp id so the create can be undone when the server id arrives.
 const gisPendingDeletes = new Set();
@@ -1535,6 +1549,7 @@ async function gisSyncCommunityReports() {
       Object.values(gisInstances).forEach((inst) => {
         if (inst && typeof inst.refreshAll === "function") inst.refreshAll();
       });
+      gisNotifyMapDataReady();
     }
   } catch (e) {
     /* offline — keep the last snapshot */
@@ -1947,6 +1962,9 @@ async function initGisMap(targetId, opts = {}) {
   Promise.all([gisSyncMapState(), gisLoadHouseholdMembers()]).then(() => {
     if (gisInstances[targetId] && typeof gisInstances[targetId].refreshAll === "function")
       gisInstances[targetId].refreshAll();
+    // ...and tell the page around the map, whose own numbers came from these
+    // same stores while they were still empty.
+    gisNotifyMapDataReady();
   });
 
   // A cached instance is only reusable if it was built into THIS element.
@@ -2223,6 +2241,22 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         ? `<button type="button" class="gis-filter-btn gis-report-incident-btn" data-gis-report-incident title="File an incident report pinned on this map">${gisIcon("siren")} Report Incident</button>`
         : ""
     }
+    ${
+      // Marking a hazard used to mean finding Edit Mode, opening "Add to Map",
+      // opening Hazard Ping's type list and picking a type — four clicks into
+      // a dock that is hidden until you know it exists, for the one thing on
+      // this map somebody needs to do in a hurry. It sits out here now, beside
+      // Report Incident, and needs no Edit Mode: the two-click ping and the
+      // form behind it are unchanged, and the form asks for the hazard type
+      // itself when no type was picked up front.
+      //
+      // Still editable-only. Drawing on the map is the 'map_edit' row of the
+      // Role Access Matrix and the server refuses the write without it, so a
+      // role that cannot edit the map never sees this button either.
+      editable
+        ? `<button type="button" class="gis-filter-btn gis-mark-hazard-btn" data-gis-mark-hazard aria-pressed="false" title="Mark a hazard area on the map — click the center, then click again to size it">${gisIcon("warningTriangle")} Mark Hazard</button>`
+        : ""
+    }
   `;
 
   // Edit controls sit inline with the zoom buttons; the drawing tools live
@@ -2458,6 +2492,13 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         legendRoadHtml("major", "Main Road"),
         legendRoadHtml("local", "Local Road"),
         legendRoadHtml("service", "Service Road"),
+        // Hazard and construction areas are drawn on the map and each has its
+        // own Map Layers toggle and its own dim state in
+        // updateLegendDimStates — but neither was ever given a line in the
+        // key, so the coloured wash a hazard leaves on the map was the one
+        // thing here with nothing to look it up by.
+        legendItemHtml("hazard", "Hazard Area", "hazard", "square"),
+        legendItemHtml("construction", "Construction Area", "construction", "square"),
         legendPinHtml("gis-key-pin-report", "Incident Report"),
         legendPinHtml("gis-key-pin-official", "Official Report"),
       ].join(""),
@@ -2522,6 +2563,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const typesTitleEl = container.querySelector("[data-gis-types-title]");
   const typesListEl = container.querySelector("[data-gis-types-list]");
   const actionsPanelEl = container.querySelector("[data-gis-actions-panel]");
+  const drawMainPanelEl = container.querySelector(".gis-draw-main-panel");
+  const markHazardBtn = toggleButtonsHost.querySelector("[data-gis-mark-hazard]");
   let openTypesGroup = null; // which element's types panel is showing
   const drawFinishBtn = container.querySelector("[data-gis-draw-finish]");
   const drawCancelBtn = container.querySelector("[data-gis-draw-cancel]");
@@ -4896,6 +4939,18 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         : editTool === "building-move" && state.moveBuildingId !== null
           ? DRAW_HINTS["building-move-picked"]
           : DRAW_HINTS[editTool] || "";
+    // The dock belongs to Edit Mode, but a tool can be armed without it now
+    // (Mark Hazard, on the map's own control row). In that case the dock still
+    // has to appear — it is where the two-click instruction and the Cancel
+    // button live — while "Add to Map" itself, the whole drawing toolkit,
+    // stays closed: nothing out here asked for it.
+    drawPanelEl.hidden = !state.editMode && !editTool;
+    drawMainPanelEl.hidden = !state.editMode;
+    if (markHazardBtn) {
+      const marking = state.drawTool === "hazard-ping";
+      markHazardBtn.classList.toggle("active", marking);
+      markHazardBtn.setAttribute("aria-pressed", marking ? "true" : "false");
+    }
   }
 
   // Everything measuring shows, on every embed that can measure — editable or
@@ -5127,27 +5182,29 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     }
   }
 
-  if (editable) {
-    function armTool(tool, subtype) {
-      const sameSelection = state.drawTool === tool && state.drawSubtype === subtype;
-      state.drawTool = sameSelection ? null : tool;
-      state.drawSubtype = sameSelection ? null : subtype;
-      // Switching tools while holding a building puts it back down — it is only
-      // hidden while the move tool has it, and leaving it hidden would look
-      // exactly like having deleted it.
-      const wasMoving = state.moveBuildingId !== null;
-      state.moveBuildingId = null;
-      state.moveBuildingIsCustom = false;
-      state.drawPoints = [];
-      state.squareRotation = 0;
-      state.squareHover = null;
-      if (wasMoving) renderBuildings();
-      renderDrawPreview();
-      updateDrawUI();
-      hidePopup();
-      hideForm();
-    }
+  // Outside the editable block below: the Mark Hazard button on the map's own
+  // control row arms a tool without Edit Mode, and it is wired up out there.
+  function armTool(tool, subtype) {
+    const sameSelection = state.drawTool === tool && state.drawSubtype === subtype;
+    state.drawTool = sameSelection ? null : tool;
+    state.drawSubtype = sameSelection ? null : subtype;
+    // Switching tools while holding a building puts it back down — it is only
+    // hidden while the move tool has it, and leaving it hidden would look
+    // exactly like having deleted it.
+    const wasMoving = state.moveBuildingId !== null;
+    state.moveBuildingId = null;
+    state.moveBuildingIsCustom = false;
+    state.drawPoints = [];
+    state.squareRotation = 0;
+    state.squareHover = null;
+    if (wasMoving) renderBuildings();
+    renderDrawPreview();
+    updateDrawUI();
+    hidePopup();
+    hideForm();
+  }
 
+  if (editable) {
     // Clicking an element opens its types in a companion panel to the LEFT
     // of "Add to Map" (re-populated per element); picking a type there is
     // what arms the draw tool.
@@ -5722,7 +5779,6 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     editToggleBtn.addEventListener("click", () => {
       state.editMode = !state.editMode;
       editToggleBtn.classList.toggle("active", state.editMode);
-      drawPanelEl.hidden = !state.editMode;
       hidePopup();
       hideForm();
       if (!state.editMode) {
@@ -5741,8 +5797,22 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         shapePanelEl.hidden = true;
         typesListEl.innerHTML = "";
         renderDrawPreview();
-        updateDrawUI();
       }
+      // Whether the dock shows at all, and whether "Add to Map" inside it is
+      // open, is updateDrawUI's call now — a tool can be armed from the map's
+      // control row with Edit Mode off, and the dock has to follow that too.
+      updateDrawUI();
+    });
+
+    // "Mark Hazard" (beside Report Incident): arms the same two-click hazard
+    // ping the dock's Hazard Ping tool arms, with no type picked — the form
+    // that opens after the second click asks for the hazard type itself when
+    // none was chosen up front. Pressing it again puts the tool away.
+    markHazardBtn?.addEventListener("click", () => {
+      // Report mode and the ping both want the next map click; whichever was
+      // armed last gets it, so the other has to be put down.
+      if (state.reportMode) cancelCommunityReport();
+      armTool("hazard-ping", null);
     });
   }
 
@@ -6057,15 +6127,36 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     // map instead of hand-maintained placeholders.
     getStats() {
       const tags = gisLoadBuildingTags();
+      // Every case on the blotter. This used to be gisAllAccidentFeatures() —
+      // the staff "Accident Ping" layer — which is why the count read zero and
+      // could only ever read zero: that ping tool was retired from the draw
+      // dock when accidents became ordinary incident reports, so nothing can
+      // add to the layer any more, and the markers left on it were deleted.
+      // An incident lives in the incident table (/api/incidents); that is what
+      // gets counted here.
+      const reports = gisAllCommunityReports();
+      // Who filed it, read the same way the pin on the map is already coloured
+      // and captioned: a report with no account behind it — walked in, phoned
+      // in, or filed before accounts existed — counts as the resident's.
+      const fromOffice = (r) => ["Admin", "Officer", "Staff"].includes(r.reporterRole || "");
       return {
         // Surrounding-context features (outside the boundary) don't count.
         totalBuildings: allBuildingFeatures().filter(featureInsideBoundary).length,
         taggedHouseholds: Object.values(tags).filter((t) => t?.type === "households").length,
         hazardZones: gisAllHazardFeatures().length,
-        incidents: gisAllAccidentFeatures().length,
+        incidents: reports.length,
+        // Resolved and dismissed cases are closed; everything else is still
+        // somebody's job.
+        openIncidents: reports.filter((r) => !r.resolved).length,
         constructionAreas: gisAllConstructionFeatures().length,
         vegetationAreas: (vegetationGeojson?.features || []).length + gisCustomVegetationFeatures().length,
-        communityReports: gisAllCommunityReports().length,
+        // The ones residents brought in themselves, rather than the office
+        // logging a call or a walk-in — which is what the card beside the
+        // total has always said it was showing ("Resident-submitted pins").
+        communityReports: reports.filter((r) => !fromOffice(r)).length,
+        // The retired accident-marker layer, kept here under a name that says
+        // what it is so nothing mistakes it for the incident count again.
+        accidentMarkers: gisAllAccidentFeatures().length,
       };
     },
     refreshAll: renderAll,
