@@ -2241,22 +2241,6 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         ? `<button type="button" class="gis-filter-btn gis-report-incident-btn" data-gis-report-incident title="File an incident report pinned on this map">${gisIcon("siren")} Report Incident</button>`
         : ""
     }
-    ${
-      // Marking a hazard used to mean finding Edit Mode, opening "Add to Map",
-      // opening Hazard Ping's type list and picking a type — four clicks into
-      // a dock that is hidden until you know it exists, for the one thing on
-      // this map somebody needs to do in a hurry. It sits out here now, beside
-      // Report Incident, and needs no Edit Mode: the two-click ping and the
-      // form behind it are unchanged, and the form asks for the hazard type
-      // itself when no type was picked up front.
-      //
-      // Still editable-only. Drawing on the map is the 'map_edit' row of the
-      // Role Access Matrix and the server refuses the write without it, so a
-      // role that cannot edit the map never sees this button either.
-      editable
-        ? `<button type="button" class="gis-filter-btn gis-mark-hazard-btn" data-gis-mark-hazard aria-pressed="false" title="Mark a hazard area on the map — click the center, then click again to size it">${gisIcon("warningTriangle")} Mark Hazard</button>`
-        : ""
-    }
   `;
 
   // Edit controls sit inline with the zoom buttons; the drawing tools live
@@ -2264,9 +2248,26 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // Mode is on. Each element expands into its specific types (a hazard ping
   // is picked as Flood/Landslide/…, a road as Major/Local/…), so the pin
   // form afterwards never needs a type selector.
+  //
+  // Mark Hazard sits in this same row, next to Edit Mode, because marking a
+  // hazard was otherwise four clicks into a dock that is invisible until you
+  // already know it is there — Edit Mode, "Add to Map", Hazard Ping, then a
+  // type — for the one thing on this map somebody does in a hurry. Out here
+  // it needs no Edit Mode: the two-click ping and the form behind it are
+  // unchanged, and the form asks for the hazard type itself when none was
+  // picked up front.
+  //
+  // Turning Edit Mode ON hides it again, because the dock that opens carries
+  // the same tool, with its type list: one control for the job at a time, and
+  // this one is the lesser of the two while the dock is up.
+  //
+  // Editable-only either way. Drawing on the map is the 'map_edit' row of the
+  // Role Access Matrix and the server refuses the write without it, so a role
+  // that cannot edit the map never sees either button.
   const editControlsHtml = editable
     ? `
       <button type="button" class="gis-toolbar-btn gis-deselect-btn" data-gis-deselect-tool title="Deselect current tool (Esc)" hidden>${gisIcon("cancelX")} Deselect</button>
+      <button type="button" class="gis-toolbar-btn gis-mark-hazard-btn" data-gis-mark-hazard aria-pressed="false" title="Mark a hazard area on the map — click the center, then click again to size it">${gisIcon("warningTriangle")} Mark Hazard</button>
       <button type="button" class="gis-toolbar-btn gis-edit-toggle-btn" data-gis-edit-toggle title="Toggle map editing">${gisIcon("edit")} Edit Mode</button>`
     : "";
 
@@ -2492,13 +2493,6 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         legendRoadHtml("major", "Main Road"),
         legendRoadHtml("local", "Local Road"),
         legendRoadHtml("service", "Service Road"),
-        // Hazard and construction areas are drawn on the map and each has its
-        // own Map Layers toggle and its own dim state in
-        // updateLegendDimStates — but neither was ever given a line in the
-        // key, so the coloured wash a hazard leaves on the map was the one
-        // thing here with nothing to look it up by.
-        legendItemHtml("hazard", "Hazard Area", "hazard", "square"),
-        legendItemHtml("construction", "Construction Area", "construction", "square"),
         legendPinHtml("gis-key-pin-report", "Incident Report"),
         legendPinHtml("gis-key-pin-official", "Official Report"),
       ].join(""),
@@ -2564,7 +2558,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const typesListEl = container.querySelector("[data-gis-types-list]");
   const actionsPanelEl = container.querySelector("[data-gis-actions-panel]");
   const drawMainPanelEl = container.querySelector(".gis-draw-main-panel");
-  const markHazardBtn = toggleButtonsHost.querySelector("[data-gis-mark-hazard]");
+  const markHazardBtn = container.querySelector("[data-gis-mark-hazard]");
   let openTypesGroup = null; // which element's types panel is showing
   const drawFinishBtn = container.querySelector("[data-gis-draw-finish]");
   const drawCancelBtn = container.querySelector("[data-gis-draw-cancel]");
@@ -4948,6 +4942,9 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     drawMainPanelEl.hidden = !state.editMode;
     if (markHazardBtn) {
       const marking = state.drawTool === "hazard-ping";
+      // Edit Mode's dock offers the same ping, with its type list. Two buttons
+      // for one job, side by side, is the confusion this is meant to remove.
+      markHazardBtn.hidden = state.editMode;
       markHazardBtn.classList.toggle("active", marking);
       markHazardBtn.setAttribute("aria-pressed", marking ? "true" : "false");
     }
@@ -5804,7 +5801,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       updateDrawUI();
     });
 
-    // "Mark Hazard" (beside Report Incident): arms the same two-click hazard
+    // "Mark Hazard" (beside Edit Mode): arms the same two-click hazard
     // ping the dock's Hazard Ping tool arms, with no type picked — the form
     // that opens after the second click asks for the hazard type itself when
     // none was chosen up front. Pressing it again puts the tool away.
