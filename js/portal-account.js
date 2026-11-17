@@ -511,7 +511,7 @@
     note.innerHTML =
       '<span class="alert-icon"><i data-icon=triangle-alert></i></span>' +
       "<div><strong>You can't apply for a Certificate of Barangay Residency yet.</strong> " +
-      "It is issued only to residents who have lived in Barangay Conde Labak for at least " +
+      "It can only be requested by residents who have lived in Barangay Conde Labak for at least " +
       "6 months. Your residency on record started on <strong>" +
       esc(longDate(block.since)) +
       "</strong>, so you can apply from <strong>" +

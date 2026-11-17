@@ -459,9 +459,9 @@ function certHasTemplate(type) {
 // word most people here meet outside the phrase "there is an issue with it",
 // so that is how it was being read: a request that had gone through cleanly
 // looked like a request with something wrong. It means the opposite — the
-// certificate was handed over the counter — so it reads "Released" now, the
-// word the barangay already uses at the window and the word the dashboard
-// already used to explain the figure ("Released to residents").
+// certificate was handed over the counter — so it reads "Released" now, which
+// is also the word the dashboard already used to explain the same figure
+// ("Released to residents").
 //
 // Only the wording changed. The value stays 'issued' in the database, in the
 // status CHECK constraint, in the statistics queries and in the CERT_ISSUE
