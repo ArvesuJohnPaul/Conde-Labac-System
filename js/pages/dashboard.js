@@ -133,7 +133,7 @@ function renderDashboard() {
 
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Registered Residents</div><div class="kpi-value" id="kpi-residents">—</div><div class="kpi-trend" id="kpi-residents-sub">Active records on file</div></div>
-      <div class="kpi-card success"><div class="kpi-label">Certificates Issued</div><div class="kpi-value" id="kpi-certs-issued">—</div><div class="kpi-trend" id="kpi-certs-issued-sub">Released to residents</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Certificates Released</div><div class="kpi-value" id="kpi-certs-issued">—</div><div class="kpi-trend" id="kpi-certs-issued-sub">Handed over to residents</div></div>
       <div class="kpi-card danger"><div class="kpi-label">Active Incidents</div><div class="kpi-value" id="kpi-incidents">—</div><div class="kpi-trend" id="kpi-incidents-sub">Open or under review</div>
         <!-- Who a new report is texted to. It belongs on the dashboard rather
              than only in the SMS page, because recipients disappear without
@@ -236,10 +236,10 @@ function renderDashboard() {
     </div>
 
     <div class="grid-2">
-      <!-- Requested against issued, week by week: two lines that drift apart
+      <!-- Requested against released, week by week: two lines that drift apart
            are a backlog forming, which a single "requests" bar cannot show. -->
       <div class="card">
-        <div class="card-header"><div class="card-title">Certificate Requests vs Issued (8 weeks)</div><span class="card-action" onclick="nav(null,'certificates')">View all</span></div>
+        <div class="card-header"><div class="card-title">Certificate Requests vs Released (8 weeks)</div><span class="card-action" onclick="nav(null,'certificates')">View all</span></div>
         <div class="chart-box chart-box-lg"><canvas id="certChart"></canvas></div>
       </div>
       <div class="card">
@@ -536,7 +536,7 @@ const DASH_WORKLOAD = [
     stages: [
       ["pending", "Pending", "#f59e0b"],
       ["approved", "Approved", "#06b6d4"],
-      ["issued", "Issued", "#22c55e"],
+      ["issued", "Released", "#22c55e"],
       ["rejected", "Rejected", "#94a3b8"],
     ],
   },
@@ -629,7 +629,7 @@ async function loadOperations() {
   const wl = document.getElementById("dash-workload-summary");
   if (wl) wl.innerHTML = bits.length ? bits.join(" · ") : "Nothing outstanding.";
 
-  // ── Certificates requested vs issued ──
+  // ── Certificates requested vs released ──
   const weekly = d.certificates_weekly || [];
   dashChart("cert", "certChart", {
     type: "line",
@@ -647,7 +647,7 @@ async function loadOperations() {
           pointRadius: 3,
         },
         {
-          label: "Issued",
+          label: "Released",
           data: weekly.map((w) => w.issued),
           borderColor: "#22c55e",
           backgroundColor: "rgba(34,197,94,0.12)",

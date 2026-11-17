@@ -1079,7 +1079,7 @@
               sub: [r.purpose, r.remarks ? "Remarks: " + r.remarks : ""]
                 .filter(Boolean)
                 .join(" · "),
-              badge: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+              badge: certStatusLabel(r.status),
               badgeClass: CERT_BADGES[r.status] || "badge-gray",
               view: () => viewCertificateRequest(r),
             });
@@ -1199,7 +1199,7 @@
       certOpenSheet(r, { mode: "requester", openDetails: true });
       return;
     }
-    const st = { label: r.status, badge: CERT_BADGES[r.status] || "badge-gray" };
+    const st = { label: certStatusLabel(r.status), badge: CERT_BADGES[r.status] || "badge-gray" };
     openActivityDetail(
       CERT_LABELS[r.type] || r.type,
       "file-text",

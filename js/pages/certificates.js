@@ -57,7 +57,7 @@ function renderCertificatesPage() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title">Certificate Processing</h2>
-      <p class="page-desc">Manage, approve, and issue barangay certificates</p>
+      <p class="page-desc">Check, approve and release barangay certificates</p>
     </div>
     <!-- Two jobs on one page: working the queue, and keeping the certificates
          themselves (names, requirements, the printed wording) up to date. -->
@@ -74,7 +74,7 @@ function renderCertificatesPage() {
     <div class="kpi-grid">
       <div class="kpi-card warning"><div class="kpi-label">Pending Review</div><div class="kpi-value" id="kpi-cert-pending">—</div></div>
       <div class="kpi-card info"><div class="kpi-label">Approved</div><div class="kpi-value" id="kpi-cert-approved">—</div></div>
-      <div class="kpi-card success"><div class="kpi-label">Issued</div><div class="kpi-value" id="kpi-cert-issued">—</div></div>
+      <div class="kpi-card success"><div class="kpi-label">Released</div><div class="kpi-value" id="kpi-cert-issued">—</div></div>
       <div class="kpi-card danger"><div class="kpi-label">Rejected</div><div class="kpi-value" id="kpi-cert-rejected">—</div></div>
     </div>
     <div class="card">
@@ -97,7 +97,7 @@ function renderCertificatesPage() {
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
-          <option value="issued">Issued</option>
+          <option value="issued">Released</option>
           <option value="rejected">Rejected</option>
         </select>
         <select class="gis-filter-select" id="cert-type" onchange="certFilterChanged()">
@@ -293,7 +293,7 @@ function renderCertRows(list) {
         );
       } else if (r.status === "approved") {
         actions.push(
-          `<button class="btn btn-sm btn-gold" onclick="setCertStatus(${r.id}, 'issued')">Issue</button>`,
+          `<button class="btn btn-sm btn-gold" onclick="setCertStatus(${r.id}, 'issued')" title="The resident has collected it — mark it handed over">Release</button>`,
           `<button class="btn btn-sm btn-outline" onclick="setCertStatus(${r.id}, 'pending')">Undo</button>`
         );
       } else if (r.status === "rejected") {
@@ -325,7 +325,7 @@ function renderCertRows(list) {
         <td class="table-name">${escapeHtml(r.applicant_name)}</td>
         <td class="table-text-sm">${escapeHtml(CERT_TYPE_LABELS[r.type] || r.type)}</td>
         <td class="table-muted">${certFmtDate(r.created_at)}</td>
-        <td><span class="badge ${badge}">${escapeHtml(r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span></td>
+        <td><span class="badge ${badge}">${escapeHtml(certStatusLabel(r.status))}</span></td>
         <td>
           <div class="cert-actions">
             <div class="btn-group">${actions.join("")}</div>
@@ -348,7 +348,7 @@ function certSlotButton(show, handler, inner, attrs) {
     : `<button class="btn btn-sm btn-outline cert-action-placeholder" disabled tabindex="-1" aria-hidden="true">${inner}</button>`;
 }
 
-// ── status changes (approve / reject / issue / undo) ──────────────────────
+// ── status changes (approve / reject / release / undo) ────────────────────
 // `remarks` is only passed by the reject flow — the API leaves the column alone
 // when it is null, so an Undo doesn't wipe the reason a rejection was recorded.
 async function setCertStatus(id, status, remarks) {
@@ -357,7 +357,7 @@ async function setCertStatus(id, status, remarks) {
   const verb =
     status === "pending" ? "move back to pending" : status;
   // Rejecting asks for a reason in its own modal (openCertReject), so by the
-  // time it reaches here it is already confirmed. Approve and Issue move a
+  // time it reaches here it is already confirmed. Approve and Release move a
   // request forward and are undoable from the row; Undo needs a second look.
   if (status === "pending") {
     const ok = await uiConfirm({
@@ -411,7 +411,7 @@ async function setCertStatus(id, status, remarks) {
   if (typeof logAudit === "function")
     logAudit(
       actions[status] || "CERT_UPDATE",
-      `${CERT_TYPE_LABELS[r.type] || r.type} (${r.request_no}) → ${status} for ${r.applicant_name}`,
+      `${CERT_TYPE_LABELS[r.type] || r.type} (${r.request_no}) → ${certStatusLabel(status).toLowerCase()} for ${r.applicant_name}`,
       "info",
       "certificate"
     );
@@ -421,7 +421,7 @@ async function setCertStatus(id, status, remarks) {
   showToast(
     status === "pending"
       ? `${r.request_no} moved back to pending`
-      : `${r.request_no} ${status}!${smsNote ? " " + smsNote : ""}`
+      : `${r.request_no} ${certStatusLabel(status).toLowerCase()}!${smsNote ? " " + smsNote : ""}`
   );
 }
 

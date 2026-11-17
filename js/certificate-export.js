@@ -451,6 +451,36 @@ function certHasTemplate(type) {
   return !!(typeof CERT_TEMPLATES !== "undefined" && CERT_TEMPLATES[type]);
 }
 
+// What a request's status is called on screen.
+//
+// The stored value for the last step is 'issued', and that is what it was
+// called everywhere a person could read it — on the button, on the badge, on
+// the counters, and in the resident's own activity list. "Issue" is not a
+// word most people here meet outside the phrase "there is an issue with it",
+// so that is how it was being read: a request that had gone through cleanly
+// looked like a request with something wrong. It means the opposite — the
+// certificate was handed over the counter — so it reads "Released" now, the
+// word the barangay already uses at the window and the word the dashboard
+// already used to explain the figure ("Released to residents").
+//
+// Only the wording changed. The value stays 'issued' in the database, in the
+// status CHECK constraint, in the statistics queries and in the CERT_ISSUE
+// audit code, so nothing already recorded has to be rewritten.
+//
+// Loaded before portal-account.js and the module pages on every page that
+// shows a certificate, so all of them can call it.
+const CERT_STATUS_TEXT = {
+  pending: "Pending",
+  approved: "Approved",
+  issued: "Released",
+  rejected: "Rejected",
+};
+
+function certStatusLabel(status) {
+  const s = String(status || "pending");
+  return CERT_STATUS_TEXT[s] || s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // Everything a sheet needs: the request, the resident behind it, who signs, and
 // the date it carries.
 async function certBuildContext(request) {
@@ -774,7 +804,7 @@ function certDetailsHtml(r, open) {
     row("Type", certEsc(certTypeLabel(r.type))) +
     row(
       "Status",
-      `<span class="badge ${badges[r.status] || "badge-gray"}">${certEsc(r.status || "pending")}</span>`
+      `<span class="badge ${badges[r.status] || "badge-gray"}">${certEsc(certStatusLabel(r.status))}</span>`
     ) +
     row("Filed", date(r.created_at)) +
     row("Purpose / Details", r.purpose ? certEsc(r.purpose) : dash) +

@@ -307,9 +307,9 @@ function renderResidencyPage() {
             <label class="form-label">Household</label>
             <select class="form-control" id="add-household"><option value="">Select household (optional)</option></select>
             <p class="modal-help-text" style="margin-top:6px">
-              A household is a building tagged as one on the
-              <a href="gis.html">GIS map</a>. Tag the resident's house there and
-              it appears in this list.
+              Households are set on the <a href="gis.html">GIS map</a>. Mark the
+              resident's house there as a household and it will show up in this
+              list.
             </p>
           </div>
           <div class="form-group form-group-flat">

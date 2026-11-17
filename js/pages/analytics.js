@@ -35,7 +35,7 @@ function renderAnalytics() {
     <div class="page-header"><h2 class="page-title">Analytics</h2><p class="page-desc">Descriptive statistics and trend charts for evidence-based barangay reporting</p></div>
     <div class="kpi-grid">
       <div class="kpi-card success"><div class="kpi-label">Registered Residents</div><div class="kpi-value" id="an-residents">—</div><div class="kpi-trend">Active records</div></div>
-      <div class="kpi-card info"><div class="kpi-label">Certificate Efficiency</div><div class="kpi-value" id="an-cert-eff">—</div><div class="kpi-trend">Issued of all requests</div></div>
+      <div class="kpi-card info"><div class="kpi-label">Certificate Efficiency</div><div class="kpi-value" id="an-cert-eff">—</div><div class="kpi-trend">Released out of all requests</div></div>
       <div class="kpi-card"><div class="kpi-label">Incident Resolution Rate</div><div class="kpi-value" id="an-inc-res">—</div><div class="kpi-trend">Resolved or dismissed</div></div>
       <div class="kpi-card warning"><div class="kpi-label">Average Satisfaction Score</div><div class="kpi-value" id="an-sat">—</div><div class="kpi-trend">From citizen feedback</div></div>
     </div>
