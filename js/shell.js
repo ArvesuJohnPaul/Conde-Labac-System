@@ -250,7 +250,7 @@ const moduleConfig = {
   },
   analytics: {
     title: "Analytics",
-    sub: "Predictive insights & trend charts",
+    sub: "Counts & trends",
   },
   content: {
     title: "Site Content",
@@ -259,7 +259,7 @@ const moduleConfig = {
   users: { title: "User Management", sub: "Roles & access control" },
   audit: { title: "Audit Logs", sub: "System activity & compliance" },
   sms: { title: "SMS Log", sub: "Text messages sent by the system" },
-  archive: { title: "Archive", sub: "Records retention & backup" },
+  archive: { title: "Archive", sub: "Deleted records & restore" },
 };
 
 // Page map for cross-page navigation
@@ -699,7 +699,7 @@ function nav(el, module, tab) {
   // Enforce client-side RBAC for navigation (Officer overrides applied).
   const allowed = modulePermissions[module];
   if (allowed && (!role || !moduleAllowedFor(module, role))) {
-    showToast("Access denied: insufficient permissions", "<i data-icon=flag></i>");
+    showToast("You don't have access to that.", "<i data-icon=flag></i>");
     if (!role) {
       // Not logged in -> go to login
       window.location.href = "../system.html";
@@ -1073,7 +1073,7 @@ function viewAiAlert(id) {
   if (typeof moduleAllowedFor === "function") {
     const role = (getSession() || {}).role;
     if (role && !moduleAllowedFor("feedback", role)) {
-      showToast("Access denied: insufficient permissions", "<i data-icon=flag></i>");
+      showToast("You don't have access to that.", "<i data-icon=flag></i>");
       return;
     }
   }

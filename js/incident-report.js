@@ -119,7 +119,7 @@ function ensureIncidentModalShell() {
       <div class="form-group">
         <label class="form-label">Location of Incident</label>
         <div class="gis-modal-map" id="incident-map" style="height:340px"></div>
-        <div class="inc-pick-status" id="inc-pick-status">Click on the map to drop a pin where it happened.</div>
+        <div class="inc-pick-status" id="inc-pick-status">Click on the map to drop a pin where it happened, or press Use my location.</div>
         <!-- Logged calls only. A caller on the phone often cannot say exactly
              where they are, and a pin dropped on their behalf is a guess that
              looks like a fact on the map. Filed without one, the officials'
@@ -316,7 +316,8 @@ function openIncidentModal(opts) {
   incidentPickPoint = null;
   const status = document.getElementById("inc-pick-status");
   if (status) {
-    status.textContent = "Click on the map to drop a pin where it happened.";
+    status.textContent =
+      "Click on the map to drop a pin where it happened, or press Use my location.";
     status.classList.remove("picked");
   }
 

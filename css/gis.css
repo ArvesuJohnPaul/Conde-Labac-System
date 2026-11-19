@@ -2056,6 +2056,67 @@
   text-overflow: ellipsis;
   pointer-events: none;
 }
+/* An answer to the locate button rather than a standing instruction, so it is
+   allowed the room to be a sentence: the out-of-barangay message has to say
+   where you are, why the pin cannot go there, and what to do instead. */
+.gis-report-hint.gis-hint-error {
+  max-width: min(420px, 86%);
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.45;
+  text-align: center;
+  background: var(--danger-solid, #ef4444);
+  bottom: 56px;
+}
+
+/* "Use my location" — bottom-right, clear of the hint pill along the bottom
+   edge and of the zoom controls. Shown only while a pin is being placed. */
+.gis-locate-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+/* The engine's buttons are inline-flex, which beats the browser's own rule for
+   [hidden] — the same trap the Deselect and Mark Hazard buttons fell into. */
+.gis-locate-btn[hidden] {
+  display: none;
+}
+
+.gis-locate-btn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: var(--surface-hover);
+}
+
+/* Waiting on the phone's GPS, which can take several seconds and must not look
+   like a button that did nothing. */
+.gis-locate-btn.is-busy {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.gis-locate-btn .gis-icon {
+  width: 14px;
+  height: 14px;
+}
+
 /* Measuring starts from the top-left button, so its hint appears just under
    the toolbars rather than along the bottom edge — which on a laptop screen is
    below the fold. */

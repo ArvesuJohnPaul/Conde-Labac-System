@@ -90,7 +90,7 @@
         '<div class="alert alert-info alert-mb"><span class="alert-icon"><i data-icon=phone></i></span>' +
         "<span>We texted a six-digit code to <strong style=\"white-space:nowrap\">" +
         esc(d.mobile_no || "") +
-        "</strong>. It is good for ten minutes.</span></div>" +
+        "</strong>. It expires in ten minutes.</span></div>" +
         '<div class="form-group">' +
         '<label class="form-label" for="sms-alert-code">Code from the text</label>' +
         '<input class="form-control" id="sms-alert-code" data-rule="digits" inputmode="numeric" autocomplete="one-time-code" ' +

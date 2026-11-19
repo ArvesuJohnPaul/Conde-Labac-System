@@ -210,14 +210,14 @@ async function purgeDeletedRecord(archiveId) {
 // ── Page scaffold ─────────────────────────────────────────────────────────────
 function renderArchive() {
   setContent(`
-    <div class="page-header"><h2 class="page-title">Archive</h2><p class="page-desc">Recycle bin, records retention, and restore workflows</p></div>
+    <div class="page-header"><h2 class="page-title">Archive</h2><p class="page-desc">Deleted records — restore them, or let them expire</p></div>
 
     <div class="card">
       <div class="card-header">
         <div class="card-title">Deleted Records <span id="deleted-records-count" class="badge badge-gray"></span></div>
         <button class="btn btn-sm btn-outline" onclick="loadDeletedRecords()"><i data-icon=refresh></i> Refresh</button>
       </div>
-      <p class="modal-help-text">Deleted records from across the system. Restoring puts one back exactly where it was; every delete, restore and permanent-delete is logged. Items are kept <strong>30 days</strong>, then deleted automatically — <strong>cleared audit entries for 90 days</strong>, and those can only leave by their timer.</p>
+      <p class="modal-help-text">Deleted records from across the system. Restoring puts one back exactly where it was; every delete, restore and permanent-delete is logged. Items are kept <strong>30 days</strong>, then deleted automatically. Cleared audit entries are kept <strong>90 days</strong>. Those cannot be deleted by hand — only the 90 days removes them.</p>
       <div id="deleted-records-list">${skeletonRows(4)}</div>
     </div>
 

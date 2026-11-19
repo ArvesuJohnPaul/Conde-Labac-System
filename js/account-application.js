@@ -167,7 +167,7 @@
             <label class="form-label" for="aa-code">Code from the text</label>
             <input class="form-control" id="aa-code" data-rule="digits" inputmode="numeric" autocomplete="one-time-code"
                    maxlength="6" placeholder="123456" />
-            <div class="modal-help-text">It is good for ten minutes. Never share it with anyone, even barangay staff.</div>
+            <div class="modal-help-text">It expires in ten minutes. Never share it with anyone, even barangay staff.</div>
           </div>
           <div class="acc-code-row" data-code-wrap hidden>
             <button class="btn btn-gold" type="button" data-act="confirm-code"><i data-icon=check></i> Confirm my number</button>

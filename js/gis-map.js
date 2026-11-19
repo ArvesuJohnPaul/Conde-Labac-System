@@ -1936,7 +1936,42 @@ function gisComputeMaxZoom(buildingsGeojson, project) {
 }
 
 // ───────── Main init ─────────
+// Builds in flight, by target id: { node, promise }.
+//
+// initGisMap() is async and does not record its instance until the very end,
+// several awaits later. Two calls for the same element therefore both got
+// past the "is one cached?" check and both built a map — and because the
+// filter row is a SIBLING of the map container rather than inside it, the
+// second build's controls landed beside the first's instead of replacing
+// them. That is the doubled toolbar: one Barangay Map card wearing two sets
+// of Map Layers / Building Type / Classification / Search / Report Incident.
+//
+// It took two renders of the same page to see it, which the GIS page does
+// routinely: loadDeletePermissions() in js/shell.js repaints the page when
+// the permission answer arrives after the first paint.
+const gisPendingInits = {};
+
 async function initGisMap(targetId, opts = {}) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  // Keyed on the NODE, not just the id: a page that repaints through
+  // setContent() puts a brand new element under the same id, and that one
+  // does need its own map. Sharing the promise there would hand back an
+  // instance built into the detached node.
+  const inFlight = gisPendingInits[targetId];
+  if (inFlight && inFlight.node === el) return inFlight.promise;
+
+  const promise = gisBuildMap(targetId, opts);
+  gisPendingInits[targetId] = { node: el, promise };
+  try {
+    return await promise;
+  } finally {
+    if (gisPendingInits[targetId] && gisPendingInits[targetId].promise === promise)
+      delete gisPendingInits[targetId];
+  }
+}
+
+async function gisBuildMap(targetId, opts = {}) {
   const container = document.getElementById(targetId);
   if (!container) return;
 
@@ -2012,7 +2047,11 @@ async function initGisMap(targetId, opts = {}) {
     maxZoom,
     opts,
   );
-  gisInstances[targetId] = instance;
+  // Only publish a map that is still on the page. A build superseded while it
+  // was fetching its layers has drawn into a node the page has since thrown
+  // away; caching it would hand every later caller a map rendering into
+  // nothing.
+  if (container.isConnected) gisInstances[targetId] = instance;
   return instance;
 }
 
@@ -2407,6 +2446,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       <div class="gis-popup" hidden></div>
       <div class="gis-pin-form" hidden></div>
       <div class="gis-report-hint" hidden></div>
+      <!-- Shown only while a pin is being placed (report or pick mode).
+           Drops the pin on where the phone says you are, instead of
+           making somebody find their own roof on a map of roofs. -->
+      <button type="button" class="gis-locate-btn" data-gis-locate hidden>
+        ${gisIcon("pin")}<span>Use my location</span>
+      </button>
       ${editable ? `
       <div class="gis-group-dock" data-gis-group-dock hidden>
         <span class="gis-group-dock-count" data-gis-group-count></span>
@@ -2427,11 +2472,15 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       ? container.previousElementSibling
       : null;
   if (filterRowEl) {
-    // The page may have seeded this row with shimmering placeholders for the
-    // controls about to go in it (js/pages/gis.js). They are stand-ins, not
-    // content, so they come out before the real thing goes in — appending
-    // around them left three ghost pills on the row for good.
-    filterRowEl.querySelectorAll(".skeleton").forEach((el) => el.remove());
+    // The row is emptied, not appended to. It holds two things and nothing
+    // else: the shimmering placeholders the page seeded it with
+    // (js/pages/gis.js), which are stand-ins rather than content, and the
+    // controls built right here. Taking only the placeholders out left a
+    // second COPY of every control on the row whenever this ran twice for the
+    // same row — two Map Layers, two searches, two Report Incident buttons.
+    // Clearing first makes running twice harmless; the guard in initGisMap()
+    // is what stops it happening in the first place.
+    filterRowEl.innerHTML = "";
     filterRowEl.insertAdjacentHTML(
       "beforeend",
       layerToggleButtonsHtml + typeFilterHtml + sectorFilterMarkup + searchMarkup,
@@ -2538,6 +2587,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const popupEl = container.querySelector(".gis-popup");
   const formEl = container.querySelector(".gis-pin-form");
   const reportHintEl = container.querySelector(".gis-report-hint");
+  const locateBtn = container.querySelector("[data-gis-locate]");
+  if (locateBtn) locateBtn.addEventListener("click", locateAndPin);
   const drawHintEl = container.querySelector(".gis-draw-hint");
   const measureBtn = container.querySelector("[data-gis-measure]");
   const outsideBtn = container.querySelector("[data-gis-outside-toggle]");
@@ -4508,6 +4559,18 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // resident-facing embeds, measuring on staff ones — but if they did, the pin
   // drop would win: it is the one waiting on the user.
   function refreshMapHint() {
+    // A message from the locate button outranks the standing instruction: it
+    // answers something the user just pressed, and the instruction is still
+    // true underneath it.
+    if (locateMessage) {
+      reportHintEl.hidden = false;
+      reportHintEl.textContent = locateMessage.text;
+      reportHintEl.classList.toggle("gis-hint-error", locateMessage.bad);
+      reportHintEl.classList.remove("gis-map-hint-top");
+      if (locateBtn) locateBtn.hidden = !(state.reportMode || state.pickMode);
+      return;
+    }
+    reportHintEl.classList.remove("gis-hint-error");
     const text = state.reportMode
       ? MAP_HINTS.report
       : state.pickMode
@@ -4518,6 +4581,150 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     reportHintEl.hidden = !text;
     reportHintEl.textContent = text;
     reportHintEl.classList.toggle("gis-map-hint-top", text === MAP_HINTS.measure);
+    // The locate button only means anything while a pin is actually being
+    // placed. Outside those two modes there is nothing for a coordinate to do.
+    if (locateBtn) locateBtn.hidden = !(state.reportMode || state.pickMode);
+  }
+
+  // -- "Use my location" ---------------------------------------------------
+  // Finding your own roof on a map of three thousand roofs is the hardest part
+  // of filing a report, and the phone already knows where it is. This drops
+  // the pin there, after checking the one thing that matters: that "there" is
+  // inside the barangay. This map covers Conde Labak and nothing else, so a
+  // coordinate from the next town cannot be pinned on it at all, and saying so
+  // plainly is more use than a pin landing off the edge of the drawing.
+  let locateMessage = null;
+  let locateTimer = null;
+
+  function sayLocate(text, bad) {
+    locateMessage = text ? { text: text, bad: !!bad } : null;
+    window.clearTimeout(locateTimer);
+    refreshMapHint();
+    if (text)
+      locateTimer = window.setTimeout(
+        function () {
+          locateMessage = null;
+          refreshMapHint();
+        },
+        bad ? 9000 : 3000
+      );
+  }
+
+  // How far outside the barangay a point is, measured to the nearest CORNER of
+  // the boundary. An approximation -- the true nearest point is usually on an
+  // edge between two corners rather than on one -- and deliberately said as
+  // "about", because its only job is to tell "the GPS is drifting by a street"
+  // apart from "you are in another town".
+  function metersOutsideBarangay(point) {
+    let best = Infinity;
+    for (const corner of boundaryRing) {
+      const d = gisHaversineMeters(point, corner);
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  function browserLocation() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation)
+        return resolve({
+          ok: false,
+          message:
+            "This browser cannot share your location. Tap the spot on the map instead.",
+        });
+      // Browsers refuse location outright on a plain http:// address and
+      // report it as a denied permission, which sends people hunting through
+      // their browser settings for a switch that would not have helped. Say
+      // what is actually wrong.
+      if (window.isSecureContext === false)
+        return resolve({
+          ok: false,
+          message:
+            "Your browser only shares your location with pages opened over a secure (https) address. Tap the spot on the map instead.",
+        });
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          resolve({ ok: true, point: [pos.coords.longitude, pos.coords.latitude] });
+        },
+        function (err) {
+          // The failures a person can actually do something about, each said
+          // as the thing to do rather than as the name of the error.
+          const message =
+            err && err.code === 1
+              ? "This page is not allowed to see your location. Allow it in your browser, or tap the spot on the map instead."
+              : err && err.code === 3
+                ? "Finding your location took too long. Try again, or tap the spot on the map instead."
+                : "Your location could not be found. Check that location is turned on, or tap the spot on the map instead.";
+          resolve({ ok: false, message: message });
+        },
+        // maximumAge 0: always take a fresh reading. A cached fix can be
+        // minutes and streets old, and this pin is the answer to "where did
+        // it happen" — a position from where the phone was last time is
+        // worse than no position, because nothing about it looks wrong.
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
+  }
+
+  async function locateAndPin() {
+    if (!state.reportMode && !state.pickMode) return { ok: false };
+    if (locateBtn) {
+      locateBtn.disabled = true;
+      locateBtn.classList.add("is-busy");
+    }
+    sayLocate("Finding where you are...", false);
+    try {
+      const got = await browserLocation();
+      if (!got.ok) {
+        sayLocate(got.message, true);
+        return { ok: false, message: got.message };
+      }
+      if (!gisPointInRing(got.point, boundaryRing)) {
+        const away = metersOutsideBarangay(got.point);
+        const message =
+          "You are outside Barangay Conde Labak, about " +
+          gisFormatDistance(away) +
+          " from its edge. This map only covers the barangay, so the pin has to go inside it. If you are reporting something that happened here, tap that spot on the map instead.";
+        sayLocate(message, true);
+        return { ok: false, outside: true, message: message, meters: away };
+      }
+
+      // Inside: drop the pin exactly where a tap would have put it.
+      if (state.pickMode) {
+        state.pickPoint = got.point;
+        renderReports();
+        if (state.pickCallback) state.pickCallback(got.point);
+        sayLocate("Pinned where you are.", false);
+      } else {
+        sayLocate(null);
+      }
+      flyToPoint(got.point);
+      if (state.reportMode) {
+        // The form opens over the middle of the map, which is where the camera
+        // has just put the spot.
+        const rect = container.getBoundingClientRect();
+        showCommunityReportForm(got.point, rect.width / 2, rect.height / 2);
+      }
+      return { ok: true, point: got.point };
+    } finally {
+      if (locateBtn) {
+        locateBtn.disabled = false;
+        locateBtn.classList.remove("is-busy");
+      }
+    }
+  }
+
+  // Camera move only. flyToRecord() is the same arithmetic plus the hover card
+  // for a report that already exists, which is not what this is.
+  function flyToPoint(point) {
+    const lng = Number(point && point[0]);
+    const lat = Number(point && point[1]);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false;
+    const [localX, localY] = project(lng, lat);
+    const zoom = Math.min(Math.max(state.zoom, 10), maxZoom);
+    hidePopup();
+    animateView({ zoom, panX: 500 - zoom * localX, panY: 500 - zoom * localY }, 650);
+    return true;
   }
 
   function beginCommunityReport(reporter) {
@@ -6195,6 +6402,11 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     // Location picker for the "File an Incident" modal's embedded map.
     beginLocationPick,
     endLocationPick,
+    // "Use my location": the same pin drop a tap makes, from the browser's own
+    // position -- refused, with a reason, when that position is outside the
+    // barangay. Resolves { ok, point } or { ok:false, outside?, message }.
+    locateAndPin,
+    flyToPoint,
   };
 }
 

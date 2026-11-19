@@ -221,7 +221,10 @@
       "Search and view resident records and purok listings",
       "Hanapin at tingnan ang mga talaan ng residente at listahan ng purok",
     ],
-    svcCertificates: ["Certificate Issuance", "Paglabas ng Sertipiko"],
+    // "Issuance" is the word a resident meets first, on the card they press
+    // to ask for a certificate — and asking is what the card does. The
+    // Filipino moves with it: "Paglabas" is the releasing, not the asking.
+    svcCertificates: ["Request a Certificate", "Humiling ng Sertipiko"],
     svcCertificatesSub: [
       "Request clearances, indigency, residency & more",
       "Humiling ng clearance, indigency, residency at iba pa",

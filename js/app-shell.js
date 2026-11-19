@@ -105,12 +105,12 @@
     feedback: ["Feedback", "Resident ratings & concerns"],
     gis: ["GIS Mapping", "Interactive zone & hazard view"],
     accounts: ["Account Claiming", "Resident registration & verification"],
-    analytics: ["Analytics", "Predictive insights & trend charts"],
+    analytics: ["Analytics", "Counts & trends"],
     content: ["Site Content", "Announcements, history, officials & hotlines"],
     users: ["User Management", "Roles & access control"],
     audit: ["Audit Logs", "System activity & compliance"],
     sms: ["SMS Log", "Text messages sent by the system"],
-    archive: ["Archive", "Records retention & backup"],
+    archive: ["Archive", "Deleted records & restore"],
   };
 
   function esc(s) {

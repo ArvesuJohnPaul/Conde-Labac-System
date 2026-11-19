@@ -41,7 +41,7 @@
     addNumber: ["Add a mobile number", "Magdagdag ng mobile number"],
     updates: ["Certificate updates", "Mga update sa sertipiko"],
     updatesSub: [
-      "When your request is approved or turned down, and messages about it",
+      "When your request is approved or not approved, and messages about it",
       "Kapag naaprubahan o hindi ang inyong hiling, at mga mensahe tungkol dito",
     ],
     advisories: ["Barangay announcements", "Mga anunsyo ng barangay"],

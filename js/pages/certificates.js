@@ -130,7 +130,7 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertReject()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The applicant is told their request was turned down, and the reason below is sent with it in full so they know what to fix — a long one runs to a second text. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
+          <p class="modal-help-text">The applicant is told their request was not approved, and the reason below is sent with it in full so they know what to fix — a long reason costs two texts. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
           <div class="form-group">
             <label class="form-label">Reason for rejection</label>
             <textarea class="form-control" id="cert-reject-remarks" rows="4" placeholder="e.g. The barangay ID presented has expired — please bring a valid ID and re-file."></textarea>
@@ -152,7 +152,7 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertMessage()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The message lands in the requester's C.A.R.E.S. notifications. Tick the box below to send it to their phone as well — a requester with no online account is only ever reached that way.</p>
+          <p class="modal-help-text">The message goes to the requester's C.A.R.E.S. notifications. Check the box below to send it to their phone as well — a requester with no online account is only ever reached that way.</p>
           <div class="form-group">
             <label class="form-label">Message</label>
             <textarea class="form-control" id="cert-message-text" rows="4" placeholder="e.g. Please bring a valid ID when picking up your certificate." oninput="certMessageCount()"></textarea>

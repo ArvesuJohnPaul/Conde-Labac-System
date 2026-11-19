@@ -76,7 +76,7 @@ function renderPage() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title">SMS Log</h2>
-      <p class="page-desc">Every text message the system queued, sent, or held back — and why</p>
+      <p class="page-desc">Every text message the system sent, or did not send — and why</p>
     </div>
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Mode</div><div class="kpi-value" id="sms-kpi-mode">—</div><div class="kpi-trend" id="sms-kpi-mode-note">&nbsp;</div></div>
