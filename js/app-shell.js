@@ -312,6 +312,15 @@
       launcherMarkup(active) +
       '<span class="topbar-date" id="topbar-date"></span>' +
       '<button type="button" class="topbar-icon-btn" id="themeToggle" aria-label="Change appearance"></button>' +
+      // The sign-in briefing on demand. It opens by itself once per sign-in
+      // and then gets out of the way, so without this there is no way back to
+      // it until the next sign-in — and "what is still waiting?" is a
+      // question that gets asked more than once a day.
+      '<button type="button" class="topbar-icon-btn" id="briefing-trigger" ' +
+      'onclick="openStaffBriefing()" aria-label="What is waiting" ' +
+      'title="What came in while you were away, and what is still waiting">' +
+      ico("inbox") +
+      "</button>" +
       // Notifications. Wrapped in a positioned container (the same shape as
       // .nav-user-menu beside it) so the panel can hang off the bell rather
       // than off the topbar — the bell is not the last item in the bar, so a
@@ -330,12 +339,6 @@
       'onclick="markAllNotificationsRead()">Mark all read</button>' +
       "</div>" +
       '<div class="notif-panel-list" id="notif-panel-list"></div>' +
-      // The sign-in briefing shows once and then gets out of the way, so this
-      // is the way back to it: everything still open, in the same two lists.
-      '<div class="notif-panel-foot">' +
-      '<button type="button" class="notif-panel-foot-btn" ' +
-      'onclick="openStaffBriefing()">See everything still waiting</button>' +
-      "</div>" +
       "</div>" +
       "</div>" +
       '<div class="nav-user-menu is-hidden" id="nav-user-menu">' +

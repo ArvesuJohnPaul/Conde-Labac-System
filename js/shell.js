@@ -970,6 +970,8 @@ function aiAlertAge(days) {
   return fil ? `${m} buwan na` : `${m} months old`;
 }
 
+const AI_ALERTS_PER_PAGE = 5;
+
 function renderAiAlerts() {
   const wrap = document.getElementById("ai-alerts");
   const list = document.getElementById("ai-alerts-list");
@@ -984,10 +986,26 @@ function renderAiAlerts() {
   const fil = window.L && L.isFilipino;
   wrap.hidden = false;
 
+  // The count is the WHOLE board, not the page being looked at: it answers
+  // "how much is there?", and a paged number would answer nothing.
   const countEl = document.getElementById("ai-alerts-count");
   if (countEl) countEl.textContent = rows.length > 99 ? "99+" : String(rows.length);
 
-  list.innerHTML = rows
+  // Paged at five. The rows are deliberately thin, but a dozen of them still
+  // push the rest of the dashboard below the fold, and the board exists to be
+  // read beside the figures it explains rather than instead of them.
+  // paginate() clamps the page when the board shrinks under a refresh, so an
+  // alert resolved on page three does not strand anyone on an empty page.
+  const page = paginate("ai-alerts", rows, renderAiAlerts, AI_ALERTS_PER_PAGE);
+  const pager = document.getElementById("ai-alerts-pager");
+  if (pager) {
+    // One page needs no controls: the count beside the heading already says
+    // how many there are.
+    pager.innerHTML = page.pages > 1 ? page.html : "";
+    if (typeof hydrateIcons === "function") hydrateIcons(pager);
+  }
+
+  list.innerHTML = page.items
     .map((a) => {
       // The reason is the model's action line ("Certificate processing has been
       // delayed for 4 months"). The two endpoints that feed this renderer name

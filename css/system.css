@@ -778,32 +778,6 @@ body.drawer-open {
   }
 }
 
-/* The way back into the sign-in briefing after it has been dismissed. Sits
-   under the feed as a footer so it reads as an action on the panel, not as
-   another notification in it. */
-.notif-panel-foot {
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.notif-panel-foot-btn {
-  display: block;
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--text-brand);
-  text-align: center;
-  cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out);
-}
-.notif-panel-foot-btn:hover {
-  background: var(--surface-hover);
-}
-
 /* ── Sign-in briefing ─────────────────────────────────
    The window an officer meets when they sign in (js/staff-briefing.js): what
    arrived while they were away on top, what they left unfinished underneath.

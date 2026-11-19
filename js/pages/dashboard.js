@@ -175,6 +175,11 @@ function renderDashboard() {
           <span class="ai-alert-count" id="ai-alerts-count"></span>
         </div>
         <div id="ai-alerts-list"></div>
+        <!-- Paged: the board is a list of things to do, and a bad week can
+             raise a dozen. Twelve stacked rows push the rest of the dashboard
+             off the screen, which is the opposite of what a dashboard is for.
+             renderAiAlerts() in js/shell.js fills both. -->
+        <div id="ai-alerts-pager"></div>
       </div>
     </div>
 

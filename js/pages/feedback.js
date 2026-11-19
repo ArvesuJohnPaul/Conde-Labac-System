@@ -244,9 +244,35 @@ function renderRecurringConcerns() {
 // Each row carries the Resolve button, so the queue empties as it is worked
 // through instead of accumulating for ever. Resolving here and resolving on the
 // dashboard are the same action on the same row.
+// Five to a page. Each row carries the full comment and two buttons it is
+// worth reading before pressing, so a queue of fifteen is a page of scrolling
+// between the officer and the Recent Feedback list underneath.
+const FB_ATTENTION_PER_PAGE = 5;
+
 function renderNeedsAttention() {
   const ai = FEEDBACK_INSIGHTS;
   if (!ai || !ai.needs_attention || !ai.needs_attention.length) return "";
+  const queue = ai.needs_attention;
+
+  // Arriving from the dashboard's View button means one particular alert is
+  // being looked for, and it may well not be on the page the pager is
+  // currently showing. Move to the page that holds it BEFORE paginating —
+  // gotoPage() would repaint, and this runs inside the repaint.
+  if (FEEDBACK_HIGHLIGHT_ID != null && typeof pagerState !== "undefined") {
+    const i = queue.findIndex((f) => Number(f.id) === FEEDBACK_HIGHLIGHT_ID);
+    if (i >= 0) {
+      pagerState["fb-attention"] = pagerState["fb-attention"] || { page: 1 };
+      pagerState["fb-attention"].page = Math.floor(i / FB_ATTENTION_PER_PAGE) + 1;
+    }
+  }
+
+  const page = paginate(
+    "fb-attention",
+    queue,
+    renderFeedbackPage,
+    FB_ATTENTION_PER_PAGE
+  );
+
   return `
     <div class="card fb-attention-card">
       <div class="card-header">
@@ -257,7 +283,7 @@ function renderNeedsAttention() {
           and dismiss it if the AI has misjudged it
         </span>
       </div>
-      ${ai.needs_attention
+      ${page.items
         .map((f) => {
           const r = Math.max(0, Math.min(5, Number(f.rating) || 0));
           const safety = f.urgency === "high";
@@ -300,6 +326,7 @@ function renderNeedsAttention() {
         </div>`;
         })
         .join("")}
+      ${page.pages > 1 ? page.html : ""}
     </div>`;
 }
 
