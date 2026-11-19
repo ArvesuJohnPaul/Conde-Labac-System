@@ -229,18 +229,18 @@ function scrollToServices(e) {
 
 // ════════════════════ NAVIGATION (Admin/Officer) ════════════════════
 const moduleConfig = {
-  dashboard: { title: "Dashboard", sub: "Overview & KPIs" },
+  dashboard: { title: "Dashboard", sub: "Today at a glance" },
   residency: {
     title: "Barangay Residency",
     sub: "Resident records & search",
   },
   certificates: {
     title: "Certificate Processing",
-    sub: "Request management",
+    sub: "Requests from residents",
   },
   incidents: {
     title: "Blotter / Incidents",
-    sub: "Emergency logging & tracking",
+    sub: "Reports from residents",
   },
   feedback: { title: "Feedback", sub: "Resident ratings & concerns" },
   gis: { title: "GIS Mapping", sub: "Interactive zone & hazard view" },
@@ -256,8 +256,8 @@ const moduleConfig = {
     title: "Site Content",
     sub: "Announcements, history, officials & hotlines",
   },
-  users: { title: "User Management", sub: "Roles & access control" },
-  audit: { title: "Audit Logs", sub: "System activity & compliance" },
+  users: { title: "User Management", sub: "Who can use what" },
+  audit: { title: "Audit Logs", sub: "A record of who did what" },
   sms: { title: "SMS Log", sub: "Text messages sent by the system" },
   archive: { title: "Archive", sub: "Deleted records & restore" },
 };
@@ -1311,7 +1311,7 @@ function renderResidentPortal() {
           <div class="service-card sc-gold" onclick="openServicePopup('certificates')">
             <div class="service-icon-wrap"><i data-icon=file-text></i></div>
             <div>
-              <div class="service-title">Certificate Issuance</div>
+              <div class="service-title">Request a Certificate</div>
               <div class="service-desc">Request Barangay Clearances, Certificates of Indigency, Residency, Good Moral, Business Clearance, and more.</div>
             </div>
             <div class="service-arrow">Request certificate <i data-icon=arrow-right></i></div>
@@ -1320,7 +1320,7 @@ function renderResidentPortal() {
           <div class="service-card sc-red" onclick="openServicePopup('incidents')">
             <div class="service-icon-wrap"><i data-icon=siren></i></div>
             <div>
-              <div class="service-title">Blotter Reporting</div>
+              <div class="service-title">Report an Incident</div>
               <div class="service-desc">File an incident report for complaints, disputes, altercations, vandalism, or other concerns happening in the barangay.</div>
             </div>
             <div class="service-arrow">File a report <i data-icon=arrow-right></i></div>

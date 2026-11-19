@@ -98,17 +98,17 @@
   // Duplicated deliberately: rendering the right title during parse avoids a
   // one-frame flash of the wrong page name on every navigation.
   var TITLES = {
-    dashboard: ["Dashboard", "Overview & KPIs"],
+    dashboard: ["Dashboard", "Today at a glance"],
     residency: ["Barangay Residency", "Resident records & search"],
-    certificates: ["Certificate Processing", "Request management"],
-    incidents: ["Blotter / Incidents", "Emergency logging & tracking"],
+    certificates: ["Certificate Processing", "Requests from residents"],
+    incidents: ["Blotter / Incidents", "Reports from residents"],
     feedback: ["Feedback", "Resident ratings & concerns"],
     gis: ["GIS Mapping", "Interactive zone & hazard view"],
     accounts: ["Account Claiming", "Resident registration & verification"],
     analytics: ["Analytics", "Counts & trends"],
     content: ["Site Content", "Announcements, history, officials & hotlines"],
-    users: ["User Management", "Roles & access control"],
-    audit: ["Audit Logs", "System activity & compliance"],
+    users: ["User Management", "Who can use what"],
+    audit: ["Audit Logs", "A record of who did what"],
     sms: ["SMS Log", "Text messages sent by the system"],
     archive: ["Archive", "Deleted records & restore"],
   };

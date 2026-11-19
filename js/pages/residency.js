@@ -84,7 +84,7 @@ function renderResidencyPage() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title">Barangay Residency</h2>
-      <p class="page-desc">Full resident database — search, view, and manage resident profiles</p>
+      <p class="page-desc">Every resident on record — search, view and edit</p>
     </div>
     <!-- Two sub-pages. The tab bar (.tab-bar / .tab / .tab-content in
          css/system.css) switches between them client-side; both are rendered

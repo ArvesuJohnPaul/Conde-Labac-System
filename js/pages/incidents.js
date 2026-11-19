@@ -328,7 +328,7 @@ function renderIncidentsPage() {
   setContent(`
     <div class="page-header">
       <h2 class="page-title">Blotter / Incident Reports</h2>
-      <p class="page-desc">Incidents and community concerns filed by residents — logged, tracked, and resolved</p>
+      <p class="page-desc">Reports from residents — logged, followed up and closed</p>
     </div>
     <div class="kpi-grid">
       <div class="kpi-card danger"><div class="kpi-label">Active</div><div class="kpi-value">${active}</div></div>

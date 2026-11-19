@@ -229,7 +229,7 @@
       "Request clearances, indigency, residency & more",
       "Humiling ng clearance, indigency, residency at iba pa",
     ],
-    svcIncidents: ["Blotter Reporting", "Pag-uulat ng Blotter"],
+    svcIncidents: ["Report an Incident", "Mag-ulat ng Insidente"],
     svcIncidentsSub: [
       "File an incident report for complaints or concerns",
       "Mag-file ng incident report para sa reklamo o alalahanin",
