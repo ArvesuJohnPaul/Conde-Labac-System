@@ -270,7 +270,13 @@ function renderCertRows(list) {
     if (pager) pager.innerHTML = "";
     return;
   }
-  const page = paginate("certificates", list, filterCertRequests);
+  const page = paginate(
+    "certificates",
+    list,
+    filterCertRequests,
+    null,
+    "#cert-tbody"
+  );
   if (pager) {
     pager.innerHTML = page.html;
     if (typeof hydrateIcons === "function") hydrateIcons(pager);

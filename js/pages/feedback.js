@@ -270,7 +270,8 @@ function renderNeedsAttention() {
     "fb-attention",
     queue,
     renderFeedbackPage,
-    FB_ATTENTION_PER_PAGE
+    FB_ATTENTION_PER_PAGE,
+    ".fb-attention-list"
   );
 
   return `
@@ -283,6 +284,11 @@ function renderNeedsAttention() {
           and dismiss it if the AI has misjudged it
         </span>
       </div>
+      <!-- The rows in a wrapper of their own: it is what the page-turn
+           animation moves (paginate's last argument), and it also puts the
+           card header and the pager outside the ":last-child has no rule"
+           rule, which the pager was breaking. -->
+      <div class="fb-attention-list">
       ${page.items
         .map((f) => {
           const r = Math.max(0, Math.min(5, Number(f.rating) || 0));
@@ -326,6 +332,7 @@ function renderNeedsAttention() {
         </div>`;
         })
         .join("")}
+      </div>
       ${page.pages > 1 ? page.html : ""}
     </div>`;
 }
@@ -390,7 +397,13 @@ function renderRecentFeedback() {
     return;
   }
 
-  const page = paginate("feedback", all, renderRecentFeedback);
+  const page = paginate(
+    "feedback",
+    all,
+    renderRecentFeedback,
+    null,
+    "#recent-feedback-wrap"
+  );
   // Kept so the Delete buttons can name their entry by position rather than
   // by an id the seed baseline does not have.
   FEEDBACK_ON_PAGE = page.items;

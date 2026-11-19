@@ -495,7 +495,13 @@ function renderResidentRows(list) {
     if (pager) pager.innerHTML = "";
     return;
   }
-  const page = paginate("residency", list, filterResidentsPage);
+  const page = paginate(
+    "residency",
+    list,
+    filterResidentsPage,
+    null,
+    "#resident-tbody"
+  );
   if (pager) {
     pager.innerHTML = page.html;
     if (typeof hydrateIcons === "function") hydrateIcons(pager);
@@ -1176,7 +1182,13 @@ function renderEditRequests(list) {
     return;
   }
 
-  const page = paginate("edit-requests", list, filterEditRequests);
+  const page = paginate(
+    "edit-requests",
+    list,
+    filterEditRequests,
+    null,
+    "#er-list"
+  );
   wrap.innerHTML = page.items.map(editRequestCardHtml).join("");
   if (pager) pager.innerHTML = page.html;
   if (typeof hydrateIcons === "function") {

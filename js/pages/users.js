@@ -760,7 +760,13 @@ function renderAccountRows(list) {
     if (pager) pager.innerHTML = "";
     return;
   }
-  const page = paginate("users", list, filterAccounts);
+  const page = paginate(
+    "users",
+    list,
+    filterAccounts,
+    null,
+    "#account-tbody"
+  );
   if (pager) {
     pager.innerHTML = page.html;
     if (typeof hydrateIcons === "function") hydrateIcons(pager);

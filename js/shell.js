@@ -996,7 +996,13 @@ function renderAiAlerts() {
   // read beside the figures it explains rather than instead of them.
   // paginate() clamps the page when the board shrinks under a refresh, so an
   // alert resolved on page three does not strand anyone on an empty page.
-  const page = paginate("ai-alerts", rows, renderAiAlerts, AI_ALERTS_PER_PAGE);
+  const page = paginate(
+    "ai-alerts",
+    rows,
+    renderAiAlerts,
+    AI_ALERTS_PER_PAGE,
+    "#ai-alerts-list"
+  );
   const pager = document.getElementById("ai-alerts-pager");
   if (pager) {
     // One page needs no controls: the count beside the heading already says
@@ -1543,12 +1549,19 @@ const PAGE_SIZE = 15;
 // key → { page, render }
 const pagerState = {};
 
-function paginate(key, list, render, perPage) {
+// `rows` names the element the page's rows are painted into — the tbody, the
+// list wrapper, whatever this pager actually refills. It is optional and only
+// feeds the page-turn animation (Motion.pageTurn), so a pager that does not
+// pass one still works, just without the slide. A SELECTOR rather than an
+// element, because a page that repaints through setContent() has replaced the
+// element by the time the animation runs.
+function paginate(key, list, render, perPage, rows) {
   const size = perPage || PAGE_SIZE;
   const total = list.length;
   const pages = Math.max(1, Math.ceil(total / size));
   const st = (pagerState[key] = pagerState[key] || { page: 1 });
   if (typeof render === "function") st.render = render;
+  if (rows) st.rows = rows;
   st.page = Math.min(Math.max(1, st.page), pages);
   const start = (st.page - 1) * size;
   const items = list.slice(start, start + size);
@@ -1607,8 +1620,16 @@ function pagerHtml(key, page, pages, total, start, count) {
 function gotoPage(key, p) {
   const st = pagerState[key];
   if (!st) return;
+  // Which way we are going, worked out BEFORE the page moves — it is what
+  // decides which side the new rows come in from.
+  const back = Math.max(1, p) < st.page;
   st.page = Math.max(1, p);
-  if (typeof st.render === "function") st.render();
+  if (typeof st.render !== "function") return;
+  st.render();
+  // After the repaint: the rows being animated are the ones that just
+  // arrived, and on a page that re-renders wholesale the container itself is
+  // new. Motion.pageTurn resolves the selector for that reason.
+  if (st.rows && window.Motion && Motion.pageTurn) Motion.pageTurn(st.rows, back);
 }
 
 // Back to page 1 — call this from every filter/search handler.

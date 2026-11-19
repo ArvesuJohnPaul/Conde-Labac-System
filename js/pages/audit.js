@@ -331,7 +331,13 @@ function renderAuditTable() {
         : "No activity recorded yet. Actions like map edits, certificate requests, resident concerns, feedback, logins, and archive operations will appear here."
     }</div>`;
   }
-  const page = paginate("audit", filtered, repaintAuditTable);
+  const page = paginate(
+    "audit",
+    filtered,
+    repaintAuditTable,
+    null,
+    "#audit-table-wrap .data-table tbody"
+  );
   // The one case where the page holds less than the trail does. It is a very
   // large number of entries away, but a compliance record that quietly stops
   // short is worse than one that says where it stopped.

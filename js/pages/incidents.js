@@ -396,7 +396,13 @@ async function paintReportRecipients() {
 function renderIncidentsList() {
   const reports = incidentSortedReports();
   if (!reports.length) return `<div class="table-wrap">${renderIncidentsEmpty()}</div>`;
-  const page = paginate("incidents", reports, repaintIncidentsList);
+  const page = paginate(
+    "incidents",
+    reports,
+    repaintIncidentsList,
+    null,
+    "#incident-list-wrap .data-table tbody"
+  );
   return `<div class="table-wrap">${renderIncidentsTable(page.items)}</div>${page.html}`;
 }
 

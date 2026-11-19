@@ -148,7 +148,13 @@ function renderAccountClaimsList() {
     return `<div class="resident-summary">${
       APP_TAB === "pending" ? "No applications are waiting for review." : "No decided applications yet."
     }</div>`;
-  const page = paginate("accounts", APPS, repaintAccountClaimsList);
+  const page = paginate(
+    "accounts",
+    APPS,
+    repaintAccountClaimsList,
+    null,
+    "#claims-list-wrap .data-table tbody"
+  );
   const rows = page.items
     .map((a) => {
       const badge =

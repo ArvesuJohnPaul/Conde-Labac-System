@@ -715,6 +715,87 @@ select.gis-pin-form-input option {
   animation-delay: calc(var(--m-i, 0) * 55ms);
 }
 
+/* ── Page turn ────────────────────────────────────
+   Switching pages swaps every row at once. Without
+   this the only evidence that anything happened is the
+   page number, which is the smallest thing on the card
+   — and on a list whose rows are of similar length, a
+   page turn can look like nothing at all.
+
+   The new rows arrive from the side you came from:
+   forward from the right, Previous (.m-page-back) from
+   the left. Motion.pageTurn() sets --m-i for the step,
+   and suppresses the ordinary stagger so the two do not
+   both claim the same rows.
+
+   The pager itself is excluded: it is the control that
+   was just pressed, and a button that slides out from
+   under the pointer reads as a misfire. */
+.m-page-in > *:not(.feedback-pagination) {
+  animation: m-page-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 20ms);
+}
+
+.m-page-in.m-page-back > *:not(.feedback-pagination) {
+  animation-name: m-page-in-back;
+}
+
+/* Table rows shift by a hair rather than a whole step, for the same reason
+   the stagger does: a transform on a <tr> can disturb column widths on some
+   engines, and the smaller the move the less there is to disturb. */
+.data-table tbody.m-page-in > tr {
+  animation: m-page-row-in var(--duration-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--m-i, 0) * 20ms);
+}
+
+.data-table tbody.m-page-in.m-page-back > tr {
+  animation-name: m-page-row-in-back;
+}
+
+@keyframes m-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-page-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-page-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-page-row-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── Skeleton → content ────────────────────────────────
    The shimmer stops and the real content rises into the
    space it was holding. */
@@ -1099,6 +1180,8 @@ body,
   .empty-state-icon,
   .m-stagger > *,
   .data-table tbody.m-stagger > tr,
+  .m-page-in > *,
+  .data-table tbody.m-page-in > tr,
   .kpi-grid.m-stagger > .kpi-card,
   .timeline.m-stagger > .timeline-item,
   .notif-panel.open .notif-item,

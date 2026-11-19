@@ -661,6 +661,60 @@
   };
 
   // ═════════════════════════════════════════════════════════════════════════
+  // 4c · PAGE TURN
+  //
+  // A pager replaces the rows between one frame and the next. Fifteen names
+  // become fifteen different names in the same boxes, and nothing on screen
+  // says which way you went — or, on a page whose rows happen to be of
+  // similar length, that anything moved at all. The page number changing is
+  // the only evidence, and it is the smallest thing on the card.
+  //
+  // So the new rows come in from the side the page came from: forward means
+  // in from the right, Previous means in from the left. The direction is the
+  // point. A plain fade would say "this changed" where the question raised by
+  // pressing a page button is "which way did I just go".
+  //
+  // The rows that LEFT are not animated. Playing them out means holding the
+  // repaint until the exit finishes, which all thirteen lists using this
+  // would have to be rewritten to allow — for an animation nobody waits
+  // around to watch. The entrance alone carries the direction.
+  // ═════════════════════════════════════════════════════════════════════════
+
+  // A shorter step and a shorter cascade than the stagger: this fires under a
+  // pointer that is still on the button, and may fire again straight away
+  // when somebody presses Next twice.
+  var PAGE_STEP = 20;
+  var PAGE_CAP = 10;
+
+  /**
+   * @param {Element|string} container  the element holding the rows (not the
+   *                                    pager) — resolved HERE rather than by
+   *                                    the caller, because a page that
+   *                                    repaints through setContent() has
+   *                                    replaced it by the time this runs.
+   * @param {boolean}        back       true when moving to a LOWER page.
+   */
+  M.pageTurn = function (container, back) {
+    var el =
+      typeof container === "string" ? document.querySelector(container) : container;
+    if (!isEl(el) || reduced()) return;
+
+    // The repaint that just happened also trips the auto-stagger observer
+    // below, which would put a second animation on these same rows in the
+    // same frame. Its rAF has not run yet, so this flag reaches it in time.
+    el._mNoStagger = true;
+
+    M.index(el, PAGE_CAP);
+    el.classList.toggle("m-page-back", !!back);
+    var ms = DUR.base + PAGE_CAP * PAGE_STEP + 200;
+    replay(el, "m-page-in", ms);
+    window.setTimeout(function () {
+      el._mNoStagger = false;
+      el.classList.remove("m-page-back");
+    }, ms + 40);
+  };
+
+  // ═════════════════════════════════════════════════════════════════════════
   // 4b · REORDERING  (FLIP)
   //
   // Moving an official up or down changed the array and repainted the list, so

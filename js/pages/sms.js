@@ -202,7 +202,13 @@ function renderSmsLog() {
   if (!SMS_ROWS.length) return `<div class="resident-summary">No text messages match.</div>`;
   const session = typeof getSession === "function" ? getSession() : null;
   const isAdmin = session && session.role === "Admin";
-  const page = paginate("sms", SMS_ROWS, repaintSmsLog);
+  const page = paginate(
+    "sms",
+    SMS_ROWS,
+    repaintSmsLog,
+    null,
+    "#sms-log-wrap .data-table tbody"
+  );
   const rows = page.items
     .map((m) => {
       // An announcement arrives here as one line standing for every copy of

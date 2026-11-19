@@ -77,7 +77,13 @@ function renderDeletedRecords() {
     list.innerHTML = `<div class="resident-empty">Nothing in the recycle bin. Deleted records across the system appear here and can be restored.</div>`;
     return;
   }
-  const page = paginate("archive-records", deletedRecords, renderDeletedRecords);
+  const page = paginate(
+    "archive-records",
+    deletedRecords,
+    renderDeletedRecords,
+    null,
+    "#deleted-records-list"
+  );
   list.innerHTML = page.items
     .map((r) => {
       const meta = ARCHIVE_MODULE_META[r.module] || {
@@ -311,7 +317,9 @@ function renderArchivedBuildingsList() {
   const page = paginate(
     "archive-buildings",
     archived.slice().reverse(),
-    repaintArchivedBuildingsList
+    repaintArchivedBuildingsList,
+    null,
+    "#archived-buildings-list"
   );
   return page.items
     .map((entry) => {
