@@ -4610,20 +4610,6 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       );
   }
 
-  // How far outside the barangay a point is, measured to the nearest CORNER of
-  // the boundary. An approximation -- the true nearest point is usually on an
-  // edge between two corners rather than on one -- and deliberately said as
-  // "about", because its only job is to tell "the GPS is drifting by a street"
-  // apart from "you are in another town".
-  function metersOutsideBarangay(point) {
-    let best = Infinity;
-    for (const corner of boundaryRing) {
-      const d = gisHaversineMeters(point, corner);
-      if (d < best) best = d;
-    }
-    return best;
-  }
-
   function browserLocation() {
     return new Promise(function (resolve) {
       if (!navigator.geolocation)
@@ -4680,13 +4666,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         return { ok: false, message: got.message };
       }
       if (!gisPointInRing(got.point, boundaryRing)) {
-        const away = metersOutsideBarangay(got.point);
         const message =
-          "You are outside Barangay Conde Labak, about " +
-          gisFormatDistance(away) +
-          " from its edge. This map only covers the barangay, so the pin has to go inside it. If you are reporting something that happened here, tap that spot on the map instead.";
+          "Your location is not inside Barangay Conde Labak. This map only covers the barangay, so the pin has to go inside it. If you are reporting something that happened here, tap that spot on the map instead.";
         sayLocate(message, true);
-        return { ok: false, outside: true, message: message, meters: away };
+        return { ok: false, outside: true, message: message };
       }
 
       // Inside: drop the pin exactly where a tap would have put it.
