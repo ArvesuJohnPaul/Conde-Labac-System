@@ -511,12 +511,12 @@
     note.innerHTML =
       '<span class="alert-icon"><i data-icon=triangle-alert></i></span>' +
       "<div><strong>You can't apply for a Certificate of Barangay Residency yet.</strong> " +
-      "It can only be requested by residents who have lived in Barangay Conde Labak for at least " +
-      "6 months. Your residency on record started on <strong>" +
+      "You need to have lived in Barangay Conde Labak for at least 6 months. " +
+      "Our records say you moved in on <strong>" +
       esc(longDate(block.since)) +
-      "</strong>, so you can apply from <strong>" +
+      "</strong>. You can apply from <strong>" +
       esc(longDate(block.from)) +
-      "</strong>. If that start date is wrong, please visit the barangay hall to have it corrected.</div>";
+      "</strong>. If that date is wrong, please visit the barangay hall to have it corrected.</div>";
     hydrate(note);
   }
 

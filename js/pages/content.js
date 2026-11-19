@@ -1062,15 +1062,15 @@ window.CURRENT_PAGE = "content";
                       esc(costLine(p)) +
                       (p.over_cap
                         ? " — over today's cap of " + p.daily_cap +
-                          " credits; the rest goes out tomorrow"
+                          " credits. The rest goes out tomorrow."
                         : "") +
                       // Over the cap and going anyway, because it is an
                       // Emergency. Said out loud: the figure looks like the
                       // one that gets held, and nobody should have to know
                       // that Emergency is the exception.
                       (p.over_cap_ignored
-                        ? " — over today's usual cap of " + p.daily_cap +
-                          " credits, but an Emergency send is never held back by it"
+                        ? " — over today's cap of " + p.daily_cap +
+                          " credits. Emergency announcements go out anyway."
                         : "") +
                     "</div>" +
                   "</div>"

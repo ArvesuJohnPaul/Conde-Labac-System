@@ -217,7 +217,8 @@ function renderArchive() {
         <div class="card-title">Deleted Records <span id="deleted-records-count" class="badge badge-gray"></span></div>
         <button class="btn btn-sm btn-outline" onclick="loadDeletedRecords()"><i data-icon=refresh></i> Refresh</button>
       </div>
-      <p class="modal-help-text">Deleted records from across the system. Restoring puts one back exactly where it was; every delete, restore and permanent-delete is logged. Items are kept <strong>30 days</strong>, then deleted automatically. Cleared audit entries are kept <strong>90 days</strong>. Those cannot be deleted by hand — only the 90 days removes them.</p>
+      <p class="modal-help-text">Deleted records from across the system. Restoring puts one back exactly where it was. Every delete, restore and permanent delete is written to the Audit Log.</p>
+      <p class="modal-help-text">Items are kept <strong>30 days</strong>, then deleted automatically. Cleared audit entries are kept <strong>90 days</strong>, and cannot be deleted by hand — only the 90 days removes them.</p>
       <div id="deleted-records-list">${skeletonRows(4)}</div>
     </div>
 

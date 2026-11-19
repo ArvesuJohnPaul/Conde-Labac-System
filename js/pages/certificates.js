@@ -130,7 +130,7 @@ function renderCertificatesPage() {
           <button class="modal-close" onclick="closeCertReject()"><i data-icon=x></i></button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text">The applicant is told their request was not approved, and the reason below is sent with it in full so they know what to fix — a long reason costs two texts. This is recorded in the Audit Log under your name and can be undone from the same row.</p>
+          <p class="modal-help-text">The applicant is told their request was not approved. The reason you write below is sent to them in full, so they know what to fix. A long reason costs two texts. This is recorded in the Audit Log under your name, and you can undo it from the same row.</p>
           <div class="form-group">
             <label class="form-label">Reason for rejection</label>
             <textarea class="form-control" id="cert-reject-remarks" rows="4" placeholder="e.g. The barangay ID presented has expired — please bring a valid ID and re-file."></textarea>

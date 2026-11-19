@@ -189,7 +189,7 @@ function renderIncidentFields(reporter) {
     <div class="form-group">
       <label class="form-label">Detailed Narration of Incident</label>
       <textarea class="form-control textarea-tall" id="inc-narration" maxlength="4000"
-        placeholder="Describe what happened — sequence of events, persons involved, and any details..."></textarea>
+        placeholder="What happened? Who was there? Anything else that helps."></textarea>
     </div>
     <div class="form-group inc-interpersonal" id="inc-witness-group" hidden>
       <label class="form-label">Witness Names (optional)</label>

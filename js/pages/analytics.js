@@ -96,7 +96,7 @@ function renderAnalytics() {
         <div class="card-title">Incident Hotspots</div>
         <button class="btn btn-sm btn-outline" onclick="nav(null, 'gis')"><i data-icon=map></i> Open Full Map</button>
       </div>
-      <p class="modal-help-text">Where reports cluster. Counts every report on record — <strong>open, under review and resolved alike</strong> — because a spot that produced ten incidents is a hotspot whether or not the paperwork was closed.</p>
+      <p class="modal-help-text">Where reports cluster. Counts every report on record: <strong>open, under review and resolved alike</strong>.</p>
       <div class="gis-heat-controls">
         <select class="gis-filter-select" id="heat-type" onchange="setHeatmapType(this.value)">
           <option value="all">All incident types</option>

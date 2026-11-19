@@ -304,9 +304,10 @@ function renderReview() {
            creating a second record for somebody who already has one. -->
       <div class="card-title" style="margin:18px 0 8px">Search for the record yourself</div>
       <p class="modal-help-text" style="margin-top:0">
-        Use this when the list above is empty or wrong — a name spelled differently
-        ("Dela Cruz" against "Delacruz"), a married name against a maiden name, or a
-        birthdate entered wrong. Searches every active resident by name or mobile number.
+        Use this when the list above is empty or wrong. A name may be spelled two ways
+        ("Dela Cruz" against "Delacruz"), a married name may be on one side and a maiden
+        name on the other, or a birthdate may have been typed wrong. This searches every
+        active resident by name or mobile number.
       </p>
       <div class="gis-filter-row" style="margin-bottom:10px">
         <div class="gis-search-wrap" style="flex:1">
