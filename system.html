@@ -153,6 +153,12 @@
           // What the server actually believes — sent on every request by
           // js/api.js. The fields above only decide what the screen offers.
           token: acct.token,
+          // Staff are owed a "what came in while you were away" window on the
+          // first MIS page they land on (js/staff-briefing.js). Set here
+          // rather than there so it fires once per SIGN-IN, not once per page
+          // load — the first page to see it spends it and clears it.
+          // Residents have no queues to be briefed on.
+          briefing_pending: acct.role !== "Resident",
         });
 
         if (typeof logAudit === "function")

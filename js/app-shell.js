@@ -330,6 +330,12 @@
       'onclick="markAllNotificationsRead()">Mark all read</button>' +
       "</div>" +
       '<div class="notif-panel-list" id="notif-panel-list"></div>' +
+      // The sign-in briefing shows once and then gets out of the way, so this
+      // is the way back to it: everything still open, in the same two lists.
+      '<div class="notif-panel-foot">' +
+      '<button type="button" class="notif-panel-foot-btn" ' +
+      'onclick="openStaffBriefing()">See everything still waiting</button>' +
+      "</div>" +
       "</div>" +
       "</div>" +
       '<div class="nav-user-menu is-hidden" id="nav-user-menu">' +

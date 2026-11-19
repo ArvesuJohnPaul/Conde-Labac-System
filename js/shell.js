@@ -1841,6 +1841,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // there, not wait until they next open the dashboard.
     loadNotifications();
     setInterval(loadNotifications, 60000);
+    // "What came in while you were away" — once per sign-in, on whichever
+    // MIS page this account lands on first (js/staff-briefing.js). It spends a
+    // mark system.html put on the session, so moving between pages afterwards
+    // does not re-open it, and a resident never sees it at all.
+    if (typeof maybeOpenStaffBriefing === "function") maybeOpenStaffBriefing();
     if (typeof renderPage === "function") {
       renderPage();
     }
