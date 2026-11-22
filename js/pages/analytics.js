@@ -28,6 +28,9 @@ const CHART_PALETTE = [
 function renderPage() {
   renderAnalytics();
   loadAnalytics();
+  // Its own request: this one asks the server to infer something, and a
+  // failure there must not take the four plain charts down with it.
+  loadPurokIncidents();
 }
 
 function renderAnalytics() {
@@ -114,6 +117,31 @@ function renderAnalytics() {
         <span class="gis-heat-legend-cap" id="heat-peak"></span>
       </div>
     </div>
+    </div>
+
+    <!-- Which purok, not just which corner of the map. Unlike every other
+         figure on this page, a report's purok is not stored anywhere — it is
+         worked out per report by the server (GET /api/stats/purok-incidents),
+         so both cards carry the coverage line that says how much of the data
+         it could actually place. -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Incident Rate by Purok</div>
+        </div>
+        <p class="modal-help-text">Reports per <strong>100 residents</strong>, not raw counts. A raw count mostly repeats the population: the biggest purok reports the most incidents. Dividing through shows which purok reports more <em>than its size explains</em>.</p>
+        <div class="gis-heat-summary" id="purok-coverage">Working out which purok each report belongs to…</div>
+        <div class="chart-box chart-box-lg"><canvas id="purokRateChart"></canvas></div>
+        <p class="modal-help-text" id="purok-note"></p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">What Each Purok Reports</div>
+        </div>
+        <p class="modal-help-text">The same reports, split by type. One purok's flooding is a drainage problem; another's theft is a patrol route — a single bar per purok cannot tell you which you have.</p>
+        <div class="chart-box chart-box-lg"><canvas id="purokMixChart"></canvas></div>
+      </div>
     </div>
   `);
   initHeatmap();
@@ -481,5 +509,183 @@ function buildAnalyticsCharts(d) {
         datasets: [{ label: "Responses", data: sat.map((r) => r.n), backgroundColor: sat.map((r) => ratingColors[r.rating - 1] || "#64748b") }],
       },
       options: { ...gridOpts, plugins: { legend: { display: false } } },
+    });
+}
+
+
+// ── Incidents per purok ────────────────────────────────────────────────────
+// The server derives each report's purok two ways (the reporter's own record
+// first, then the puroks of the nearest tagged households) and tells us which
+// one answered. Everything below reports that honestly: the coverage line
+// states the split, and a purok with nobody on record in it gets no rate
+// rather than a zero.
+
+async function loadPurokIncidents() {
+  const cov = document.getElementById("purok-coverage");
+  let d;
+  try {
+    d = await apiGet("/api/stats/purok-incidents");
+  } catch (e) {
+    if (cov) cov.textContent = "Could not work out the purok breakdown: " + e.message;
+    return;
+  }
+  renderPurokCoverage(d);
+  buildPurokCharts(d);
+}
+
+// How much of the data the two charts are actually speaking for, and on what
+// basis. Without this the charts read as fact, and they are not: half of these
+// reports are placed by where the reporter lives rather than where the pin is.
+function renderPurokCoverage(d) {
+  const cov = document.getElementById("purok-coverage");
+  if (!cov) return;
+  const c = d.coverage || {};
+  const total = c.total || 0;
+  const placed = (c.from_reporter || 0) + (c.from_nearest || 0);
+  if (!total) {
+    cov.textContent = "No incidents have been filed yet.";
+    return;
+  }
+  const pct = Math.round((100 * placed) / total);
+  cov.innerHTML =
+    `Purok worked out for <strong>${placed}</strong> of <strong>${total}</strong> ` +
+    `report${total === 1 ? "" : "s"} (${pct}%) — ` +
+    `<strong>${c.from_reporter || 0}</strong> from the reporter's own record, ` +
+    `<strong>${c.from_nearest || 0}</strong> from the nearest tagged household within ${d.radius_m}m. ` +
+    (c.unassigned
+      ? `<strong>${c.unassigned}</strong> could not be placed and ` +
+        `${c.unassigned === 1 ? "is" : "are"} left out of both charts.`
+      : `Every report was placed.`);
+}
+
+// The caveats that belong under the rate chart rather than in a tooltip:
+// which puroks have no rate at all, and how thin the location-based half of
+// the assignment currently is.
+function purokNote(d) {
+  const notes = [];
+  const noPeople = (d.puroks || []).filter((p) => p.per_100 == null);
+  if (noPeople.length)
+    notes.push(
+      `${noPeople.map((p) => p.name).join(" and ")} ` +
+        `${noPeople.length === 1 ? "has" : "have"} no residents on record, so no rate can be worked out ` +
+        `${noPeople.length === 1 ? "for it" : "for them"}.`
+    );
+  // The nearest-household method is only as good as the number of tagged
+  // households, and right now that number is small. Say so on the page
+  // rather than letting the chart imply a precision it does not have.
+  if (!d.anchors)
+    notes.push(
+      "No household on the map carries a purok yet, so a report can only be placed by its reporter's record. " +
+        "Tagging households on the GIS map is what lets the pin itself be used."
+    );
+  else if (d.anchor_puroks < 2)
+    notes.push(
+      `Only ${d.anchors} tagged household${d.anchors === 1 ? "" : "s"} on the map ` +
+        `carr${d.anchors === 1 ? "ies" : "y"} a purok, all in one purok, so placing a report by its ` +
+        "location cannot yet tell the puroks apart. Tag households in the others to fix that."
+    );
+  return notes.join(" ");
+}
+
+function buildPurokCharts(d) {
+  if (typeof Chart === "undefined") return;
+  ["p1", "p2"].forEach((k) => {
+    if (charts[k]) {
+      charts[k].destroy();
+      delete charts[k];
+    }
+  });
+
+  const noteEl = document.getElementById("purok-note");
+  if (noteEl) noteEl.textContent = purokNote(d);
+
+  // ── Rate per 100 residents, worst first ────────────────────────────────
+  // Puroks with nobody on record are left out rather than drawn at zero: the
+  // rate there is undefined, and a zero bar would read as "no problem here".
+  const rated = (d.puroks || [])
+    .filter((p) => p.per_100 != null)
+    .sort((a, b) => b.per_100 - a.per_100);
+  const c1 = document.getElementById("purokRateChart");
+  if (c1)
+    charts.p1 = new Chart(c1, {
+      type: "bar",
+      data: {
+        labels: rated.map((p) => p.name),
+        datasets: [
+          {
+            label: "Reports per 100 residents",
+            data: rated.map((p) => p.per_100),
+            // One colour, not one per purok. The bar's POSITION already says
+            // which purok it is; colouring them differently would spend the
+            // page's only colour code on nothing — and the card beside this
+            // one uses that same palette to mean incident type, so a blue bar
+            // here and a blue bar there would mean two different things.
+            // This is the red the Monthly Service Requests chart already uses
+            // for incidents.
+            backgroundColor: "rgba(239,68,68,0.75)",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // The rate on its own hides how few reports it can rest on.
+              // 1 report among 3 residents is 33 per 100 and means nothing.
+              label: (ctx) => {
+                const p = rated[ctx.dataIndex] || {};
+                return [
+                  `${p.per_100} per 100 residents`,
+                  `${p.incidents} report${p.incidents === 1 ? "" : "s"}, ${p.residents} resident${p.residents === 1 ? "" : "s"}`,
+                ];
+              },
+            },
+          },
+        },
+        scales: { x: { beginAtZero: true }, y: { grid: { display: false } } },
+      },
+    });
+
+  // ── Purok x incident type ──────────────────────────────────────────────
+  // A stacked bar rather than a colour grid: it shows the mix AND the volume,
+  // and it needs no charting plugin the page does not already load.
+  const byPurok = {};
+  (d.matrix || []).forEach((m) => {
+    (byPurok[m.purok_id] = byPurok[m.purok_id] || {})[m.report_type] = m.n;
+  });
+  // Only puroks that have reports — an empty row teaches nothing and costs
+  // vertical space the ones with data need.
+  const mixPuroks = (d.puroks || []).filter((p) => p.incidents > 0);
+  const types = [...new Set((d.matrix || []).map((m) => m.report_type))].sort(
+    (a, b) =>
+      (d.matrix.filter((m) => m.report_type === b).reduce((t, m) => t + m.n, 0)) -
+      (d.matrix.filter((m) => m.report_type === a).reduce((t, m) => t + m.n, 0))
+  );
+  const c2 = document.getElementById("purokMixChart");
+  if (c2)
+    charts.p2 = new Chart(c2, {
+      type: "bar",
+      data: {
+        labels: mixPuroks.map((p) => p.name),
+        datasets: types.map((t, i) => ({
+          label: INCIDENT_TYPE_LABELS[t] || t,
+          data: mixPuroks.map((p) => (byPurok[p.purok_id] || {})[t] || 0),
+          backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length],
+        })),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        plugins: { legend: { position: "bottom" } },
+        scales: {
+          x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+          y: { stacked: true, grid: { display: false } },
+        },
+      },
     });
 }
