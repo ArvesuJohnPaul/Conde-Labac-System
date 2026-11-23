@@ -68,10 +68,18 @@ function incidentCurrentReporter() {
 // It opens on "Select the type of incident": a first type picked by default
 // is a report filed under a heading the reporter never chose.
 function incidentTypeOptions() {
+  // data-i18n rather than a lookup here: the shell is built once and kept, so
+  // a language change has to be able to repaint these options in place.
+  // The English stays in the markup as the fallback, and the value stays the
+  // slug \u2014 what gets SUBMITTED never changes with the language.
+  const key = (k) => "incType" + k.charAt(0).toUpperCase() + k.slice(1);
   return (
-    '<option value="">Select the type of incident</option>' +
+    '<option value="" data-i18n="incSelectType">Select the type of incident</option>' +
     Object.entries(GIS_REPORT_TYPE_META)
-      .map(([key, meta]) => `<option value="${key}">${incEscape(meta.label)}</option>`)
+      .map(
+        ([k, meta]) =>
+          `<option value="${k}" data-i18n="${key(k)}">${incEscape(meta.label)}</option>`
+      )
       .join("")
   );
 }
@@ -92,7 +100,7 @@ function ensureIncidentModalShell() {
     <div class="modal-header">
       <div class="modal-title">
         <div class="modal-title-icon"><i data-icon="siren"></i></div>
-        File an Incident / Concern
+        <span data-i18n="incFormTitle">File an Incident / Concern</span>
       </div>
       <button class="modal-close" onclick="closeServiceModal('incidents')"><i data-icon="x"></i></button>
     </div>
@@ -102,8 +110,8 @@ function ensureIncidentModalShell() {
         <!-- Two lines, not one sentence: at phone width the hotline was the
              last thing on the line and got cut off at the right edge. -->
         <span class="alert-lines">
-          <span>For life-threatening emergencies, call <strong>911</strong> immediately.</span>
-          <span>Barangay hotline: <strong data-hotline="primary-number">043-702-8875</strong></span>
+          <span><span data-i18n="incEmergencyCall">For life-threatening emergencies, call</span> <strong>911</strong> <span data-i18n="incEmergencyNow">immediately.</span></span>
+          <span><span data-i18n="incHotlineLabel">Barangay hotline:</span> <strong data-hotline="primary-number">043-702-8875</strong></span>
         </span>
       </div>
       <div class="alert alert-info is-hidden" id="inc-log-banner">
@@ -112,37 +120,37 @@ function ensureIncidentModalShell() {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Incident Type</label>
+          <label class="form-label" data-i18n="incType">Incident Type</label>
           <select class="form-control" id="inc-type">${incidentTypeOptions()}</select>
         </div>
         <div class="form-group">
-          <label class="form-label">Date &amp; Time of Incident</label>
+          <label class="form-label" data-i18n="incDateTime">Date &amp; Time of Incident</label>
           <input class="form-control" id="inc-datetime" readonly />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Location of Incident</label>
+        <label class="form-label" data-i18n="incLocationLabel">Location of Incident</label>
         <div class="gis-modal-map" id="incident-map" style="height:340px"></div>
-        <div class="inc-pick-status" id="inc-pick-status">Click on the map to drop a pin where it happened, or press Use my location.</div>
+        <div class="inc-pick-status" id="inc-pick-status" data-i18n="incPickPrompt">Click on the map to drop a pin where it happened, or press Use my location.</div>
         <!-- Logged calls only. A caller on the phone often cannot say exactly
              where they are, and a pin dropped on their behalf is a guess that
              looks like a fact on the map. Filed without one, the officials'
              text says "NO PIN DROPPED" and gives the caller's number. -->
         <label class="inc-nopin is-hidden" id="inc-nopin-wrap">
           <input type="checkbox" id="inc-nopin" />
-          <span>The caller could not say exactly where — file without a pin</span>
+          <span data-i18n="incNoPin">The caller could not say exactly where — file without a pin</span>
         </label>
       </div>
       <div id="inc-fields"></div>
       <div class="alert alert-info">
         <span class="alert-icon"><i data-icon="info"></i></span>
-        Your report will be reviewed by a barangay official. You will receive a phone notification with any updates.
+        <span data-i18n="incReviewNotice">Your report will be reviewed by a barangay official. You will receive a phone notification with any updates.</span>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeServiceModal('incidents')">Cancel</button>
+      <button class="btn btn-outline" onclick="closeServiceModal('incidents')" data-i18n="actionCancel">Cancel</button>
       <button class="btn btn-danger btn-danger-strong" onclick="submitIncidentReport()">
-        <i data-icon="check"></i> Submit Report
+        <i data-icon="check"></i> <span data-i18n="incSubmit">Submit Report</span>
       </button>
     </div>`;
   box.setAttribute("data-incident-built", "1");
@@ -169,35 +177,36 @@ function renderIncidentFields(reporter) {
   // A signed-in reporter's name is fixed; with no session, one is typed.
   const nameField = known
     ? `<input class="form-control" id="inc-complainant" value="${nameVal}" readonly />
-       <div class="inc-field-hint">Auto-filled from your resident record${purokLine}</div>`
-    : `<input class="form-control" id="inc-complainant" data-rule="names" maxlength="120" placeholder="Your full name" />`;
+       <div class="inc-field-hint"><span data-i18n="incAutofilled">Auto-filled from your resident record</span>${purokLine}</div>`
+    : `<input class="form-control" id="inc-complainant" data-rule="names" maxlength="120" data-i18n-placeholder="phYourFullName" placeholder="Your full name" />`;
   // Contact pre-fills when a number is on file; otherwise it stays editable so
   // one can be provided (the resident directory carries no phone numbers yet).
-  const contactField = `<input class="form-control" type="tel" id="inc-contact" data-rule="phone" maxlength="11" placeholder="09XXXXXXXXX" value="${contactVal}" ${contactVal ? "readonly" : ""} />`;
+  const contactField = `<input class="form-control" type="tel" id="inc-contact" data-rule="phone" maxlength="11" data-i18n-placeholder="phMobile" placeholder="09XXXXXXXXX" value="${contactVal}" ${contactVal ? "readonly" : ""} />`;
 
   fieldsEl.innerHTML = `
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Complainant Full Name</label>
+        <label class="form-label" data-i18n="incComplainant">Complainant Full Name</label>
         ${nameField}
       </div>
       <div class="form-group">
-        <label class="form-label">Contact Number</label>
+        <label class="form-label" data-i18n="fieldContactNumber">Contact Number</label>
         ${contactField}
       </div>
     </div>
     <div class="form-group inc-interpersonal" id="inc-respondent-group" hidden>
-      <label class="form-label">Respondent / Subject (if known)</label>
-      <input class="form-control" id="inc-respondent" maxlength="200" placeholder="Name or description of the other party (optional)" />
+      <label class="form-label" data-i18n="incRespondent">Respondent / Subject (if known)</label>
+      <input class="form-control" id="inc-respondent" maxlength="200" data-i18n-placeholder="phIncRespondent" placeholder="Name or description of the other party (optional)" />
     </div>
     <div class="form-group">
-      <label class="form-label">Detailed Narration of Incident</label>
+      <label class="form-label" data-i18n="incNarration">Detailed Narration of Incident</label>
       <textarea class="form-control textarea-tall" id="inc-narration" maxlength="4000"
+        data-i18n-placeholder="phIncNarration"
         placeholder="What happened? Who was there? Anything else that helps."></textarea>
     </div>
     <div class="form-group inc-interpersonal" id="inc-witness-group" hidden>
-      <label class="form-label">Witness Names (optional)</label>
-      <input class="form-control" id="inc-witnesses" data-rule="names" maxlength="400" placeholder="e.g. Maria Cruz, Jose Reyes" />
+      <label class="form-label" data-i18n="incWitnesses">Witness Names (optional)</label>
+      <input class="form-control" id="inc-witnesses" data-rule="names" maxlength="400" data-i18n-placeholder="phIncWitnesses" placeholder="e.g. Maria Cruz, Jose Reyes" />
     </div>`;
 }
 
@@ -283,6 +292,37 @@ function updateIncidentConditionalFields() {
 // (SMS-HOTLINE-PLAN.md §4.2).
 let incidentSource = null;
 
+
+// ── Language ────────────────────────────────────────────────────────────────
+// This modal is the same form for a resident filing from the portal and for
+// staff logging a call, and it is assembled from template strings rather than
+// written into a page, so data-i18n attributes alone are not enough: nothing
+// has run over them by the time they reach the DOM.
+
+// Write a translated string AND leave the key on the element, so a later
+// apply() — a language change while the modal is open — finds it again
+// instead of reverting it to whatever this element said first.
+function incidentSay(el, key) {
+  if (!el) return;
+  el.setAttribute("data-i18n", key);
+  el.textContent =
+    typeof L !== "undefined" && L && typeof L.t === "function" ? L.t(key) : el.textContent;
+}
+
+function incidentApplyLanguage(root) {
+  if (typeof L === "undefined" || !L || typeof L.apply !== "function") return;
+  L.apply(root || document.getElementById("modal-incidents") || document);
+}
+
+// A language change redraws the modal in place, so somebody who switches
+// mid-report does not have to close and reopen it to see the new language.
+if (typeof L !== "undefined" && L && typeof L.subscribe === "function") {
+  L.subscribe(function () {
+    const modal = document.getElementById("modal-incidents");
+    if (modal) incidentApplyLanguage(modal);
+  });
+}
+
 // Entry point — replaces the old openServicePopup('incidents') behaviour.
 // opts.source: 'hotline' | 'walk-in' puts the form in logged-call mode.
 function openIncidentModal(opts) {
@@ -320,10 +360,12 @@ function openIncidentModal(opts) {
   incidentPickPoint = null;
   const status = document.getElementById("inc-pick-status");
   if (status) {
-    status.textContent =
-      "Click on the map to drop a pin where it happened, or press Use my location.";
+    incidentSay(status, "incPickPrompt");
     status.classList.remove("picked");
   }
+
+  // Built and refilled by script, so nothing has translated it yet.
+  incidentApplyLanguage(modal);
 
   modal.classList.add("open");
 
@@ -338,11 +380,16 @@ function openIncidentModal(opts) {
         incidentPickPoint = pt;
         const s = document.getElementById("inc-pick-status");
         if (s) {
-          s.textContent = "Location pinned. Click elsewhere on the map to move it.";
+          incidentSay(s, "incPickDone");
           s.classList.add("picked");
         }
       });
     }
+    // The map builds its own markup — the "Use my location" button among it —
+    // and it lands here AFTER the apply() above, which ran before this timer.
+    // Without a second pass that button is the one thing in a Filipino form
+    // still reading English.
+    incidentApplyLanguage(modal);
   }, 160);
 }
 

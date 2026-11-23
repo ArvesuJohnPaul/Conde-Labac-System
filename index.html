@@ -956,12 +956,16 @@
             <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
             <span class="alert-lines">
               <span
-                >For life-threatening emergencies, call
-                <strong>911</strong> now — you do not need an account to
-                call.</span
+                ><span data-i18n="signInEmergency"
+                  >For life-threatening emergencies, call</span
+                >
+                <strong>911</strong>
+                <span data-i18n="signInEmergencyTail"
+                  >now — you do not need an account to call.</span
+                ></span
               >
               <span
-                >Barangay hotline:
+                ><span data-i18n="incHotlineLabel">Barangay hotline:</span>
                 <strong data-hotline="primary-number">043-702-8875</strong></span
               >
             </span>
@@ -969,7 +973,7 @@
           <p class="modal-muted-text" id="signin-required-text">
             The barangay's online services are for residents with an account.
           </p>
-          <p class="modal-muted-text">
+          <p class="modal-muted-text" data-i18n="signInNoAccount">
             No account yet? Apply online. The barangay checks your application
             against its resident records and lets you know when your account is
             ready.
@@ -977,10 +981,10 @@
         </div>
         <div class="modal-footer">
           <a class="btn btn-outline" href="claim-account.html"
-            >Apply for an account</a
+            ><span data-i18n="signInApply">Apply for an account</span></a
           >
           <a class="btn btn-gold" href="system.html"
-            >Sign in <i data-icon="arrow-right"></i
+            ><span data-i18n="signIn">Sign in</span> <i data-icon="arrow-right"></i
           ></a>
         </div>
       </div>
@@ -1008,7 +1012,7 @@
         <div class="modal-header">
           <div class="modal-title">
             <div class="modal-title-icon"><i data-icon="file-text"></i></div>
-            Certificate Issuance – Request Form
+            <span data-i18n="certFormTitle">Request a Certificate</span>
           </div>
           <button
             class="modal-close"
@@ -1018,12 +1022,12 @@
           </button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text-lg">
+          <p class="modal-help-text-lg" data-i18n="certFormHelp">
             Select the certificate type, fill in the required information, and
             submit your request. Processing typically takes 1–3 working days.
           </p>
 
-          <label class="form-label">Select Certificate Type</label>
+          <label class="form-label" data-i18n="certSelectType">Select Certificate Type</label>
           <div class="cert-type-grid" id="cert-type-grid">
             <!-- Cards are rendered by renderCertTypeGrid() in
                    js/portal-account.js, the one list of certificate types. -->
@@ -1035,7 +1039,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">First Name</label>
+              <label class="form-label" data-i18n="fieldFirstName">First Name</label>
               <input
                 class="form-control"
                 placeholder="Juan"
@@ -1044,7 +1048,7 @@
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Last Name</label>
+              <label class="form-label" data-i18n="fieldLastName">Last Name</label>
               <input
                 class="form-control"
                 placeholder="Santos"
@@ -1055,13 +1059,13 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Date of Birth</label>
+              <label class="form-label" data-i18n="fieldDateOfBirth">Date of Birth</label>
               <input class="form-control" type="date" id="cert-dob" data-rule="past-date" />
             </div>
             <div class="form-group">
-              <label class="form-label">Purok</label>
+              <label class="form-label" data-i18n="fieldPurok">Purok</label>
               <select class="form-control" id="cert-purok">
-                <option value="">Select your purok</option>
+                <option value="" data-i18n="phSelectPurok">Select your purok</option>
                 <option>Purok 1</option>
                 <option>Purok 2</option>
                 <option>Purok 3</option>
@@ -1073,17 +1077,18 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Purpose / Reason for Request</label>
+            <label class="form-label" data-i18n="certPurpose">Purpose / Reason for Request</label>
             <textarea
               class="form-control"
               id="cert-purpose"
               maxlength="500"
+              data-i18n-placeholder="phCertPurpose"
               placeholder="e.g. For employment purposes, scholarship application, etc."
             ></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Contact Number</label>
+              <label class="form-label" data-i18n="fieldContactNumber">Contact Number</label>
               <input
                 class="form-control"
                 placeholder="09XXXXXXXXX"
@@ -1094,25 +1099,28 @@
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Preferred Pickup Date</label>
+              <label class="form-label" data-i18n="certPickupDate">Preferred Pickup Date</label>
               <input class="form-control" type="date" id="cert-pickup" data-rule="future-date" />
             </div>
           </div>
           <div class="alert alert-info">
-            <span class="alert-icon"><i data-icon="info"></i></span> You will
-            receive a phone notification once your certificate is ready for
-            pickup at the barangay hall.
+            <span class="alert-icon"><i data-icon="info"></i></span>
+            <span data-i18n="certPickupNotice"
+              >You will receive a phone notification once your certificate is
+              ready for pickup at the barangay hall.</span
+            >
           </div>
         </div>
         <div class="modal-footer">
           <button
             class="btn btn-outline"
             onclick="closeServiceModal('certificates')"
+            data-i18n="actionCancel"
           >
             Cancel
           </button>
           <button class="btn btn-gold" onclick="submitCertificate()">
-            <i data-icon="check"></i> Submit Request
+            <i data-icon="check"></i> <span data-i18n="certSubmit">Submit Request</span>
           </button>
         </div>
       </div>
@@ -1278,35 +1286,41 @@
             <div class="modal-title-icon">
               <i data-icon="message-square"></i>
             </div>
-            Resident Feedback
+            <span data-i18n="fbFormTitle">Resident Feedback</span>
           </div>
           <button class="modal-close" onclick="closeServiceModal('feedback')">
             <i data-icon="x"></i>
           </button>
         </div>
         <div class="modal-body">
-          <p class="modal-help-text-lg">
+          <p class="modal-help-text-lg" data-i18n="fbFormHelp">
             Your feedback helps the barangay improve its services. All
             submissions are confidential and reviewed monthly by barangay
             officials.
           </p>
 
           <div class="form-group">
-            <label class="form-label">Category</label>
+            <label class="form-label" data-i18n="fbCategory">Category</label>
+            <!-- Each option carries an explicit value so what is SUBMITTED is
+                 always the English string, whatever the resident is reading.
+                 Without it the option's text is the value, and a Filipino
+                 reader would file "Kalinisan at Sanitasyon" into the same
+                 column as "Cleanliness & Sanitation" — one topic counted as
+                 two on the staff Feedback and Analytics pages. -->
             <select class="form-control" id="fb-category">
-              <option value="">Select a category</option>
-              <option>Barangay Services</option>
-              <option>Cleanliness &amp; Sanitation</option>
-              <option>Peace &amp; Order</option>
-              <option>Infrastructure</option>
-              <option>Barangay Officials</option>
-              <option>Health Services</option>
-              <option>Other</option>
+              <option value="" data-i18n="fbSelectCategory">Select a category</option>
+              <option value="Barangay Services" data-i18n="fbCatServices">Barangay Services</option>
+              <option value="Cleanliness &amp; Sanitation" data-i18n="fbCatCleanliness">Cleanliness &amp; Sanitation</option>
+              <option value="Peace &amp; Order" data-i18n="fbCatPeace">Peace &amp; Order</option>
+              <option value="Infrastructure" data-i18n="fbCatInfra">Infrastructure</option>
+              <option value="Barangay Officials" data-i18n="fbCatOfficials">Barangay Officials</option>
+              <option value="Health Services" data-i18n="fbCatHealth">Health Services</option>
+              <option value="Other" data-i18n="fbCatOther">Other</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Overall Satisfaction</label>
+            <label class="form-label" data-i18n="fbSatisfaction">Overall Satisfaction</label>
             <div class="star-rating" id="star-rating" tabindex="-1">
               <span class="star" onclick="setRating(1)"
                 ><i data-icon="star"></i
@@ -1324,56 +1338,64 @@
                 ><i data-icon="star"></i
               ></span>
             </div>
-            <div id="rating-label" class="rating-label">Select a rating</div>
+            <div id="rating-label" class="rating-label" data-i18n="fbSelectRating">
+              Select a rating
+            </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Your Comment or Suggestion</label>
+            <label class="form-label" data-i18n="fbComment">Your Comment or Suggestion</label>
             <textarea
               class="form-control textarea-medium"
               id="fb-comment"
               required
+              data-i18n-placeholder="phFbComment"
               placeholder="Share your experience, suggestions, or concerns about barangay services..."
             ></textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Your Name (optional)</label>
+            <label class="form-label" data-i18n="fbYourName">Your Name (optional)</label>
             <input
               class="form-control"
               id="fb-name"
               data-rule="names"
               maxlength="120"
+              data-i18n-placeholder="phFbName"
               placeholder="Leave blank to submit anonymously"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Contact (optional)</label>
+            <label class="form-label" data-i18n="fbContactOptional">Contact (optional)</label>
             <input
               class="form-control"
               id="fb-contact"
               data-rule="email-or-mobile"
               maxlength="120"
+              data-i18n-placeholder="phFbContact"
               placeholder="Email or phone number"
             />
           </div>
 
           <div class="alert alert-success">
-            <span class="alert-icon"><i data-icon="check"></i></span> Feedback
-            is reviewed by the Barangay Chairperson and department heads during
-            monthly meetings.
+            <span class="alert-icon"><i data-icon="check"></i></span>
+            <span data-i18n="fbReviewNotice"
+              >Feedback is reviewed by the Barangay Chairperson and department
+              heads during monthly meetings.</span
+            >
           </div>
         </div>
         <div class="modal-footer">
           <button
             class="btn btn-outline"
             onclick="closeServiceModal('feedback')"
+            data-i18n="actionCancel"
           >
             Cancel
           </button>
           <button class="btn btn-gold" onclick="submitFeedback()">
-            <i data-icon="check"></i> Submit Feedback
+            <i data-icon="check"></i> <span data-i18n="fbSubmit">Submit Feedback</span>
           </button>
         </div>
       </div>
@@ -1508,7 +1530,9 @@
       </div>
       <div class="footer-bottom">
         <div class="container footer-bottom-inner">
-          <span>© 2026 Barangay Conde Labak. All rights reserved.</span>
+          <span data-i18n="rightsReserved"
+            >© 2026 Barangay Conde Labak. All rights reserved.</span
+          >
           <span class="footer-credit"
             >Capstone Project AY 2025–2026 — Arvesu · Bacani · Balmes ·
             BatStateU CICS</span
@@ -2025,30 +2049,28 @@
 
       // What each service is asked for on the sign-in prompt, and why it needs
       // an account.
+      // Dictionary keys rather than sentences: this modal is filled in by
+      // script, so the strings cannot be reached by data-i18n attributes and
+      // are looked up through L.t() when it opens instead.
       const SIGNIN_REASONS = {
-        certificates: {
-          title: "Sign in to request a certificate",
-          text: "A certificate is made from your resident record, so the request has to come from your account. Sign in and the form fills itself in from your record.",
-        },
+        certificates: { title: "signInCertTitle", text: "signInCertText" },
         incidents: {
-          title: "Sign in to file a report",
-          text: "Reports are filed under your account so an official can follow up with you and you can see what was done in My Activity.",
+          title: "signInIncTitle",
+          text: "signInIncText",
           emergency: true,
         },
-        feedback: {
-          title: "Sign in to send feedback",
-          text: "Feedback is sent from your account, so the barangay can tell you when a concern you raised is dealt with. You can still sign it as Anonymous.",
-        },
+        feedback: { title: "signInFbTitle", text: "signInFbText" },
       };
 
       // A visitor's service card opens this instead of the form.
       function openSignInRequired(service) {
         const r = SIGNIN_REASONS[service] || {};
+        const say = (key) =>
+          typeof L !== "undefined" && L && typeof L.t === "function" ? L.t(key) : "";
         document.getElementById("signin-required-title").textContent =
-          r.title || "Sign in to continue";
+          say(r.title || "signInToContinue");
         document.getElementById("signin-required-text").textContent =
-          r.text ||
-          "The barangay's online services are for residents with an account.";
+          say(r.text || "signInDefault");
         document
           .getElementById("signin-required-emergency")
           .classList.toggle("is-hidden", !r.emergency);
@@ -2152,14 +2174,9 @@
         );
       }
 
-      const ratingLabels = [
-        "",
-        "Very Poor",
-        "Poor",
-        "Average",
-        "Good",
-        "Excellent",
-      ];
+      // Dictionary keys, looked up as the caption is written — the caption is
+      // built by script and so cannot be reached by a data-i18n attribute.
+      const ratingLabels = ["", "fbRate1", "fbRate2", "fbRate3", "fbRate4", "fbRate5"];
       // The star row is a <div>, not an input, so it gets nothing from the
       // validation helpers on its own. Giving it a `.value` is what lets
       // Motion.require treat it as the required field it is — same shake, same
@@ -2178,9 +2195,11 @@
         document.querySelectorAll(".star").forEach((s, i) => {
           s.classList.toggle("active", i < n);
         });
+        const say = (key) =>
+          typeof L !== "undefined" && L && typeof L.t === "function" ? L.t(key) : "";
         document.getElementById("rating-label").textContent = n
-          ? `${n} out of 5 – ${ratingLabels[n]}`
-          : "Select a rating";
+          ? `${n} ${say("fbOutOf5")} – ${say(ratingLabels[n])}`
+          : say("fbSelectRating");
         setStarValue(n);
       }
 

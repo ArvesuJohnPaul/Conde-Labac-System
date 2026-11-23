@@ -134,7 +134,7 @@
       ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cert-type-list"' +
       ' aria-label="Certificate type" autocomplete="off" spellcheck="false" maxlength="120"' +
       (CERT_TYPE_OPTIONS.length
-        ? ' placeholder="Type to search, or click to see the list" />'
+        ? ' data-i18n-placeholder="phCertSearch" placeholder="Type to search, or click to see the list" />'
         : ` placeholder="${esc(loading)}" disabled />`) +
       '<ul class="cert-combo-list" id="cert-type-list" role="listbox" aria-label="Certificates" hidden></ul>' +
       '<select id="cert-type-select" hidden tabindex="-1" aria-hidden="true" onchange="certTypeChanged(this)"' +

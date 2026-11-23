@@ -1263,45 +1263,45 @@ function renderResidentPortal() {
     <div class="resident-portal">
       <div class="portal-welcome">
         <div class="portal-welcome-content">
-          <h2>Mabuhay, <span class="gold">${portalName}</span>!</h2>
-          <p>Welcome to the Barangay Conde Labak Resident Portal. Access your barangay services below — request certificates, file reports, and stay connected with your community.</p>
+          <h2><span data-i18n="portalWelcome">Mabuhay,</span> <span class="gold">${portalName}</span>!</h2>
+          <p data-i18n="portalWelcomeBody">Welcome to the Barangay Conde Labak Resident Portal. Access your barangay services below — request certificates, file reports, and stay connected with your community.</p>
         </div>
       </div>
 
       <div id="account-section">
-        <div class="services-title">Your Account</div>
-        <div class="services-subtitle">Track your requests and stay updated</div>
+        <div class="services-title" data-i18n="portalYourAccount">Your Account</div>
+        <div class="services-subtitle" data-i18n="portalYourAccountSub">Track your requests and stay updated</div>
         <div class="services-grid">
           <div class="service-card sc-blue" onclick="openMyInfo()">
             <div class="service-icon-wrap"><i data-icon=user></i></div>
             <div>
-              <div class="service-title">My Information</div>
-              <div class="service-desc">View your account details and your barangay record on file.</div>
+              <div class="service-title" data-i18n="myInformation">My Information</div>
+              <div class="service-desc" data-i18n="portalMyInfoDesc">View your account details and your barangay record on file.</div>
             </div>
-            <div class="service-arrow">View my info <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalViewMyInfo">View my info</span> <i data-icon=arrow-right></i></div>
           </div>
           <div class="service-card sc-gold" onclick="openMyActivity()">
             <div class="service-icon-wrap"><i data-icon=inbox></i></div>
             <div>
-              <div class="service-title">My Activity</div>
-              <div class="service-desc">Track everything you sent the barangay — certificate requests, changes to your details, incident reports, and feedback.</div>
+              <div class="service-title" data-i18n="myActivity">My Activity</div>
+              <div class="service-desc" data-i18n="portalMyActivityDesc">Track everything you sent the barangay — certificate requests, changes to your details, incident reports, and feedback.</div>
             </div>
-            <div class="service-arrow">View my activity <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalViewMyActivity">View my activity</span> <i data-icon=arrow-right></i></div>
           </div>
           <div class="service-card sc-green" onclick="openNotifications()">
             <div class="service-icon-wrap"><i data-icon=bell></i></div>
             <div>
-              <div class="service-title">Notifications</div>
-              <div class="service-desc">Updates on your requests and messages from the barangay office.</div>
+              <div class="service-title" data-i18n="notifications">Notifications</div>
+              <div class="service-desc" data-i18n="portalNotificationsDesc">Updates on your requests and messages from the barangay office.</div>
             </div>
-            <div class="service-arrow">Open inbox <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalOpenInbox">Open inbox</span> <i data-icon=arrow-right></i></div>
           </div>
         </div>
       </div>
 
       <div id="services-section">
-        <div class="services-title">Services We Offer</div>
-        <div class="services-subtitle">Click on any service to get started</div>
+        <div class="services-title" data-i18n="portalServicesTitle">Services We Offer</div>
+        <div class="services-subtitle" data-i18n="portalServicesSub">Click on any service to get started</div>
 
         <!-- No Barangay Residency card: it opened a lookup over every
              resident's record to whoever was signed in. That is personal
@@ -1311,59 +1311,64 @@ function renderResidentPortal() {
           <div class="service-card sc-gold" onclick="openServicePopup('certificates')">
             <div class="service-icon-wrap"><i data-icon=file-text></i></div>
             <div>
-              <div class="service-title">Request a Certificate</div>
-              <div class="service-desc">Request Barangay Clearances, Certificates of Indigency, Residency, Good Moral, Business Clearance, and more.</div>
+              <div class="service-title" data-i18n="svcCertificates">Request a Certificate</div>
+              <div class="service-desc" data-i18n="portalCertDesc">Request Barangay Clearances, Certificates of Indigency, Residency, Good Moral, Business Clearance, and more.</div>
             </div>
-            <div class="service-arrow">Request certificate <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalRequestCert">Request certificate</span> <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-red" onclick="openServicePopup('incidents')">
             <div class="service-icon-wrap"><i data-icon=siren></i></div>
             <div>
-              <div class="service-title">Report an Incident</div>
-              <div class="service-desc">File an incident report for complaints, disputes, altercations, vandalism, or other concerns happening in the barangay.</div>
+              <div class="service-title" data-i18n="svcIncidents">Report an Incident</div>
+              <div class="service-desc" data-i18n="portalIncidentDesc">File an incident report for complaints, disputes, altercations, vandalism, or other concerns happening in the barangay.</div>
             </div>
-            <div class="service-arrow">File a report <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalFileReport">File a report</span> <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-green" onclick="openServicePopup('feedback')">
             <div class="service-icon-wrap"><i data-icon=message-square></i></div>
             <div>
-              <div class="service-title">Feedback</div>
-              <div class="service-desc">Share your comments, suggestions, or concerns about barangay services. Your voice helps improve governance.</div>
+              <div class="service-title" data-i18n="svcFeedback">Feedback</div>
+              <div class="service-desc" data-i18n="portalFeedbackDesc">Share your comments, suggestions, or concerns about barangay services. Your voice helps improve governance.</div>
             </div>
-            <div class="service-arrow">Give feedback <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalGiveFeedback">Give feedback</span> <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-purple" onclick="openServicePopup('gis')">
             <div class="service-icon-wrap"><i data-icon=map></i></div>
             <div>
-              <div class="service-title">GIS Map</div>
-              <div class="service-desc">View the interactive map of Barangay Conde Labak — showing puroks, hazard zones, health centers, and key landmarks.</div>
+              <div class="service-title" data-i18n="navGisMap">GIS Map</div>
+              <div class="service-desc" data-i18n="portalGisDesc">View the interactive map of Barangay Conde Labak — showing puroks, hazard zones, health centers, and key landmarks.</div>
             </div>
-            <div class="service-arrow">View map <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalViewMap">View map</span> <i data-icon=arrow-right></i></div>
           </div>
 
           <div class="service-card sc-teal" onclick="openServicePopup('accounts')">
             <div class="service-icon-wrap"><i data-icon=key></i></div>
             <div>
-              <div class="service-title">Apply for an Account</div>
-              <div class="service-desc">Get a resident account to request certificates and track your requests online. Apply with a valid ID — a barangay official reviews it.</div>
+              <div class="service-title" data-i18n="claimAccount">Apply for an account</div>
+              <div class="service-desc" data-i18n="portalApplyDesc">Get a resident account to request certificates and track your requests online. Apply with a valid ID — a barangay official reviews it.</div>
             </div>
-            <div class="service-arrow">Apply <i data-icon=arrow-right></i></div>
+            <div class="service-arrow"><span data-i18n="portalApply">Apply</span> <i data-icon=arrow-right></i></div>
           </div>
         </div>
       </div>
 
       <!-- Notices -->
       <div class="notice-card">
-        <div class="notice-title"><i data-icon=megaphone></i> Barangay Notices</div>
+        <div class="notice-title"><i data-icon=megaphone></i> <span data-i18n="portalNotices">Barangay Notices</span></div>
         <div class="alert alert-warning"><span class="alert-icon"><i data-icon=triangle-alert></i></span> <strong>Flood Advisory:</strong> Purok 3 residents — please monitor weather conditions. Pre-positioned relief goods at Brgy Hall.</div>
         <div class="alert alert-info"><span class="alert-icon"><i data-icon=info></i></span> <strong>Certificate Processing:</strong> Regular processing hours are Mon–Fri, 8:00 AM – 5:00 PM.</div>
         <div class="alert alert-success"><span class="alert-icon"><i data-icon=check></i></span> <strong>Free Medical Mission:</strong> May 15, 2025 at the Barangay Health Center. Walk-ins welcome.</div>
       </div>
     </div>
   `);
+  // Written by script after i18n.js already ran over the page, so it has to be
+  // asked to run again. Language CHANGES need nothing extra: setLanguage()
+  // applies across the whole document, and every string above is reachable
+  // from it now.
+  if (typeof L !== "undefined" && L && typeof L.apply === "function") L.apply();
 }
 
 // ════════════════════ RESIDENCY MODAL LOGIC ════════════════════

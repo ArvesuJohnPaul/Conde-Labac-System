@@ -2198,7 +2198,19 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const isSquareMode = () => state.drawShape === "square" && SQUARE_TOOLS.has(state.drawTool);
   // The hint pill along the map's bottom edge (refreshMapHint) — for the modes
   // that are not dock tools, and so have no hint box of their own.
+  // Translate a resident-facing string, falling back to the English given
+  // here: the engine is loaded on pages that may not carry the dictionary, and
+  // a missing translation must not blank a hint out.
+  function gisSay(key, english) {
+    if (typeof L === "undefined" || !L || typeof L.t !== "function") return english;
+    const out = L.t(key);
+    return out || english;
+  }
+
   const MAP_HINTS = {
+    // `report` and `measure` are staff drawing tools and stay English with the
+    // rest of the MIS; `pick` is what a resident filing an incident reads, so
+    // it is looked up when the hint is written rather than fixed here.
     report: "Click the spot on the map where the concern is located — Esc to cancel.",
     pick: "Click the spot on the map where the incident happened.",
     measure: "Click to add points · drag a point to move it · click a point to remove it · Esc to stop",
@@ -2450,7 +2462,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
            Drops the pin on where the phone says you are, instead of
            making somebody find their own roof on a map of roofs. -->
       <button type="button" class="gis-locate-btn" data-gis-locate hidden>
-        ${gisIcon("pin")}<span>Use my location</span>
+        ${gisIcon("pin")}<span data-i18n="locateUseMine">Use my location</span>
       </button>
       ${editable ? `
       <div class="gis-group-dock" data-gis-group-dock hidden>
@@ -4588,7 +4600,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
     const text = state.reportMode
       ? MAP_HINTS.report
       : state.pickMode
-        ? MAP_HINTS.pick
+        ? gisSay("mapPickHint", MAP_HINTS.pick)
         : state.drawTool === "measure"
           ? MAP_HINTS.measure
           : "";
@@ -4629,8 +4641,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       if (!navigator.geolocation)
         return resolve({
           ok: false,
-          message:
-            "This browser cannot share your location. Tap the spot on the map instead.",
+          message: gisSay(
+            "locateNoSupport",
+            "This browser cannot share your location. Tap the spot on the map instead."
+          ),
         });
       // Browsers refuse location outright on a plain http:// address and
       // report it as a denied permission, which sends people hunting through
@@ -4639,8 +4653,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       if (window.isSecureContext === false)
         return resolve({
           ok: false,
-          message:
-            "Your browser only shares your location with pages opened over a secure (https) address. Tap the spot on the map instead.",
+          message: gisSay(
+            "locateInsecure",
+            "Your browser only shares your location with pages opened over a secure (https) address. Tap the spot on the map instead."
+          ),
         });
       navigator.geolocation.getCurrentPosition(
         function (pos) {
@@ -4651,10 +4667,19 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
           // as the thing to do rather than as the name of the error.
           const message =
             err && err.code === 1
-              ? "This page is not allowed to see your location. Allow it in your browser, or tap the spot on the map instead."
+              ? gisSay(
+                  "locateDenied",
+                  "This page is not allowed to see your location. Allow it in your browser, or tap the spot on the map instead."
+                )
               : err && err.code === 3
-                ? "Finding your location took too long. Try again, or tap the spot on the map instead."
-                : "Your location could not be found. Check that location is turned on, or tap the spot on the map instead.";
+                ? gisSay(
+                    "locateTimeout",
+                    "Finding your location took too long. Try again, or tap the spot on the map instead."
+                  )
+                : gisSay(
+                    "locateUnavailable",
+                    "Your location could not be found. Check that location is turned on, or tap the spot on the map instead."
+                  );
           resolve({ ok: false, message: message });
         },
         // maximumAge 0: always take a fresh reading. A cached fix can be
@@ -4672,7 +4697,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       locateBtn.disabled = true;
       locateBtn.classList.add("is-busy");
     }
-    sayLocate("Finding where you are...", false);
+    sayLocate(gisSay("locateFinding", "Finding where you are…"), false);
     try {
       const got = await browserLocation();
       if (!got.ok) {
@@ -4680,8 +4705,10 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         return { ok: false, message: got.message };
       }
       if (!gisPointInRing(got.point, boundaryRing)) {
-        const message =
-          "Your location is not inside Barangay Conde Labak. This map only covers the barangay, so the pin has to go inside it. If you are reporting something that happened here, tap that spot on the map instead.";
+        // Just the fact. The pin is still placed by tapping the map, which the
+        // hint under it already says, so repeating it here only buries the one
+        // thing this message exists to report.
+        const message = gisSay("locateOutside", "You are not inside Barangay Conde Labak.");
         sayLocate(message, true);
         return { ok: false, outside: true, message: message };
       }
@@ -4691,7 +4718,7 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
         state.pickPoint = got.point;
         renderReports();
         if (state.pickCallback) state.pickCallback(got.point);
-        sayLocate("Pinned where you are.", false);
+        sayLocate(gisSay("locatePinned", "Pinned where you are."), false);
       } else {
         sayLocate(null);
       }

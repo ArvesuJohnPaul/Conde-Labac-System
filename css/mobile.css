@@ -90,27 +90,30 @@
     margin-bottom: 0;
   }
 
-  /* The desktop table draws a line under every row; the cards have borders of
-     their own, and a second line under the last cell of each would double up
-     with it. */
+  /* The desktop table draws a line under every row. The cards carried those
+     lines over at first, one under each field — and a line needs air on both
+     sides of it to read as a separator, which is 24px of padding per field,
+     which is 366px per record and 2.3 records to a screen. The lines are gone
+     and the padding with them: a record is now 274px and three fit, which is
+     what the label/value rhythm was already doing the work of. */
   .data-table tbody tr:last-child td,
   .data-table td {
-    border-bottom: 1px solid var(--border-subtle, var(--border));
-  }
-
-  .data-table tbody tr td:last-child {
     border-bottom: 0;
   }
 
   /* label | value, on one line while they fit, wrapping to two when they do
      not. minmax(0, …) on the value lets a long certificate name wrap instead
-     of widening the card. */
+     of widening the card.
+
+     The 5.5rem minimum on the label column is measured, not chosen: at 4.5rem
+     "COMPLAINANT" and "DATE FILED" break across two lines, which costs more
+     height than the narrower column saves — the page measured 4% TALLER. */
   .data-table td {
     display: grid;
     grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
     gap: var(--space-3);
     align-items: baseline;
-    padding: var(--space-3) 0;
+    padding: 4px 0;
     text-align: left;
   }
 
@@ -932,19 +935,54 @@
    So the scale itself is re-stated here rather than the dozens of rules that
    read from it; one change, and the whole interface keeps its proportions.
 
-   Only the display end moves. 15px and below is body and UI text, where a
-   point smaller is harder to read rather than tidier, and 16px is the floor
-   that stops iOS Safari zooming in on a focused input (§6). Above that the
-   sizes come down by about a fifth, which is roughly the ratio between the
-   two column widths. */
+   WHERE THE NUMBERS COME FROM
+   The two type scales that phone interfaces are actually built on, read from
+   the specs rather than from memory:
+
+     Apple HIG, iOS, default Dynamic Type   Material Design 3 baseline
+       Title 2      22 / 28                   Title Large     22 / 28
+       Title 3      20 / 25                   Title Medium    16 / 24
+       Headline     17 / 22 semibold          Title Small     14 / 20
+       Body         17 / 22                   Body Large      16 / 24
+       Callout      16 / 21                   Body Medium     14 / 20
+       Subhead      15 / 20                   Body Small      12 / 16
+       Footnote     13 / 18                   Label Large     14 / 20
+       Caption 1    12 / 16                   Label Medium    12 / 16
+       Caption 2    11 / 13                   Label Small     11 / 16
+     iOS states a 17pt default and an 11pt minimum.
+
+   Note what that says about SIZE: both put phone body text at 16–17px. This
+   interface's body is 14px and its dense UI text 13px — already smaller than
+   either, and the table cells are 12px, which is Material's Body Small and
+   Apple's Caption 1. There is no room below that: 11px is the floor Apple
+   publishes, and it is for captions, not for records someone has to read.
+
+   What the two scales DO have that this one did not is tighter LEADING —
+   14/20 is 1.43, 13/18 is 1.38, 17/22 is 1.29 — against the 1.55 and 1.7 this
+   interface was using. That is where the lines were too far apart, and it is
+   a saving on every block of text on every page. The display sizes also come
+   down one more notch each, landing the page title on Material's Title Medium
+   (16) and the KPI number between its Title Large and Headline Small. */
 @media (max-width: 640px) {
   :root {
-    --text-md: 0.875rem; /* 15 → 14 */
-    --text-lg: 0.9375rem; /* 17 → 15 */
-    --text-xl: 1.0625rem; /* 20 → 17 */
-    --text-2xl: 1.1875rem; /* 24 → 19 */
-    --text-3xl: 1.4375rem; /* 30 → 23 */
-    --text-4xl: 1.6875rem; /* 36 → 27 */
+    --text-md: 0.875rem; /* 15 → 14 — Material Body Medium       */
+    --text-lg: 0.9375rem; /* 17 → 15 — Apple Subhead              */
+    --text-xl: 1rem; /* 20 → 16 — Material Title Medium      */
+    --text-2xl: 1.125rem; /* 24 → 18                              */
+    --text-3xl: 1.3125rem; /* 30 → 21                              */
+    --text-4xl: 1.5625rem; /* 36 → 25                              */
+
+    /* The leading the two scales ship, instead of 1.55 / 1.7 / 1.4. */
+    --leading-normal: 1.45;
+    --leading-relaxed: 1.5;
+    --leading-snug: 1.3;
+
+    /* The uppercase labels — KPI captions, table headings, section labels —
+       were tracked at 0.09em, which is twice what Material gives its Label
+       Small (0.5 at 11sp, i.e. 0.045em). The extra width is why "CERTIFICATES
+       RELEASED" and "REGISTERED HOUSEHOLDS" each took two lines in a 150px
+       card and made their tiles taller than the ones beside them. */
+    --tracking-caps: 0.045em;
   }
 
   /* The headlines on the public site are not tokens — they are clamp()s whose
@@ -987,5 +1025,56 @@
   .gis-map-embed,
   .gis-map-embed.gis-custom-map {
     height: 420px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   18 · DENSITY
+   ═══════════════════════════════════════════════════
+
+   The complaint that the interface "doesn't fit much on the screen" is mostly
+   not about type size — §16 has the numbers — it is about how much air sits
+   between things. Material's own list items carry 8dp of vertical padding and
+   16dp at the sides; this interface was spending 20–28px on each of the gaps
+   that repeat down a page.
+
+   Measured on the Blotter at 390px, by what each change bought on its own:
+
+     the field padding and lines (§1)   6324px → 4869px   row 366 → 269px
+     the leading (§16)                  6324px → 6231px
+     the page chrome (below)            6324px → 6253px
+     all three                          6324px → 4872px   row 366 → 274px
+
+   So the field padding is the whole argument and the rest is rounding — but
+   the rest is free, and it is the difference between three records on a
+   screen and three records with the fourth beginning. Certificates, which
+   carries one more column, went from 7105px to 4682px: a third shorter.
+
+   The tokens are tightened rather than the rules that read them, so nothing
+   that derives from --page-pad (the table wrapper's bleed, the section
+   header's negative margins) goes out of step with it. */
+@media (max-width: 640px) {
+  :root {
+    --page-pad: var(--space-3); /* 16 → 12, so the content gets the width */
+    --stack: var(--space-3); /* 16 → 12 between blocks                 */
+  }
+
+  /* The repeating gaps down a page: the heading, each card's own heading, and
+     the KPI strip, which is four cards of mostly padding. */
+  .page-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .card-header {
+    margin-bottom: var(--space-3);
+  }
+
+  .kpi-grid {
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .kpi-card {
+    padding: var(--space-3);
   }
 }

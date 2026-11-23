@@ -398,6 +398,296 @@
     wakeElapsed: ["Waiting {s}s", "Naghihintay {s}s"],
     wakeReload: ["Reload", "I-reload"],
     wakeContinue: ["Continue without waiting", "Magpatuloy nang hindi naghihintay"],
+
+    // ── Shared form chrome ──────────────────────────────────────────────
+    // Used by more than one modal, so they live together rather than being
+    // repeated per form.
+    actionCancel: ["Cancel", "Kanselahin"],
+    fieldFirstName: ["First Name", "Pangalan"],
+    fieldLastName: ["Last Name", "Apelyido"],
+    fieldDateOfBirth: ["Date of Birth", "Petsa ng Kapanganakan"],
+    fieldPurok: ["Purok", "Purok"],
+    fieldContactNumber: ["Contact Number", "Numero ng Telepono"],
+    phSelectPurok: ["Select your purok", "Piliin ang inyong purok"],
+
+    // ── Certificate request modal ───────────────────────────────────────
+    certFormTitle: ["Request a Certificate", "Humiling ng Sertipiko"],
+    certFormHelp: [
+      "Select the certificate type, fill in the required information, and submit your request. Processing typically takes 1\u20133 working days.",
+      "Piliin ang uri ng sertipiko, punan ang mga hinihinging impormasyon, at ipasa ang inyong hiling. Karaniwang 1\u20133 araw ng trabaho ang pagproseso.",
+    ],
+    certSelectType: ["Select Certificate Type", "Piliin ang Uri ng Sertipiko"],
+    certPurpose: ["Purpose / Reason for Request", "Layunin / Dahilan ng Paghiling"],
+    certPickupDate: ["Preferred Pickup Date", "Petsa ng Pagkuha"],
+    certPickupNotice: [
+      "You will receive a phone notification once your certificate is ready for pickup at the barangay hall.",
+      "Matatanggap ninyo ang abiso sa telepono kapag handa nang kunin ang inyong sertipiko sa barangay hall.",
+    ],
+    certSubmit: ["Submit Request", "Ipasa ang Hiling"],
+    phCertSearch: [
+      "Type to search, or click to see the list",
+      "Mag-type para maghanap, o i-click para makita ang listahan",
+    ],
+    phCertPurpose: [
+      "e.g. For employment purposes, scholarship application, etc.",
+      "hal. Para sa trabaho, aplikasyon sa scholarship, atbp.",
+    ],
+
+    // ── Feedback modal ──────────────────────────────────────────────────
+    fbFormTitle: ["Resident Feedback", "Puna ng Residente"],
+    fbFormHelp: [
+      "Your feedback helps the barangay improve its services. All submissions are confidential and reviewed monthly by barangay officials.",
+      "Nakakatulong ang inyong puna upang mapabuti ng barangay ang serbisyo nito. Kompidensyal ang lahat ng isinumite at bawat buwan itong sinusuri ng mga opisyal ng barangay.",
+    ],
+    fbCategory: ["Category", "Kategorya"],
+    fbSelectCategory: ["Select a category", "Pumili ng kategorya"],
+    // Display text only \u2014 the value submitted stays the English string,
+    // pinned in each option's value attribute.
+    fbCatServices: ["Barangay Services", "Serbisyo ng Barangay"],
+    fbCatCleanliness: ["Cleanliness & Sanitation", "Kalinisan at Sanitasyon"],
+    fbCatPeace: ["Peace & Order", "Kapayapaan at Kaayusan"],
+    fbCatInfra: ["Infrastructure", "Imprastraktura"],
+    fbCatOfficials: ["Barangay Officials", "Mga Opisyal ng Barangay"],
+    fbCatHealth: ["Health Services", "Serbisyong Pangkalusugan"],
+    fbCatOther: ["Other", "Iba pa"],
+    fbOutOf5: ["out of 5", "sa 5"],
+    fbRate1: ["Very Poor", "Napakahina"],
+    fbRate2: ["Poor", "Mahina"],
+    fbRate3: ["Average", "Katamtaman"],
+    fbRate4: ["Good", "Mabuti"],
+    fbRate5: ["Excellent", "Napakahusay"],
+    fbSatisfaction: ["Overall Satisfaction", "Pangkalahatang Kasiyahan"],
+    fbSelectRating: ["Select a rating", "Pumili ng rating"],
+    fbComment: ["Your Comment or Suggestion", "Inyong Puna o Mungkahi"],
+    fbYourName: ["Your Name (optional)", "Inyong Pangalan (opsyonal)"],
+    fbContactOptional: ["Contact (optional)", "Kontak (opsyonal)"],
+    fbReviewNotice: [
+      "Feedback is reviewed by the Barangay Chairperson and department heads during monthly meetings.",
+      "Sinusuri ng Punong Barangay at ng mga namumuno sa bawat departamento ang mga puna tuwing buwanang pulong.",
+    ],
+    fbSubmit: ["Submit Feedback", "Ipasa ang Puna"],
+    phFbComment: [
+      "Share your experience, suggestions, or concerns about barangay services...",
+      "Ibahagi ang inyong karanasan, mungkahi, o alalahanin tungkol sa serbisyo ng barangay...",
+    ],
+    phFbName: [
+      "Leave blank to submit anonymously",
+      "Iwanang blangko upang hindi ipakita ang pangalan",
+    ],
+    phFbContact: ["Email or phone number", "Email o numero ng telepono"],
+
+    // ── Incident / concern modal ────────────────────────────────────────
+    // Built by js/incident-report.js, which the resident portal and the MIS
+    // both open.
+    incFormTitle: ["File an Incident / Concern", "Mag-ulat ng Insidente o Alalahanin"],
+    incEmergencyCall: [
+      "For life-threatening emergencies, call",
+      "Para sa emerhensiyang nakamamatay, tumawag sa",
+    ],
+    incEmergencyNow: ["immediately.", "kaagad."],
+    incHotlineLabel: ["Barangay hotline:", "Hotline ng barangay:"],
+    incType: ["Incident Type", "Uri ng Insidente"],
+    incSelectType: ["Select the type of incident", "Piliin ang uri ng insidente"],
+    // One per GIS_REPORT_TYPE_META key. Display only \u2014 the option's value is
+    // the slug, and the MIS keeps reading the English label from the metadata.
+    incTypeNoise: ["Noise Complaint", "Reklamo sa Ingay"],
+    incTypeDispute: ["Property Dispute", "Alitan sa Ari-arian"],
+    incTypeAltercation: ["Physical Altercation", "Pisikal na Away"],
+    incTypeTheft: ["Theft / Robbery", "Pagnanakaw / Panloloob"],
+    incTypeVandalism: ["Vandalism", "Bandalismo"],
+    incTypeDomestic: ["Domestic Disturbance", "Gulo sa Tahanan"],
+    incTypeFlooding: ["Flooding / Natural Hazard", "Pagbaha / Likas na Panganib"],
+    incTypeVehicular: ["Vehicular Accident", "Aksidente sa Sasakyan"],
+    incTypeFire: ["Fire Incident", "Sunog"],
+    incTypeMedical: ["Medical Emergency", "Emerhensiyang Medikal"],
+    incTypeOther: ["Other", "Iba pa"],
+    incDateTime: ["Date & Time of Incident", "Petsa at Oras ng Insidente"],
+    incLocationLabel: ["Location of Incident", "Lugar ng Insidente"],
+    incComplainant: ["Complainant Full Name", "Buong Pangalan ng Nagreklamo"],
+    incAutofilled: [
+      "Auto-filled from your resident record",
+      "Awtomatikong kinuha sa inyong talaan bilang residente",
+    ],
+    incRespondent: [
+      "Respondent / Subject (if known)",
+      "Inireklamo / Kinauukulan (kung alam)",
+    ],
+    incWitnesses: ["Witness Names (optional)", "Pangalan ng mga Saksi (opsyonal)"],
+    // Logged calls only \u2014 staff taking a report over the hotline.
+    incNoPin: [
+      "The caller could not say exactly where \u2014 file without a pin",
+      "Hindi matukoy ng tumawag kung saan \u2014 isumite nang walang pin",
+    ],
+    incNarration: ["Detailed Narration of Incident", "Detalyadong Salaysay ng Insidente"],
+    incReviewNotice: [
+      "Your report will be reviewed by a barangay official. You will receive a phone notification with any updates.",
+      "Susuriin ng isang opisyal ng barangay ang inyong ulat. Matatanggap ninyo sa telepono ang anumang update.",
+    ],
+    incSubmit: ["Submit Report", "Ipasa ang Ulat"],
+    incPickPrompt: [
+      "Click on the map to drop a pin where it happened, or press Use my location.",
+      "I-click ang mapa upang ilagay ang pin kung saan ito nangyari, o pindutin ang Gamitin ang aking lokasyon.",
+    ],
+    // Shown on the map itself (js/gis-map.js) while a pin is being placed.
+    mapPickHint: [
+      "Click the spot on the map where the incident happened.",
+      "I-click ang bahagi ng mapa kung saan nangyari ang insidente.",
+    ],
+    locateUseMine: ["Use my location", "Gamitin ang aking lokasyon"],
+    locateFinding: ["Finding where you are\u2026", "Hinahanap kung nasaan kayo\u2026"],
+    locatePinned: ["Pinned where you are.", "Naka-pin na kung nasaan kayo."],
+    locateOutside: [
+      "You are not inside Barangay Conde Labak.",
+      "Wala kayo sa loob ng Barangay Conde Labak.",
+    ],
+    locateNoSupport: [
+      "This browser cannot share your location. Tap the spot on the map instead.",
+      "Hindi maibabahagi ng browser na ito ang inyong lokasyon. I-tap na lang ang bahagi ng mapa.",
+    ],
+    locateInsecure: [
+      "Your browser only shares your location with pages opened over a secure (https) address. Tap the spot on the map instead.",
+      "Sa mga pahinang bukas sa secure (https) na address lamang ibinabahagi ng browser ang inyong lokasyon. I-tap na lang ang bahagi ng mapa.",
+    ],
+    locateDenied: [
+      "This page is not allowed to see your location. Allow it in your browser, or tap the spot on the map instead.",
+      "Hindi pinapayagan ang pahinang ito na makita ang inyong lokasyon. Payagan ito sa inyong browser, o i-tap na lang ang bahagi ng mapa.",
+    ],
+    locateTimeout: [
+      "Finding your location took too long. Try again, or tap the spot on the map instead.",
+      "Masyadong natagalan ang paghahanap sa inyong lokasyon. Subukan muli, o i-tap na lang ang bahagi ng mapa.",
+    ],
+    locateUnavailable: [
+      "Your location could not be found. Check that location is turned on, or tap the spot on the map instead.",
+      "Hindi matagpuan ang inyong lokasyon. Tiyaking naka-on ang location, o i-tap na lang ang bahagi ng mapa.",
+    ],
+    incPickDone: [
+      "Location pinned. Click elsewhere on the map to move it.",
+      "Naka-pin na ang lokasyon. I-click ang ibang bahagi ng mapa upang ilipat ito.",
+    ],
+    phIncRespondent: [
+      "Name or description of the other party (optional)",
+      "Pangalan o paglalarawan sa kabilang panig (opsyonal)",
+    ],
+    phIncWitnesses: ["e.g. Maria Cruz, Jose Reyes", "hal. Maria Cruz, Jose Reyes"],
+    phIncNarration: [
+      "What happened? Who was there? Anything else that helps.",
+      "Ano ang nangyari? Sino ang naroon? Anuman pang makakatulong.",
+    ],
+    phIncLocation: [
+      "e.g. Purok 3, near the basketball court",
+      "hal. Purok 3, malapit sa basketball court",
+    ],
+    phYourFullName: ["Your full name", "Inyong buong pangalan"],
+    phMobile: ["09XXXXXXXXX", "09XXXXXXXXX"],
+
+    // ── "Sign in to continue" ───────────────────────────────────────────
+    signInToContinue: ["Sign in to continue", "Mag-sign in upang magpatuloy"],
+    signInDefault: [
+      "The barangay's online services are for residents with an account.",
+      "Para sa mga residenteng may account ang mga online na serbisyo ng barangay.",
+    ],
+    signInCertTitle: ["Sign in to request a certificate", "Mag-sign in upang humiling ng sertipiko"],
+    signInCertText: [
+      "A certificate is made from your resident record, so the request has to come from your account. Sign in and the form fills itself in from your record.",
+      "Ginagawa ang sertipiko mula sa inyong talaan bilang residente, kaya kailangang galing sa inyong account ang hiling. Mag-sign in at kusang mapupunan ang form mula sa inyong talaan.",
+    ],
+    signInIncTitle: ["Sign in to file a report", "Mag-sign in upang mag-ulat"],
+    signInIncText: [
+      "Reports are filed under your account so an official can follow up with you and you can see what was done in My Activity.",
+      "Nakatala sa inyong account ang mga ulat upang mabalikan kayo ng opisyal at makita ninyo sa Aking Aktibidad kung ano ang ginawa.",
+    ],
+    signInFbTitle: ["Sign in to send feedback", "Mag-sign in upang magpadala ng puna"],
+    signInFbText: [
+      "Feedback is sent from your account, so the barangay can tell you when a concern you raised is dealt with. You can still sign it as Anonymous.",
+      "Ipinapadala ang puna mula sa inyong account, upang masabi ng barangay kung kailan naaksyunan ang inyong alalahanin. Maaari pa rin ninyo itong ipadala nang hindi nagpapakilala.",
+    ],
+    signInEmergency: [
+      "For life-threatening emergencies, call",
+      "Para sa emerhensiyang nakamamatay, tumawag sa",
+    ],
+    signInEmergencyTail: [
+      "now \u2014 you do not need an account to call.",
+      "ngayon \u2014 hindi kailangan ng account upang tumawag.",
+    ],
+    signInNoAccount: [
+      "No account yet? Apply online. The barangay checks your application against its resident records and lets you know when your account is ready.",
+      "Wala pang account? Mag-apply online. Isasalang ng barangay ang inyong aplikasyon sa talaan nito ng mga residente at ipapaalam kung handa na ang inyong account.",
+    ],
+    signInApply: ["Apply for an account", "Mag-apply ng account"],
+
+    // ── Resident portal (js/shell.js renderResidentPortal) ──────────────
+    portalWelcome: ["Mabuhay,", "Mabuhay,"],
+    portalWelcomeBody: [
+      "Welcome to the Barangay Conde Labak Resident Portal. Access your barangay services below \u2014 request certificates, file reports, and stay connected with your community.",
+      "Maligayang pagdating sa Resident Portal ng Barangay Conde Labak. Narito sa ibaba ang inyong mga serbisyo \u2014 humiling ng sertipiko, mag-ulat, at manatiling konektado sa inyong komunidad.",
+    ],
+    portalYourAccount: ["Your Account", "Inyong Account"],
+    portalYourAccountSub: [
+      "Track your requests and stay updated",
+      "Subaybayan ang inyong mga hiling at manatiling updated",
+    ],
+    portalServicesTitle: ["Services We Offer", "Mga Serbisyong Inaalok Namin"],
+    portalServicesSub: [
+      "Click on any service to get started",
+      "I-click ang alinmang serbisyo upang magsimula",
+    ],
+    portalViewMyInfo: ["View my info", "Tingnan ang aking impormasyon"],
+    portalViewMyActivity: ["View my activity", "Tingnan ang aking aktibidad"],
+    portalOpenInbox: ["Open inbox", "Buksan ang inbox"],
+    portalRequestCert: ["Request certificate", "Humiling ng sertipiko"],
+    portalFileReport: ["File a report", "Mag-ulat"],
+    portalGiveFeedback: ["Give feedback", "Magbigay ng puna"],
+    portalViewMap: ["View map", "Tingnan ang mapa"],
+    portalApply: ["Apply", "Mag-apply"],
+    portalMyInfoDesc: [
+      "View your account details and your barangay record on file.",
+      "Tingnan ang detalye ng inyong account at ang inyong talaan sa barangay.",
+    ],
+    portalMyActivityDesc: [
+      "Track everything you sent the barangay \u2014 certificate requests, changes to your details, incident reports, and feedback.",
+      "Subaybayan ang lahat ng ipinadala ninyo sa barangay \u2014 mga hiling na sertipiko, pagbabago sa inyong detalye, mga ulat ng insidente, at mga puna.",
+    ],
+    portalNotificationsDesc: [
+      "Updates on your requests and messages from the barangay office.",
+      "Mga update sa inyong mga hiling at mensahe mula sa tanggapan ng barangay.",
+    ],
+    portalCertDesc: [
+      "Request Barangay Clearances, Certificates of Indigency, Residency, Good Moral, Business Clearance, and more.",
+      "Humiling ng Barangay Clearance, Certificate of Indigency, Residency, Good Moral, Business Clearance, at iba pa.",
+    ],
+    portalIncidentDesc: [
+      "File an incident report for complaints, disputes, altercations, vandalism, or other concerns happening in the barangay.",
+      "Mag-ulat ng insidente para sa reklamo, alitan, away, bandalismo, o iba pang alalahanin sa barangay.",
+    ],
+    portalFeedbackDesc: [
+      "Share your comments, suggestions, or concerns about barangay services. Your voice helps improve governance.",
+      "Ibahagi ang inyong komento, mungkahi, o alalahanin tungkol sa serbisyo ng barangay. Nakakatulong ang inyong boses sa mas mahusay na pamamahala.",
+    ],
+    portalGisDesc: [
+      "View the interactive map of Barangay Conde Labak \u2014 showing puroks, hazard zones, health centers, and key landmarks.",
+      "Tingnan ang interactive na mapa ng Barangay Conde Labak \u2014 ipinapakita ang mga purok, mapanganib na lugar, health center, at mahahalagang palatandaan.",
+    ],
+    portalApplyDesc: [
+      "Get a resident account to request certificates and track your requests online. Apply with a valid ID \u2014 a barangay official reviews it.",
+      "Kumuha ng resident account upang makahiling ng sertipiko at masubaybayan ang inyong mga hiling online. Mag-apply gamit ang valid ID \u2014 susuriin ito ng isang opisyal ng barangay.",
+    ],
+    portalNotices: ["Barangay Notices", "Mga Paalala ng Barangay"],
+
+    // ── Landing page values the labels already had keys for ─────────────
+    historyTitle: ["The History of Conde Labak", "Ang Kasaysayan ng Conde Labak"],
+    hotlineBarangay: ["Barangay Hotline", "Hotline ng Barangay"],
+    officeHoursValue: [
+      "Monday\u2013Friday \u00b7 8:00 AM \u2013 5:00 PM",
+      "Lunes\u2013Biyernes \u00b7 8:00 AM \u2013 5:00 PM",
+    ],
+    officeHoursShort: [
+      "Mon\u2013Fri \u00b7 8:00 AM\u20135:00 PM",
+      "Lun\u2013Bye \u00b7 8:00 AM\u20135:00 PM",
+    ],
+    rightsReserved: [
+      "\u00a9 2026 Barangay Conde Labak. All rights reserved.",
+      "\u00a9 2026 Barangay Conde Labak. Nakalaan ang lahat ng karapatan.",
+    ],
   };
 
   var listeners = [];
