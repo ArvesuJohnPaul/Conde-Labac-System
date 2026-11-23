@@ -515,11 +515,22 @@
     max-width: 100%;
   }
 
+
   /* The panel headings on the GIS page are whole-row toggle buttons that
      fold the panel. They were 18px tall. */
   .gis-panel-toggle,
   .gis-hz-head {
     min-height: 44px;
+  }
+
+  /* The hint pill that says where to tap is centred on the map's bottom edge,
+     and "Use my location" sits at the right of that same edge. On a 900px map
+     they clear each other, as the comment beside them says; on the 322px map
+     inside the incident modal the pill is 92% of the width and the button
+     lands on top of the instruction. Lifting the pill a line is what its own
+     error variant already does. */
+  .gis-report-hint {
+    bottom: 56px;
   }
 
   /* .gis-filter-row is shared: the map's layer pills, and the search-plus-
@@ -545,6 +556,27 @@
   .gis-filter-row > .gis-filter-select {
     flex: 1 1 10rem;
     min-width: 0;
+  }
+}
+
+/* Wrapping is not enough on its own, because the map's controls live in two
+   separately positioned corners: zoom, Mark Hazard and Edit Mode at the top
+   right, Measure and Show/Hide Outside at the top left. The right-hand
+   toolbar spans the full width of the map (left:10px right:10px) so that its
+   rows CAN wrap — which also means it only wraps on reaching the map's LEFT
+   edge, long after it has run over the left-hand pair. At 390px the zoom-in
+   button sat underneath them.
+
+   Reserving the left pair's width makes the rows wrap before the two meet.
+   This is a 640px rule, not a 760px one, because that is where gis.css hides
+   those buttons' labels and leaves the pair two icon-only buttons:
+   2 × (12px padding + 14px icon + 12px padding + 2px border) + a 6px gap =
+   86px, and 92px leaves a little air. The gutter costs the public map
+   nothing — it has no left-hand tools, and the rows stay flush right either
+   way. */
+@media (max-width: 640px) {
+  .gis-map-toolbar {
+    padding-left: 92px;
   }
 }
 
@@ -883,5 +915,77 @@
   .sc-field-value,
   .notif-panel-list {
     overflow-wrap: anywhere;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   16 · THE TYPE SCALE
+   ═══════════════════════════════════════════════════
+
+   Everything in the system sizes its text from the --text-* tokens in
+   tokens.css, and those are a desktop scale: 30px KPI numbers, 24px page
+   titles, 20px card titles. Against the 356px a phone actually gives a page
+   they are out of proportion — a KPI card is mostly digit, a page title takes
+   two lines on its own, and a card header's title and its button stop fitting
+   on one row.
+
+   So the scale itself is re-stated here rather than the dozens of rules that
+   read from it; one change, and the whole interface keeps its proportions.
+
+   Only the display end moves. 15px and below is body and UI text, where a
+   point smaller is harder to read rather than tidier, and 16px is the floor
+   that stops iOS Safari zooming in on a focused input (§6). Above that the
+   sizes come down by about a fifth, which is roughly the ratio between the
+   two column widths. */
+@media (max-width: 640px) {
+  :root {
+    --text-md: 0.875rem; /* 15 → 14 */
+    --text-lg: 0.9375rem; /* 17 → 15 */
+    --text-xl: 1.0625rem; /* 20 → 17 */
+    --text-2xl: 1.1875rem; /* 24 → 19 */
+    --text-3xl: 1.4375rem; /* 30 → 23 */
+    --text-4xl: 1.6875rem; /* 36 → 27 */
+  }
+
+  /* The headlines on the public site are not tokens — they are clamp()s whose
+     middle term is a vw, and below about 840px the vw term has fallen under
+     the floor, so the floor is all a phone ever sees. The hero headline was
+     43px on a 390px screen, about eight characters to the line. Each floor is
+     re-stated with a vw that still has somewhere to go. */
+  .hero-title {
+    font-size: clamp(1.75rem, 7.5vw, 2.6rem);
+  }
+
+  .section-title {
+    font-size: clamp(1.25rem, 5vw, 1.65rem);
+  }
+
+  .announcements-grid .announcement-card:first-child .announcement-title {
+    font-size: 1.1rem;
+  }
+
+  .footer-title {
+    font-size: 1.0625rem;
+  }
+
+  /* The resident portal's welcome banner, same shape of rule in system.css. */
+  .portal-welcome h2 {
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   17 · THE MAP'S SHARE OF THE SCREEN
+   ═══════════════════════════════════════════════════
+
+   The GIS page's map is 640px tall. On an 844px phone that is the screen,
+   and once it is zoomed in it also takes the one-finger drag (see
+   .gis-svg-pannable in css/gis.css), so the page could only be scrolled from
+   the few pixels above and below it. 420px is the height landing.css already
+   gives the same map inside a public section panel, for the same reason. */
+@media (max-width: 768px) {
+  .gis-map-embed,
+  .gis-map-embed.gis-custom-map {
+    height: 420px;
   }
 }

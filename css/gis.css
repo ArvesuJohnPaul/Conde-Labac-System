@@ -836,6 +836,17 @@
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  /* Touch gestures belong to the map, not to the browser. `pan-y` denies the
+     browser the pinch — which it otherwise answers by zooming the whole
+     document, measured as scale 1 → 5 on a two-finger spread while the map
+     itself did not move at all — and js/gis-map.js handles that pinch
+     instead. A one-finger drag is left to the page, because at the fitted
+     zoom the map cannot pan anyway and a map that ate the scroll would be a
+     trap. Once it CAN pan, gis-map.js adds .gis-svg-pannable below. */
+  touch-action: pan-y;
+}
+.gis-svg.gis-svg-pannable {
+  touch-action: none;
 }
 .gis-drawing .gis-svg {
   cursor: crosshair;

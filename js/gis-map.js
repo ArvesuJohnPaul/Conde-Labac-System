@@ -2306,8 +2306,8 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   const editControlsHtml = editable
     ? `
       <button type="button" class="gis-toolbar-btn gis-deselect-btn" data-gis-deselect-tool title="Deselect current tool (Esc)" hidden>${gisIcon("cancelX")} Deselect</button>
-      <button type="button" class="gis-toolbar-btn gis-mark-hazard-btn" data-gis-mark-hazard aria-pressed="false" title="Mark a hazard area on the map — click the center, then click again to size it">${gisIcon("warningTriangle")} Mark Hazard</button>
-      <button type="button" class="gis-toolbar-btn gis-edit-toggle-btn" data-gis-edit-toggle title="Toggle map editing">${gisIcon("edit")} Edit Mode</button>`
+      <button type="button" class="gis-toolbar-btn gis-mark-hazard-btn" data-gis-mark-hazard aria-pressed="false" aria-label="Mark hazard area" title="Mark a hazard area on the map — click the center, then click again to size it">${gisIcon("warningTriangle")}<span class="gis-tool-label">Mark Hazard</span></button>
+      <button type="button" class="gis-toolbar-btn gis-edit-toggle-btn" data-gis-edit-toggle aria-label="Toggle map editing" title="Toggle map editing">${gisIcon("edit")}<span class="gis-tool-label">Edit Mode</span></button>`
     : "";
 
   const drawGroups = [
@@ -2688,9 +2688,17 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
   // edges of what the map showed on load; at the fit zoom itself the view is
   // pinned. Recomputed from the live container size so a resize can't strand
   // the view somewhere it could no longer reach.
+  // The fit zoom as of the last clamp. Panning is only possible above it (see
+  // clampPan), and the touch handling further down needs to know which side of
+  // it the view is on to decide whether a one-finger drag belongs to the map
+  // or to the page. Stashed rather than recomputed because computeFitZoom()
+  // reads layout, and this is wanted on every frame of a pan.
+  let lastFitZoom = 1;
+
   function clampPan() {
     const vis = visibleViewBoxRect();
     const fitZoom = computeFitZoom();
+    lastFitZoom = fitZoom;
     const fitPan = 500 * (1 - fitZoom);
     const clampAxis = (pan, visMin, visMax) => {
       const homeMin = (visMin - fitPan) / fitZoom;
@@ -2710,6 +2718,12 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       "transform",
       `translate(${state.panX} ${state.panY}) scale(${state.zoom})`,
     );
+    // Who gets a one-finger drag — the map or the page. At or below the fitted
+    // zoom the map has nowhere to pan to (clampPan pins it), so taking the
+    // gesture would strand a reader half way down the map with the page
+    // refusing to scroll; above it the map takes the drag like any map does.
+    // css/gis.css carries the two touch-action values.
+    svg.classList.toggle("gis-svg-pannable", state.zoom > lastFitZoom * 1.02);
   }
 
   // With the view clamped to the initial fitted extent (clampPan above), a
@@ -6219,6 +6233,153 @@ function gisCreateMap(container, geojson, layers, project, maxZoom, opts) {
       zoomAt(state.zoom * factor, anchorX, anchorY);
     },
     { passive: false },
+  );
+
+  // ── Touch: one finger pans, two fingers pinch-zoom ──
+  //
+  // Everything above this point is mouse-only, and a phone browser does not
+  // fill the gap. It synthesises mousedown/mouseup/click for a TAP, but never
+  // for a drag or a pinch: those it keeps and spends on the page. Measured on
+  // a 390px screen, a two-finger spread over the map left the map's own
+  // transform byte-for-byte unchanged and took the whole document from scale
+  // 1 to scale 5 — the page zoomed, the map did not, and the only way to
+  // actually zoom the map was its three toolbar buttons.
+  //
+  //   one finger  → pan, 1:1 with the finger
+  //   two fingers → scale about the midpoint, and follow the midpoint
+  //
+  // Both are measured in viewBox units, not client pixels, because the square
+  // 0..1000 viewBox is letterboxed into the container: on the 322px-wide map
+  // of a 390px phone one client pixel is about 3.1 viewBox units, so adding
+  // client pixels straight onto state.panX — which is what the mouse path
+  // does — would move the map at a third of the speed of the finger.
+  //
+  // Both are also incremental, re-seeded from the fingers on every frame, so
+  // lifting one finger of a pinch, or landing a second mid-drag, changes what
+  // the gesture does without the map jumping.
+  let touchPan = null; // { x, y } viewBox, { cx, cy } client — last 1-finger position
+  let pinch = null; // { dist, x, y } viewBox — last 2-finger spread and midpoint
+  let touchMoved = false; // did this gesture move, i.e. is it a drag and not a tap?
+
+  function touchPair(evt) {
+    const out = [];
+    for (let i = 0; i < evt.touches.length && i < 2; i++)
+      out.push(screenToViewBox(evt.touches[i].clientX, evt.touches[i].clientY));
+    return out;
+  }
+
+  function pinchOf(p) {
+    const dx = p[0][0] - p[1][0];
+    const dy = p[0][1] - p[1][1];
+    return {
+      dist: Math.hypot(dx, dy) || 1,
+      x: (p[0][0] + p[1][0]) / 2,
+      y: (p[0][1] + p[1][1]) / 2,
+    };
+  }
+
+  function seedTouch(evt) {
+    const p = touchPair(evt);
+    if (p.length >= 2) {
+      pinch = pinchOf(p);
+      touchPan = null;
+    } else if (p.length === 1) {
+      pinch = null;
+      touchPan = { x: p[0][0], y: p[0][1], cx: evt.touches[0].clientX, cy: evt.touches[0].clientY };
+    } else {
+      pinch = null;
+      touchPan = null;
+    }
+  }
+
+  svg.addEventListener(
+    "touchstart",
+    (evt) => {
+      // Deliberately no preventDefault: a tap must keep synthesising its
+      // click, which is what drops a report pin, picks an incident's location
+      // and adds a vertex while drawing. Only a gesture that MOVES takes the
+      // event away from the browser (below).
+      touchMoved = false;
+      seedTouch(evt);
+    },
+    { passive: true },
+  );
+
+  svg.addEventListener(
+    "touchmove",
+    (evt) => {
+      const p = touchPair(evt);
+      if (p.length >= 2) {
+        if (!pinch) {
+          pinch = pinchOf(p); // a second finger landed mid-drag
+          return;
+        }
+        const now = pinchOf(p);
+        const factor = now.dist / pinch.dist || 1;
+        // The midpoint's travel pans, its spread zooms. Panning first means
+        // zoomAt anchors on where the fingers now are, so the point held
+        // between them stays between them.
+        state.panX += now.x - pinch.x;
+        state.panY += now.y - pinch.y;
+        pinch = now;
+        touchMoved = true;
+        zoomAt(state.zoom * factor, now.x, now.y);
+        evt.preventDefault();
+        return;
+      }
+      if (p.length !== 1) return;
+      if (!touchPan) {
+        seedTouch(evt); // down to one finger after a pinch
+        return;
+      }
+      // At the fitted zoom the map has nowhere to pan to — clampPan would undo
+      // the move — so the drag is the page's, and taking it would leave a
+      // reader stuck against a 420px map that refuses to scroll. The class is
+      // applyTransform's, and css/gis.css tells the browser the same thing
+      // through touch-action; this is the half of that decision the handler
+      // has to make, because preventDefault would override the CSS.
+      if (!svg.classList.contains("gis-svg-pannable")) return;
+      const t = evt.touches[0];
+      // The same few pixels of slop the mouse path uses, measured in client
+      // pixels: within it the gesture is still a tap and the map must not
+      // move, or a pin would land a few metres from where it was placed.
+      if (!touchMoved && Math.abs(t.clientX - touchPan.cx) <= 3 && Math.abs(t.clientY - touchPan.cy) <= 3) return;
+      touchMoved = true;
+      state.panX += p[0][0] - touchPan.x;
+      state.panY += p[0][1] - touchPan.y;
+      touchPan = { x: p[0][0], y: p[0][1], cx: t.clientX, cy: t.clientY };
+      applyTransform();
+      evt.preventDefault();
+    },
+    { passive: false },
+  );
+
+  svg.addEventListener(
+    "touchend",
+    (evt) => {
+      // A gesture that moved was a pan or a pinch, and must not also place
+      // something. Cancelling the default here is what stops the browser
+      // synthesising the trailing click — cleaner than the mouse path's
+      // suppressClickAdd flag, which depends on a click actually arriving to
+      // clear itself and would otherwise swallow the NEXT tap.
+      if (touchMoved) evt.preventDefault();
+      if (!evt.touches.length) {
+        touchMoved = false;
+        pinch = null;
+        touchPan = null;
+      } else seedTouch(evt);
+    },
+    { passive: false },
+  );
+
+  svg.addEventListener(
+    "touchcancel",
+    () => {
+      touchMoved = false;
+      pinch = null;
+      touchPan = null;
+    },
+    { passive: true },
   );
 
   // ── Click on the map background: place a report pin in report mode, place

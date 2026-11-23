@@ -99,8 +99,12 @@ function ensureIncidentModalShell() {
     <div class="modal-body">
       <div class="alert alert-warning">
         <span class="alert-icon"><i data-icon="triangle-alert"></i></span>
-        For life-threatening emergencies, call <strong>911</strong> or the barangay
-        hotline at <strong data-hotline="primary-number">043-702-8875</strong> immediately.
+        <!-- Two lines, not one sentence: at phone width the hotline was the
+             last thing on the line and got cut off at the right edge. -->
+        <span class="alert-lines">
+          <span>For life-threatening emergencies, call <strong>911</strong> immediately.</span>
+          <span>Barangay hotline: <strong data-hotline="primary-number">043-702-8875</strong></span>
+        </span>
       </div>
       <div class="alert alert-info is-hidden" id="inc-log-banner">
         <span class="alert-icon"><i data-icon="phone"></i></span>

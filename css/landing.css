@@ -2251,6 +2251,15 @@ html:not(.is-visitor) .services-footnote {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  /* The public page carries its own copy of the map's rules because it does
+     not load css/gis.css. Touch gestures: `pan-y` denies the browser the
+     pinch — which it answers by zooming the whole document — leaving it to
+     js/gis-map.js, while a one-finger drag stays the page's until the map has
+     somewhere to pan to. See css/gis.css for the long version. */
+  touch-action: pan-y;
+}
+.gis-svg.gis-svg-pannable {
+  touch-action: none;
 }
 .gis-drawing .gis-svg {
   cursor: crosshair;
