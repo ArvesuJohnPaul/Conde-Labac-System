@@ -1900,3 +1900,77 @@ textarea.form-control {
   /* A hairline keeps a light photo from bleeding into a light bar. */
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
+
+
+/* ── Language sweep ──────────────────────────────────────────────────────
+   The wipe that plays when the language changes, driven by js/i18n.js.
+
+   A MASK, not one span per letter. Splitting the landing page's 3,386
+   on-screen translated characters into their own elements would take a
+   1,037-element page past 4,400 — and a character sitting in its own
+   inline-block no longer wraps like a character inside a word, so lines
+   would break mid-word. A mask adds no nodes at all and never reaches
+   layout: it is paint only, and the text keeps wrapping the way it always
+   did.
+
+   The mask is three times the width of the element — a clear third, a
+   ramp, and an opaque third — so sliding it from 100% to 0% walks the
+   boundary across the text from left to right. WHICH third starts under
+   the text is the only difference between the half that takes the old
+   words away and the half that brings the new ones in, which is why both
+   animate in the same direction and only the gradient is swapped.
+
+   --sweep-pos is the only thing that moves. Everything else is set once by
+   the script, and the whole lot is stripped off the element when the sweep
+   finishes, so nothing here is paid for while the page is just sitting
+   there.                                                                   */
+[data-i18n-sweep] {
+  -webkit-mask-image: var(--sweep-img);
+  mask-image: var(--sweep-img);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: var(--sweep-pos, 100% 0);
+  mask-position: var(--sweep-pos, 100% 0);
+}
+
+/* Leaving: clear third first, so the text empties from the left. */
+[data-i18n-sweep="go"] {
+  --sweep-img: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 40%,
+    #000 60%,
+    #000 100%
+  );
+}
+
+/* Arriving: opaque third first, so the text fills from the left. */
+[data-i18n-sweep="come"] {
+  --sweep-img: linear-gradient(
+    90deg,
+    #000 0%,
+    #000 40%,
+    transparent 60%,
+    transparent 100%
+  );
+}
+
+/* Added a frame after the starting position is committed — set together,
+   the browser folds the two into one and nothing moves. */
+[data-i18n-sweep].is-sweeping {
+  transition:
+    -webkit-mask-position var(--sweep-ms, 200ms) linear var(--sweep-delay, 0ms),
+    mask-position var(--sweep-ms, 200ms) linear var(--sweep-delay, 0ms);
+}
+
+/* The script checks this too and swaps the text outright; this is here so a
+   sweep already running when the setting changes cannot leave text masked. */
+@media (prefers-reduced-motion: reduce) {
+  [data-i18n-sweep] {
+    -webkit-mask-image: none;
+    mask-image: none;
+    transition: none;
+  }
+}

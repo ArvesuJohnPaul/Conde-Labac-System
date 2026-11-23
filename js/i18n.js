@@ -778,6 +778,140 @@
     });
   }
 
+  // ── The language sweep ────────────────────────────────────────
+  // Changing language wipes the old words away from the left and brings the
+  // new ones back the same way. The mechanics are a mask slid across each
+  // element — see "Language sweep" in css/shared.css for why it is a mask
+  // and not one element per letter.
+  //
+  // Only the PAINT is deferred. `language` and the stored preference are
+  // updated before the sweep starts, so anything reading L.language or
+  // calling L.t() during it already gets the new value. What waits for the
+  // midpoint is the text in the page and the listeners — those exist to
+  // redraw script-built markup, and firing them early would swap that
+  // markup in plain sight while the rest of the page is still wiping.
+  var SWEEP = {
+    leave: 200, // ms for the old text to go
+    enter: 240, // ms for the new text to arrive
+    stagger: 12, // ms between neighbours, so it reads as one wave
+    maxStagger: 120, // ...but the wave never drags
+    cap: 60, // elements animated; the rest still swap, just at once
+    margin: 120, // px outside the viewport still worth animating
+    slack: 40, // ms of grace before the next phase, for a slow frame
+  };
+
+  // The sweep in flight, if any.
+  var active = null;
+
+  function sweepUsable() {
+    try {
+      if (document.hidden) return false;
+      if (!window.matchMedia || !window.CSS || !window.CSS.supports) return false;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+      var g = "linear-gradient(90deg,#000,transparent)";
+      return (
+        window.CSS.supports("mask-image", g) ||
+        window.CSS.supports("-webkit-mask-image", g)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // The translated elements worth masking: on screen, laid out, and a single
+  // box. An inline run broken over two lines is skipped — its mask would be
+  // measured against a rectangle that is not the shape of the text, and the
+  // wipe would cross the second line before it had finished the first.
+  function sweepTargets() {
+    var all = document.querySelectorAll("[data-i18n]");
+    var h = window.innerHeight || 0;
+    var out = [];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!el.offsetParent) continue; // display:none, or detached
+      if (el.getClientRects().length !== 1) continue; // wrapped inline run
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      if (r.bottom < -SWEEP.margin || r.top > h + SWEEP.margin) continue;
+      out.push({ el: el, top: r.top, left: r.left });
+    }
+    // Reading order rather than markup order, banded so things standing side
+    // by side leave together instead of one just after the other.
+    out.sort(function (a, b) {
+      return Math.round(a.top / 28) - Math.round(b.top / 28) || a.left - b.left;
+    });
+    return out.slice(0, SWEEP.cap);
+  }
+
+  function sweepClear(items) {
+    items.forEach(function (it) {
+      var el = it.el;
+      el.removeAttribute("data-i18n-sweep");
+      el.classList.remove("is-sweeping");
+      el.style.removeProperty("--sweep-pos");
+      el.style.removeProperty("--sweep-ms");
+      el.style.removeProperty("--sweep-delay");
+    });
+  }
+
+  // One half of the wipe. Both halves slide the mask the same way; which
+  // gradient is underneath decides whether that reads as going or coming.
+  function sweepPhase(job, phase, done) {
+    var ms = phase === "go" ? SWEEP.leave : SWEEP.enter;
+    var last = 0;
+    job.items.forEach(function (it, i) {
+      var delay = Math.min(i * SWEEP.stagger, SWEEP.maxStagger);
+      if (delay > last) last = delay;
+      var el = it.el;
+      // The transition is off while the starting point is set, or the
+      // element animates backwards into it first.
+      el.classList.remove("is-sweeping");
+      el.setAttribute("data-i18n-sweep", phase);
+      el.style.setProperty("--sweep-ms", ms + "ms");
+      el.style.setProperty("--sweep-delay", delay + "ms");
+      el.style.setProperty("--sweep-pos", "100% 0");
+    });
+    void document.body.offsetHeight; // commit that as a jump, not a move
+    job.items.forEach(function (it) {
+      it.el.classList.add("is-sweeping");
+      it.el.style.setProperty("--sweep-pos", "0% 0");
+    });
+    // A timer rather than transitionend: an element removed mid-sweep (a
+    // panel re-rendering under us) would never fire the event, and the swap
+    // must happen whatever the page does.
+    job.timer = setTimeout(done, ms + last + SWEEP.slack);
+  }
+
+  // Runs `swap` — the thing that actually changes the words — at the moment
+  // every animated element is invisible.
+  function sweep(swap) {
+    // Anything already running is finished off first, at once: two sweeps
+    // sharing an element would leave a mask behind on it.
+    if (active) {
+      var prev = active;
+      active = null;
+      clearTimeout(prev.timer);
+      if (prev.swap) prev.swap();
+      sweepClear(prev.items);
+    }
+    if (!sweepUsable()) return swap();
+    var items = sweepTargets();
+    if (!items.length) return swap();
+
+    var job = { items: items, swap: swap, timer: 0 };
+    active = job;
+    sweepPhase(job, "go", function () {
+      if (active !== job) return;
+      job.swap();
+      job.swap = null;
+      sweepPhase(job, "come", function () {
+        if (active !== job) return;
+        active = null;
+        sweepClear(job.items);
+      });
+    });
+  }
+
   function setLanguage(next) {
     if (LANGS.indexOf(next) === -1 || next === language) return;
     language = next;
@@ -786,16 +920,20 @@
     } catch (e) {
       // A failed write only costs the preference on the next visit.
     }
-    apply();
-    notify();
+    sweep(function () {
+      apply();
+      notify();
+    });
   }
 
   // Another tab changed the language — mirror it here.
   window.addEventListener("storage", function (e) {
     if (e.key !== KEY) return;
     language = read();
-    apply();
-    notify();
+    sweep(function () {
+      apply();
+      notify();
+    });
   });
 
   window.L = {
