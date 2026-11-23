@@ -210,6 +210,18 @@
       sidebarNav(active) +
       "</nav>" +
       '<div class="sidebar-footer">' +
+      // The how-to videos, one per module (js/guide-videos.js). Pinned here
+      // rather than listed with the modules: it is not a module, no role is
+      // kept from it, and it should not scroll away under a long sidebar.
+      // Its onclick deliberately does not read nav(...), so the role filter
+      // in shell.js (applyOfficerModuleVisibility) leaves it alone.
+      '<button type="button" class="nav-item nav-item-guides" onclick="openGuideLibrary()">' +
+      '<span class="nav-icon">' +
+      ico("circle-play") +
+      "</span>" +
+      '<span class="nav-label">Guide Videos</span>' +
+      '<span class="nav-tip" aria-hidden="true">Guide Videos</span>' +
+      "</button>" +
       '<div class="user-pill">' +
       '<span class="user-avatar" id="sidebar-avatar">··</span>' +
       '<span class="user-meta">' +
@@ -626,6 +638,32 @@
     Theme.subscribe(paint);
     paint();
   }
+
+  // ── Guide videos ───────────────────────────────────────────────────────
+  // The sidebar's "Guide Videos". js/guide-videos.js (and its stylesheet) load
+  // on first use: every MIS page renders this shell, and most visits never
+  // open the videos.
+  var guidesLoading = false;
+  window.openGuideLibrary = function () {
+    if (window.GuideVideos) return window.GuideVideos.library();
+    if (guidesLoading) return;
+    guidesLoading = true;
+    var s = document.createElement("script");
+    s.src = "../js/guide-videos.js";
+    s.onload = function () {
+      guidesLoading = false;
+      if (window.GuideVideos) window.GuideVideos.library();
+    };
+    s.onerror = function () {
+      guidesLoading = false;
+      if (typeof window.showToast === "function")
+        window.showToast(
+          "The guide videos could not be loaded. Check the connection.",
+          "<i data-icon=triangle-alert></i>"
+        );
+    };
+    document.head.appendChild(s);
+  };
 
   // ── Boot ───────────────────────────────────────────────────────────────
   var app = document.getElementById("app");

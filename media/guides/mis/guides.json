@@ -1,0 +1,335 @@
+{
+  "note": "Written by motion/publish.js — do not edit by hand.",
+  "videos": [
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "subtitle": "Sign in, see what is waiting today, and get to any part of the MIS.",
+      "icon": "home",
+      "file": "mis/01-dashboard.mp4",
+      "poster": "mis/01-dashboard.jpg",
+      "duration": 69.2,
+      "steps": [
+        {
+          "t": 5.9,
+          "label": "Sign in with your staff account"
+        },
+        {
+          "t": 11.7,
+          "label": "See what came in while you were away"
+        },
+        {
+          "t": 19.8,
+          "label": "Read the numbers at the top"
+        },
+        {
+          "t": 27.9,
+          "label": "Start with the AI Briefing"
+        },
+        {
+          "t": 35.8,
+          "label": "Scroll for activity and charts"
+        },
+        {
+          "t": 42.9,
+          "label": "Check the bell for alerts"
+        },
+        {
+          "t": 51.7,
+          "label": "Jump to any module from the search"
+        }
+      ]
+    },
+    {
+      "id": "residency",
+      "title": "Barangay Residency",
+      "subtitle": "Find residents, read their records, add new ones, and approve the corrections they ask for.",
+      "icon": "houses",
+      "file": "mis/02-residency.mp4",
+      "poster": "mis/02-residency.jpg",
+      "duration": 65.7,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Barangay Residency"
+        },
+        {
+          "t": 13.9,
+          "label": "Filter or search the directory"
+        },
+        {
+          "t": 24.3,
+          "label": "Open a resident's profile"
+        },
+        {
+          "t": 31.4,
+          "label": "Add a new resident"
+        },
+        {
+          "t": 46.4,
+          "label": "Approve a correction a resident asked for"
+        }
+      ]
+    },
+    {
+      "id": "certificates",
+      "title": "Certificate Processing",
+      "subtitle": "Review residents' requests, approve them, print the certificate and release it.",
+      "icon": "file-text",
+      "file": "mis/03-certificates.mp4",
+      "poster": "mis/03-certificates.jpg",
+      "duration": 64.9,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Certificate Processing"
+        },
+        {
+          "t": 13.1,
+          "label": "Find the request"
+        },
+        {
+          "t": 19.8,
+          "label": "Check the details and the attached ID"
+        },
+        {
+          "t": 36.6,
+          "label": "Approve it: the resident is texted"
+        },
+        {
+          "t": 44.6,
+          "label": "Print the certificate"
+        },
+        {
+          "t": 51.2,
+          "label": "Mark it Released once it is picked up"
+        }
+      ]
+    },
+    {
+      "id": "incidents",
+      "title": "Blotter / Incidents",
+      "subtitle": "Read residents' reports, see who was alerted, find them on the map and resolve them.",
+      "icon": "siren",
+      "file": "mis/04-incidents.mp4",
+      "poster": "mis/04-incidents.jpg",
+      "duration": 53.6,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Blotter / Incidents"
+        },
+        {
+          "t": 14.8,
+          "label": "Open a report to read it"
+        },
+        {
+          "t": 22,
+          "label": "The officials were texted when it came in"
+        },
+        {
+          "t": 30.1,
+          "label": "See where it happened on the map"
+        },
+        {
+          "t": 36.3,
+          "label": "Resolve it once it is settled"
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "title": "Feedback",
+      "subtitle": "See what residents keep raising, act on urgent comments, and tell the resident what was done.",
+      "icon": "message-square",
+      "file": "mis/05-feedback.mp4",
+      "poster": "mis/05-feedback.jpg",
+      "duration": 54.4,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Feedback"
+        },
+        {
+          "t": 13.6,
+          "label": "Read the recurring concerns"
+        },
+        {
+          "t": 20.1,
+          "label": "Check what needs attention"
+        },
+        {
+          "t": 26.5,
+          "label": "Resolve it and say what was done"
+        },
+        {
+          "t": 40.5,
+          "label": "The resident gets your reply"
+        }
+      ]
+    },
+    {
+      "id": "gis",
+      "title": "GIS Mapping",
+      "subtitle": "The barangay on one map: households, hazard zones and every report, in one place.",
+      "icon": "map",
+      "file": "mis/06-gis.mp4",
+      "poster": "mis/06-gis.jpg",
+      "duration": 57.1,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open GIS Mapping"
+        },
+        {
+          "t": 13.7,
+          "label": "Choose what the map shows"
+        },
+        {
+          "t": 23,
+          "label": "Highlight households by group"
+        },
+        {
+          "t": 31.7,
+          "label": "Find a household"
+        },
+        {
+          "t": 41,
+          "label": "Check the hazard zones"
+        }
+      ]
+    },
+    {
+      "id": "accounts",
+      "title": "Account Claiming",
+      "subtitle": "Check residents' ID and selfie, connect them to their barangay record, and approve the account.",
+      "icon": "key",
+      "file": "mis/07-accounts.mp4",
+      "poster": "mis/07-accounts.jpg",
+      "duration": 46.9,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Account Claiming"
+        },
+        {
+          "t": 15,
+          "label": "Review a pending application"
+        },
+        {
+          "t": 17.1,
+          "label": "Compare the ID and selfie with the form"
+        },
+        {
+          "t": 25,
+          "label": "Connect it to the matching barangay record"
+        },
+        {
+          "t": 31.2,
+          "label": "Approve: the resident is texted and can sign in"
+        }
+      ]
+    },
+    {
+      "id": "analytics",
+      "title": "Analytics",
+      "subtitle": "The barangay's figures over time, for reports and planning.",
+      "icon": "chart",
+      "file": "mis/08-analytics.mp4",
+      "poster": "mis/08-analytics.jpg",
+      "duration": 52.4,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Analytics"
+        },
+        {
+          "t": 8.9,
+          "label": "Read the four headline rates"
+        },
+        {
+          "t": 16,
+          "label": "Follow requests month by month"
+        },
+        {
+          "t": 21,
+          "label": "See which incidents are most common"
+        },
+        {
+          "t": 27,
+          "label": "Check satisfaction and certificate demand"
+        },
+        {
+          "t": 33.1,
+          "label": "Find where incidents cluster"
+        },
+        {
+          "t": 39.3,
+          "label": "Compare the puroks fairly"
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "title": "Site Content",
+      "subtitle": "Post announcements, text them to residents, and keep the portal's history, officials and hotlines current.",
+      "icon": "megaphone",
+      "file": "mis/09-content.mp4",
+      "poster": "mis/09-content.jpg",
+      "duration": 77,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Open Site Content"
+        },
+        {
+          "t": 14.3,
+          "label": "Write a new announcement"
+        },
+        {
+          "t": 29.5,
+          "label": "Publish it to the portal"
+        },
+        {
+          "t": 37.1,
+          "label": "Text it to residents too (optional)"
+        },
+        {
+          "t": 58.1,
+          "label": "Keep history, officials and hotlines current"
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "title": "Administration",
+      "subtitle": "Accounts and roles, the audit trail, every text the system sent, and restoring deleted records.",
+      "icon": "shield",
+      "file": "mis/10-admin.mp4",
+      "poster": "mis/10-admin.jpg",
+      "duration": 52.6,
+      "steps": [
+        {
+          "t": 6,
+          "label": "Manage accounts and roles"
+        },
+        {
+          "t": 16.4,
+          "label": "Decide what each role can open"
+        },
+        {
+          "t": 22.5,
+          "label": "See who did what in the Audit Logs"
+        },
+        {
+          "t": 29.6,
+          "label": "Check every text in the SMS Log"
+        },
+        {
+          "t": 37.7,
+          "label": "Restore a deleted record from the Archive"
+        }
+      ]
+    }
+  ]
+}

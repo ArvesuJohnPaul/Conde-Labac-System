@@ -439,6 +439,13 @@ body.drawer-open {
   border-top: 1px solid var(--sidebar-border);
 }
 
+/* "Guide Videos" (js/app-shell.js): a .nav-item, but inside the footer's own
+   padding rather than the nav's, so it drops the nav's side margins. */
+.sidebar-footer .nav-item-guides {
+  width: 100%;
+  margin: 0 0 var(--space-2);
+}
+
 .user-pill {
   display: flex;
   align-items: center;

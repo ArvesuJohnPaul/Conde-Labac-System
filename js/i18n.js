@@ -239,6 +239,16 @@
       "Share comments and suggestions on barangay services",
       "Ibahagi ang inyong komento at mungkahi sa serbisyo ng barangay",
     ],
+    // The how-to video at the foot of each service card (js/guide-videos.js).
+    // The video itself is in English; the words around it follow the page.
+    watchHow: ["Watch how", "Panoorin kung paano"],
+    guideCertificates: [
+      "How to request a certificate",
+      "Paano humiling ng sertipiko",
+    ],
+    guideIncidents: ["How to report an incident", "Paano mag-ulat ng insidente"],
+    guideFeedback: ["How to send feedback", "Paano magpadala ng puna"],
+    closeVideo: ["Close video", "Isara ang video"],
 
     // Profile
     myInformation: ["My Information", "Aking Impormasyon"],

@@ -1,0 +1,421 @@
+/* ═══════════════════════════════════════════════════
+   GUIDE VIDEOS — js/guide-videos.js
+   The thumbnail at the foot of each Citizen Services card
+   (index.html), the player it opens, and the MIS's library
+   of staff videos (sidebar → Guide Videos).
+   Colours come from tokens.css, so both themes follow.
+═══════════════════════════════════════════════════ */
+
+/* ── Landing: the card's thumbnail ───────────────────── */
+.service-guide {
+  position: relative;
+  /* Above .service-cta's ::after, which stretches the card's "Open
+     service" button over the whole card. */
+  z-index: 1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 4px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--navy-900);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.service-guide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+/* Darkens the lower edge so the caption reads on any frame. */
+.service-guide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(6, 14, 27, 0.82),
+    rgba(6, 14, 27, 0.1) 52%,
+    rgba(6, 14, 27, 0) 70%
+  );
+}
+
+.service-guide-play {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-full);
+  background: var(--gold-500);
+  color: var(--navy-900);
+  font-size: 18px;
+  box-shadow: 0 6px 22px rgba(6, 14, 27, 0.45);
+  transform: translate(-50%, -50%);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+/* The triangle's visual centre sits right of its box's centre. */
+.service-guide-play i[data-icon] {
+  margin-left: 3px;
+}
+
+.service-guide-caption {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.service-guide-time {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(6, 14, 27, 0.66);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.service-guide:hover img {
+  transform: scale(1.04);
+}
+
+.service-guide:hover .service-guide-play {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.service-guide:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── The player (both pages) ─────────────────────────── */
+.guide-video-modal .modal-header {
+  padding-block: var(--space-4) var(--space-3);
+}
+
+/* As wide as fits without the picture running past the bottom of the
+   window: 92vh is the box's own cap, less the header. */
+.modal-box.guide-video-box {
+  width: min(1180px, calc((92vh - 70px) * 16 / 9));
+  overflow: hidden;
+}
+
+.guide-video-stage {
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.guide-video-stage video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.guide-video-box .guide-video-stage {
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  overflow: hidden;
+}
+
+/* ── MIS: the library ────────────────────────────────── */
+.modal-box.guide-library-box {
+  display: flex;
+  flex-direction: column;
+  width: 1320px;
+  height: min(880px, 92vh);
+  overflow: hidden;
+}
+
+.guide-library {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.guide-library-note {
+  grid-column: 1 / -1;
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+.guide-library-main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.guide-library-main .guide-video-stage {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.guide-library-info {
+  padding-top: var(--space-4);
+}
+
+.guide-library-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.guide-library-title {
+  margin-top: 4px;
+  font-size: 1.25rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-brand);
+}
+
+.guide-library-sub {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.guide-steps-label {
+  margin-top: var(--space-5);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.guide-steps-label span {
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.guide-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
+  margin-top: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.guide-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.guide-step:hover {
+  background: var(--surface-hover);
+}
+
+.guide-step-num {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+}
+
+.guide-step-label {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.guide-step-time {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.guide-step.is-done .guide-step-num {
+  border-color: var(--accent-border);
+  color: var(--accent-fg);
+}
+
+.guide-step.is-current {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.guide-step.is-current .guide-step-num {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: var(--navy-900);
+}
+
+.guide-library-list {
+  /* Positioned, so a pick's offsetTop is measured from the list itself. */
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3);
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.guide-library-list ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-pick {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  font-family: inherit;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.guide-pick:hover {
+  background: var(--surface-hover);
+}
+
+.guide-pick.is-current {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.guide-pick-thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--navy-900);
+  aspect-ratio: 16 / 9;
+}
+
+.guide-pick-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.guide-pick-time {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(6, 14, 27, 0.78);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.guide-pick-text {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.guide-pick-num {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.guide-pick-title {
+  font-size: 0.86rem;
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+}
+
+/* Narrow windows: one column — player, its steps, then the list. The box
+   scrolls as a whole instead of each pane on its own. */
+@media (max-width: 900px) {
+  .modal-box.guide-library-box {
+    display: block;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .guide-library {
+    display: block;
+  }
+
+  .guide-library-main {
+    overflow: visible;
+    padding: var(--space-4);
+  }
+
+  .guide-library-list {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .guide-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-guide img,
+  .service-guide-play {
+    transition: none;
+  }
+}

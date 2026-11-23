@@ -50,6 +50,8 @@
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/shared.css" />
     <link rel="stylesheet" href="css/landing.css?v=20261024" />
+    <!-- The how-to video thumbnail on each service card, and its player. -->
+    <link rel="stylesheet" href="css/guide-videos.css" />
     <!-- The motion layer loads last: a few of its rules replace a one-shot
          animation with a two-way one and have to win the cascade. -->
     <link rel="stylesheet" href="css/motion.css" />
@@ -517,6 +519,33 @@
                 <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
               </button>
+              <!-- How-to video: this service's chapter of the resident guide
+                   (motion/, published by motion/publish.js). Plays in a
+                   modal, signed in or not — js/guide-videos.js. -->
+              <button
+                type="button"
+                class="service-guide"
+                onclick="openGuideVideo('certificates')"
+              >
+                <img
+                  src="media/guides/resident-certificates.jpg"
+                  alt=""
+                  width="960"
+                  height="540"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="service-guide-play" aria-hidden="true"
+                  ><i data-icon="play" class="ic-fill"></i
+                ></span>
+                <span class="service-guide-caption">
+                  <span data-i18n="watchHow">Watch how</span>
+                  <span class="sr-only" data-i18n="guideCertificates"
+                    >How to request a certificate</span
+                  >
+                  <span class="service-guide-time">0:25</span>
+                </span>
+              </button>
             </li>
 
             <li class="service-card">
@@ -544,6 +573,30 @@
                 <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
               </button>
+              <button
+                type="button"
+                class="service-guide"
+                onclick="openGuideVideo('incidents')"
+              >
+                <img
+                  src="media/guides/resident-incidents.jpg"
+                  alt=""
+                  width="960"
+                  height="540"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="service-guide-play" aria-hidden="true"
+                  ><i data-icon="play" class="ic-fill"></i
+                ></span>
+                <span class="service-guide-caption">
+                  <span data-i18n="watchHow">Watch how</span>
+                  <span class="sr-only" data-i18n="guideIncidents"
+                    >How to report an incident</span
+                  >
+                  <span class="service-guide-time">0:26</span>
+                </span>
+              </button>
             </li>
 
             <li class="service-card">
@@ -568,6 +621,30 @@
                 <span class="cta-member" data-i18n="openService">Open service</span>
                 <span class="cta-visitor" data-i18n="signInToUse">Sign in to use</span>
                 <i data-icon="arrow-right"></i>
+              </button>
+              <button
+                type="button"
+                class="service-guide"
+                onclick="openGuideVideo('feedback')"
+              >
+                <img
+                  src="media/guides/resident-feedback.jpg"
+                  alt=""
+                  width="960"
+                  height="540"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="service-guide-play" aria-hidden="true"
+                  ><i data-icon="play" class="ic-fill"></i
+                ></span>
+                <span class="service-guide-caption">
+                  <span data-i18n="watchHow">Watch how</span>
+                  <span class="sr-only" data-i18n="guideFeedback"
+                    >How to send feedback</span
+                  >
+                  <span class="service-guide-time">0:20</span>
+                </span>
               </button>
             </li>
           </ul>
@@ -2281,6 +2358,8 @@
     <script defer src="js/certificate-templates.js"></script>
     <script defer src="js/certificate-attachments.js"></script>
     <script defer src="js/portal-account.js"></script>
+    <!-- The service cards' how-to videos (openGuideVideo). -->
+    <script defer src="js/guide-videos.js"></script>
     <!-- Motion runtime: collapse/validation/exit animations. Last, so it
          observes a DOM every other script has already set up. -->
     <script src="js/input-guard.js"></script>
