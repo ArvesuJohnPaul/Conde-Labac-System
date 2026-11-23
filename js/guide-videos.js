@@ -1,9 +1,10 @@
 // js/guide-videos.js — the how-to videos, played inside the site.
 //
 // Two ways in:
-//   • Landing page (index.html). Each Citizen Services card ends in a
-//     thumbnail of the resident guide's chapter for that service, and
-//     openGuideVideo('certificates' | 'incidents' | 'feedback') plays it.
+//   • Landing page (index.html). Each Citizen Services card ends in a button
+//     named for its video ("How to request a certificate · 0:25"), and
+//     openGuideVideo('certificates' | 'incidents' | 'feedback') plays that
+//     service's chapter of the resident guide.
 //   • MIS. "Guide Videos" at the foot of the sidebar (js/app-shell.js) loads
 //     this file on first use and calls GuideVideos.library(): all ten staff
 //     videos, one per module, each with its steps to jump to. It opens on the
@@ -83,8 +84,12 @@
       '<div class="modal-title-icon"><i data-icon="circle-play"></i></div>' +
       '<span id="guide-video-title">' + esc(title) + "</span>" +
       "</div>" +
+      '<div class="guide-video-actions">' +
+      // Shown once there is a video to mute (wireMute).
+      '<button type="button" class="guide-mute" hidden></button>' +
       '<button type="button" class="modal-close" aria-label="' + esc(closeLabel) + '">' +
       '<i data-icon="x"></i></button>' +
+      "</div>" +
       "</div>" +
       body +
       "</div>";
@@ -130,6 +135,58 @@
     if (p && typeof p.catch === "function") p.catch(function () {});
   }
 
+  // ── Sound ──────────────────────────────────────────────────────────────
+  // The files are already mixed quieter than the originals (GAIN in
+  // motion/publish.js). This is the off switch, in plain sight in the header
+  // rather than inside the player's own controls. The choice carries over to
+  // the next video, in this browser only.
+  var MUTE_KEY = "cares.guide_videos_muted";
+
+  function readMuted() {
+    try {
+      return localStorage.getItem(MUTE_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function saveMuted(on) {
+    try {
+      localStorage.setItem(MUTE_KEY, on ? "1" : "0");
+    } catch (e) {
+      // Storage off: the choice just lasts for this video.
+    }
+  }
+
+  // `labels` = { mute, unmute } in the page's language.
+  function wireMute(el, video, labels) {
+    var btn = el.querySelector(".guide-mute");
+    if (!btn) return;
+    function paint() {
+      var muted = video.muted;
+      var label = muted ? labels.unmute : labels.mute;
+      btn.innerHTML =
+        '<i data-icon="' + (muted ? "volume-x" : "volume") + '"></i>' +
+        "<span>" + esc(label) + "</span>";
+      // The word can be hidden on a phone (css/guide-videos.css); the name
+      // stays.
+      btn.setAttribute("aria-label", label);
+      btn.classList.toggle("is-muted", muted);
+      if (window.hydrateIcons) hydrateIcons(btn);
+    }
+    video.muted = readMuted();
+    btn.hidden = false;
+    btn.addEventListener("click", function () {
+      video.muted = !video.muted;
+    });
+    // Also follows the mute control inside the player itself.
+    video.addEventListener("volumechange", function () {
+      saveMuted(video.muted);
+      paint();
+    });
+    paint();
+  }
+
   // ── Landing page: one service's clip ──────────────────────────────────
   function service(id) {
     var s = SERVICES[id];
@@ -146,6 +203,10 @@
       tr("closeVideo", "Close video")
     );
     var video = el.querySelector("video");
+    wireMute(el, video, {
+      mute: tr("muteVideo", "Mute"),
+      unmute: tr("unmuteVideo", "Unmute"),
+    });
     video.focus();
     play(video); // the click that opened this is the gesture that allows sound
   }
@@ -229,6 +290,8 @@
     var video = root.querySelector("video");
     var stepsEl = root.querySelector(".guide-steps");
     var shown = -1;
+    // English: the MIS is English-only (see the note at the top of i18n.js).
+    wireMute(el, video, { mute: "Mute", unmute: "Unmute" });
 
     function select(i, autoplay) {
       var v = videos[i];
