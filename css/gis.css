@@ -2288,6 +2288,18 @@ html:not(.has-motion) .gis-side-panel.is-collapsed > :not(.card-header) {
   color: inherit;
   text-align: left;
 }
+/* `flex: 1 1 12rem` above is a WIDTH only for as long as .card-header is a
+   row. Below 600px system.css turns that header into a column — and in a
+   column flex-basis is a HEIGHT, so the toggle was being told to be 12rem
+   (192px) TALL. Since it centres its own contents, the panel title sat in the
+   middle of an empty 192px box: both GIS side panels opened on a phone with
+   roughly 190px of white space above their headings. The basis has no job
+   once the header has stacked, so it is withdrawn. */
+@media (max-width: 600px) {
+  .gis-panel-toggle {
+    flex: 0 0 auto;
+  }
+}
 /* Wraps to a second line rather than truncating — in the narrow column even
    the title on its own does not fit on one line at the card-title size, so
    an ellipsis here can only ever hide words. Sized down a step too: this is

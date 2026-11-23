@@ -25,6 +25,11 @@ const CHART_PALETTE = [
   "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#64748b", "#14b8a6",
 ];
 
+// Where the doughnut's legend goes. A legend beside the chart needs about
+// 180px to itself, which a phone cannot spare — the same 760px the rest of
+// the phone layer uses (css/mobile.css).
+const legendSide = () => (window.matchMedia("(max-width: 760px)").matches ? "bottom" : "right");
+
 function renderPage() {
   renderAnalytics();
   loadAnalytics();
@@ -474,7 +479,21 @@ function buildAnalyticsCharts(d) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: "right" } },
+        // Beside the doughnut on a desktop, under it on a phone. Ten incident
+        // types at a readable size need about 180px of legend; on a 390px
+        // screen that left the chart itself 150px wide and pushed the last
+        // swatch off the right edge of the card.
+        plugins: { legend: { position: legendSide() } },
+        // Chart.js reads `position` once, when the chart is built. A phone
+        // turned on its side would otherwise keep the layout it was born
+        // with, so it is re-picked whenever the chart reports a resize. The
+        // equality check is what stops update() from looping back in here.
+        onResize(c) {
+          const want = legendSide();
+          if (c.options.plugins.legend.position === want) return;
+          c.options.plugins.legend.position = want;
+          c.update();
+        },
       },
     });
 

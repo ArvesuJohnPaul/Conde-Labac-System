@@ -23,6 +23,11 @@
     <!-- The motion layer loads last: a few of its rules replace a one-shot
          animation with a two-way one and have to win the cascade. -->
     <link rel="stylesheet" href="css/motion.css" />
+    <!-- The phone layer. Loads after motion.css so it can correct the
+         module stylesheets at phone widths without any of them growing a
+         second set of breakpoints: stacked data tables, 44px touch targets,
+         the topbar heading, the scrollers. -->
+    <link rel="stylesheet" href="css/mobile.css" />
     <!-- This page's own layout: the card and the step dots. -->
     <link rel="stylesheet" href="css/claim-account.css" />
     <script src="js/api-config.js"></script>

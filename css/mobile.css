@@ -1,0 +1,887 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   mobile.css — THE PHONE LAYER
+
+   Loaded last on every page, after motion.css, so it can correct the module
+   stylesheets without any of them growing a second set of breakpoints.
+
+   WHAT IT IS FOR
+   The site was responsive already: the sidebar becomes a drawer below 1025px,
+   grids drop to one column, the topbar sheds its date and keyboard hint. What
+   it was not was usable on a 390px phone, and the reasons were measurable:
+
+     · Every list in the MIS is a 6–8 column table 757–1047px wide inside a
+       356px scroller. Only the first two or three columns are on screen; the
+       row's View / Edit / Approve / Reject buttons are 400–700px off the right
+       edge, behind a sideways scroll nothing announces. On the SMS log the
+       off-screen Message column made each row 287px tall and nearly empty.
+     · The Site Content tab strip is 561px wide and does not scroll, so the
+       page is wider than the phone. Mobile browsers answer that by zooming the
+       whole page out to fit — the measured layout viewport was 577px, i.e.
+       every page on that screen rendered two-thirds size.
+     · The topbar heading had 64px to live in. "Certificate Processing"
+       rendered as "Certifi…" and its subtitle as "Requests…" on every page.
+     · The row action buttons (.btn-sm) are 26–28px tall, the modal and
+       sidebar close buttons 32px, the GIS "locate" button 20px, the public
+       site's menu links 17px. The guidance everyone follows — WCAG 2.5.5,
+       Apple's HIG, Material — is 44px; nothing here met it.
+
+   Sizes below are "at least 44px for anything a thumb has to hit", and the
+   breakpoints match the ones already in use (768px for the phone-ish layer,
+   640px for the stacked tables, 1100px for the public navbar's drawer).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════
+   1 · DATA TABLES BECOME CARDS
+   ═══════════════════════════════════════════════════
+
+   Below 640px a .data-table stops being a table. Each row becomes a card and
+   each cell a "Heading   value" line, so nothing is off-screen and the row's
+   buttons are at the bottom of its own card instead of behind a scroll.
+
+   The headings come from the table's own <thead>, copied onto the cells as
+   data-label by js/mobile.js — see that file for why it is done there.
+
+   display:block on table parts is the long-standing way to do this; it drops
+   the table's layout algorithm, which is the whole point — a table lays its
+   columns out to the widest cell, and that is what was forcing 1047px of
+   content through a 356px window. */
+@media (max-width: 640px) {
+  /* The scroller pulls itself out to the card's edges and scrolls sideways.
+     Neither is wanted once the rows are stacked. */
+  .table-wrap {
+    margin: 0;
+    padding: 0;
+    overflow-x: visible;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* The header row is the source of every label now, so it is read rather
+     than shown. Hidden the accessible way: a screen reader still announces
+     the table's columns. */
+  .data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* One record, one card. */
+  .data-table tbody tr {
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+  }
+
+  .data-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  /* The desktop table draws a line under every row; the cards have borders of
+     their own, and a second line under the last cell of each would double up
+     with it. */
+  .data-table tbody tr:last-child td,
+  .data-table td {
+    border-bottom: 1px solid var(--border-subtle, var(--border));
+  }
+
+  .data-table tbody tr td:last-child {
+    border-bottom: 0;
+  }
+
+  /* label | value, on one line while they fit, wrapping to two when they do
+     not. minmax(0, …) on the value lets a long certificate name wrap instead
+     of widening the card. */
+  .data-table td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    text-align: left;
+  }
+
+  .data-table td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    /* The heading is the row's anchor; it should not be the thing that wraps
+       if the value beside it is long. */
+    overflow-wrap: anywhere;
+  }
+
+  /* A cell with no heading of its own (an unnamed column, the resident's
+     avatar) spans the card rather than leaving an empty label gutter. */
+  .data-table td:not([data-label]) {
+    display: block;
+  }
+
+  /* The resident photo leads the card. */
+  .data-table td[data-cell="media"] {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  /* A badge is an inline-flex pill; as a grid item it would be stretched to
+     the full width of the value column, so "Unclaimed" arrived as a 356px
+     lozenge. Same for the mono reference chips in the audit trail. */
+  .data-table td > .badge,
+  .data-table td > .table-action-code,
+  .data-table td > .status-pill {
+    justify-self: start;
+  }
+
+  /* The row's buttons: a full-width bar at the foot of the card, each button
+     big enough to hit and wide enough to read. This is the change that makes
+     the lists workable — these buttons were previously the furthest thing
+     off the right edge of the screen. */
+  .data-table td[data-cell="actions"] {
+    display: block;
+    padding-top: var(--space-3);
+  }
+
+  /* No "Actions" heading over them — the buttons say what they do, and the
+     line it would take is a line of the record that is not shown. */
+  .data-table td[data-cell="actions"]::before {
+    display: none;
+  }
+
+  .data-table td[data-cell="actions"] .btn-group {
+    gap: var(--space-2);
+  }
+
+  .data-table td[data-cell="actions"] .btn {
+    flex: 1 1 auto;
+    min-width: 7rem;
+  }
+
+  /* …except the ones that are a bare glyph. The delete button in a table row
+     is rendered with no label (deleteButtonHtml(handler, "") in js/shell.js),
+     and a lone trash can stretched across half the card reads as the row's
+     main action rather than its most destructive one. It keeps a 44px square.
+     js/mobile.js marks these, because the test is "has no text" and CSS
+     cannot see text — see markIconOnly() there for the selector that looks
+     like it would work and does not. */
+  .data-table td[data-cell="actions"] .btn[data-icon-only] {
+    flex: 0 0 auto;
+    min-width: 44px;
+    width: 44px;
+    padding-inline: 0;
+  }
+
+  /* "Loading residents…", "No results", an error line with a Retry button:
+     one cell spanning the table. It keeps its own centring. */
+  .data-table td[data-cell="state"] {
+    display: block;
+    padding: var(--space-5) var(--space-3);
+    text-align: center;
+  }
+
+  /* Cells whose column exists only on a wide screen read better stacked: the
+     value goes under its heading rather than squeezing beside it. */
+  .data-table td.table-text-md,
+  .data-table td.sms-body-cell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  /* A table cell may not be a flex/grid item's parent once it is a block, and
+     several pages put a .btn-group or a badge stack in one. Keep them tidy. */
+  .data-table td .btn-group {
+    flex-wrap: wrap;
+  }
+
+  /* Pagination under a stacked list: its buttons were 28px squares. */
+  .fb-page-btn,
+  .pagination button,
+  .pagination a {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   2 · THE ROLE ACCESS MATRIX STAYS A MATRIX
+   ═══════════════════════════════════════════════════
+
+   .perm-table is roles across and permissions down, and the whole point of it
+   is the comparison between columns — stacking it would destroy that. So it
+   keeps scrolling sideways, with the permission name pinned to the left edge
+   so you can always see which row the ✓ you are about to tap belongs to. */
+@media (max-width: 760px) {
+  .perm-table td:first-child,
+  .perm-table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    /* The cell is see-through by default; over a scrolling column it has to
+       be opaque or the ticks slide under the text. */
+    background: var(--surface-raised);
+    box-shadow: 1px 0 0 var(--border);
+  }
+
+  .perm-table th:first-child {
+    background: var(--surface);
+  }
+
+  /* Was 149px of a 356px window, leaving room for barely two role columns. */
+  .perm-table td:first-child,
+  .perm-table th:first-child {
+    min-width: 11rem;
+    max-width: 11rem;
+  }
+
+  /* The ✓/✗ toggles are the point of the table and were 20px glyphs in a
+     73px cell. */
+  .perm-table td button,
+  .perm-table td [role="button"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   3 · A SCROLLER HAS TO LOOK LIKE ONE
+   ═══════════════════════════════════════════════════
+
+   Anything still scrolling sideways on a phone (the permission matrix, a wide
+   card) gets momentum scrolling and a right-hand fade, so it is visible that
+   there is more to the right rather than something merely being cut off. */
+@media (max-width: 760px) {
+  .table-wrap,
+  .gis-filter-row,
+  .sc-tabs,
+  .tab-strip {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .table-wrap:has(.perm-table) {
+    position: relative;
+    overflow-x: auto;
+    /* A fade pinned to the right edge of the viewport box, not the content:
+       `local` keeps it still while the content scrolls under it. */
+    background:
+      linear-gradient(to left, var(--surface-raised), rgba(255, 255, 255, 0)) right center / 28px 100% no-repeat local;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   4 · THE TOPBAR HEADING
+   ═══════════════════════════════════════════════════
+
+   Measured on a 390px screen: the burger takes 40px, the five-control cluster
+   on the right 230px, and the heading was left with 64px — enough for
+   "Certifi…" over "Requests…". Every module page already prints its own full
+   title as an <h1> immediately below, so the subtitle in the bar is the thing
+   to give up, not the title. */
+@media (max-width: 768px) {
+  .topbar-subtitle {
+    display: none;
+  }
+
+  .topbar-title {
+    font-size: var(--text-base);
+    line-height: 1.25;
+    /* Two lines rather than an ellipsis: a wrapped "Certificate Processing"
+       is readable, a truncated one is a guess. */
+    white-space: normal;
+    overflow: visible;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow-wrap: anywhere;
+  }
+
+  .topbar-heading {
+    min-width: 0;
+    /* Takes the slack the cluster below gives back. */
+    flex: 1 1 auto;
+  }
+
+  /* Tighten the right-hand cluster so the heading has something to take.
+     The controls stay 44px tall; only the air between them goes. */
+  .topbar-right {
+    gap: var(--space-1);
+  }
+
+  #topbar {
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+  }
+}
+
+/* On the narrowest phones the launcher is the one control with a keyboard
+   shortcut and a duplicate — every module it opens is in the drawer the
+   burger already opens, two buttons to its left. */
+@media (max-width: 420px) {
+  .topbar-modules-menu {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   5 · THE SITE CONTENT TAB STRIP
+   ═══════════════════════════════════════════════════
+
+   Four pill tabs come to 561px. In a 390px viewport with overflow visible
+   that is not a clipped tab strip — it is a page wider than the screen, and a
+   phone browser's answer to that is to zoom the whole document out until it
+   fits. Measured: the layout viewport opened at 577px, so every page on that
+   screen was rendering at two-thirds size. The strip scrolls instead. */
+@media (max-width: 760px) {
+  .sc-tabs {
+    overflow-x: auto;
+    /* The strip is a rounded pill; without this the first and last tabs sit
+       flush against the curve while scrolling. */
+    scroll-padding-inline: var(--space-2);
+    scrollbar-width: none;
+  }
+
+  .sc-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sc-tab {
+    flex: 0 0 auto;
+    /* Was 30px tall. */
+    min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   6 · TOUCH TARGETS
+   ═══════════════════════════════════════════════════
+
+   44px is the floor for anything a thumb has to hit. These were the measured
+   offenders, in order of how small they were. */
+@media (max-width: 768px) {
+  /* The row action buttons — View, Edit, Approve, Reject, Release, Message,
+     Reopen, Undo, and the delete button beside them. 26–28px tall. */
+  .btn-sm {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+  }
+
+  /* Every .btn, not only the small ones — a few pages use the base size in a
+     tight row and it lands at 38px. */
+  .btn {
+    min-height: 44px;
+  }
+
+  /* Close buttons: the modal's X and the sidebar's sign-out, both 32px. The
+     X is the control someone reaches for when they have opened the wrong
+     record, so it is the worst one to make people aim at. */
+  .modal-close,
+  .logout-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* The Site Content row controls (edit, move up, move down, delete), 30px. */
+  .sc-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* The topbar cluster is already 40px; the last 4px costs nothing now that
+     §4 has tightened the gaps. */
+  .topbar-icon-btn,
+  .nav-user-menu-trigger {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* "View all", "View log", "Generate" — underlined text links in card
+     headers, 19px tall. Padding alone would shift the headers, so the hit
+     area is grown around the text instead of inside it. */
+  .card-action {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    /* Pulls the extra height back out of the layout so the card header keeps
+       the spacing it was designed with. */
+    margin-block: calc(var(--space-3) * -1);
+  }
+
+  /* The feedback rating stars, 28px. */
+  .star {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px;
+  }
+
+  /* Checkboxes and radios: 16px boxes with a label beside them. The box grows
+     and the whole label becomes the target, which is what people aim at
+     anyway. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    /* Safari and older Android shrink these back without it. */
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]),
+  .checkbox-row,
+  .radio-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 44px;
+  }
+
+  /* Form fields. A field under 44px is hard to tap, and anything under 16px
+     of text makes iOS Safari zoom the page in on focus and leave it there —
+     which is its own kind of "the layout broke". */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: max(16px, var(--text-base));
+  }
+
+  textarea {
+    min-height: 88px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   7 · THE GIS MAP CONTROLS
+   ═══════════════════════════════════════════════════
+
+   The map is the one screen where a mis-tap costs the most — it drops a pin
+   or moves the view — and it had the smallest controls on the site: a 20px
+   locate button and 30px zoom buttons, over a surface that pans under the
+   finger. */
+@media (max-width: 760px) {
+  .gis-zoom-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .gis-zoom-btn .gis-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .gis-hz-locate {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gis-toolbar-btn,
+  .gis-filter-btn,
+  .gis-filter-toggle,
+  .gis-elements-btn {
+    min-height: 44px;
+    /* Narrower than the usual button padding on purpose: these sit in a row
+       floating over the map, and every pixel of width is a pixel of map. */
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  /* The toolbar over the map is a right-aligned column of rows, and the top
+     row — zoom, measure, hide-outside, Mark Hazard, Edit Mode — does not
+     wrap. On a phone that row is wider than the map, so it overflowed to the
+     LEFT and the zoom and tool buttons were sliced off by the card's edge.
+     (This predates the sizes above; they made the slice a little wider.)
+     Wrapping is what the second row already does. */
+  .gis-toolbar-row {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+
+  /* The panel headings on the GIS page are whole-row toggle buttons that
+     fold the panel. They were 18px tall. */
+  .gis-panel-toggle,
+  .gis-hz-head {
+    min-height: 44px;
+  }
+
+  /* .gis-filter-row is shared: the map's layer pills, and the search-plus-
+     filters toolbar on Residency, Certificates, User Management and Site
+     Content. It already wraps, which is right for both — what it does not do
+     is give the search field a line of its own, so at 360px the field and the
+     first select shared one line and neither was usable. */
+  .gis-filter-row > .gis-search-wrap {
+    flex: 1 1 100%;
+    min-width: 0;
+    /* The pill is the target; the input inside it must not add its own 44px
+       on top of the pill's padding and make a 58px-tall search box. */
+    min-height: 44px;
+    padding-block: 0;
+  }
+
+  .gis-search-wrap .gis-search-input {
+    min-height: 0;
+    align-self: stretch;
+  }
+
+  .gis-filter-row > select,
+  .gis-filter-row > .gis-filter-select {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   8 · THE GIS SIDE PANELS
+   ═══════════════════════════════════════════════════
+
+   A real bug, not a size: the panel headers opened with ~190px of empty space
+   above their titles.
+
+   .gis-panel-toggle carries `flex: 1 1 12rem` so that on a desktop the title
+   and its action button share the narrow side column sensibly. At 600px
+   system.css turns .card-header into `flex-direction: column` — and in a
+   column, flex-basis is a HEIGHT. The toggle was being told to be 12rem tall,
+   and since it centres its own contents the title sat in the middle of a
+   192px box. Both panels on the GIS page did it.
+
+   The basis is corrected in css/gis.css, where the rule lives. What is left
+   here is the rest of the stacked header: the button that dropped onto a line
+   of its own should not then be pushed to the far right by a margin-left:auto
+   that was written for a row. */
+@media (max-width: 600px) {
+  .gis-side-panel .card-header > .btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   9 · THE PUBLIC SITE'S MENU
+   ═══════════════════════════════════════════════════
+
+   The drawer the burger opens is a column of plain anchors, 17px tall with
+   1.2rem between them — nine links a resident is expected to hit on a phone,
+   each a third of the recommended size. They become rows. */
+@media (max-width: 1100px) {
+  .nav-toggle {
+    /* Was 30x24. */
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    /* The three bars are the button's children; centring them needs the
+       button to stop being a bare column of 22px lines. */
+    padding: 0;
+  }
+
+  .nav-links.open {
+    gap: 0;
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    /* Nine 48px rows plus the sign-in button come to ~500px. A phone held
+       sideways has 390px of screen, and the drawer is position:fixed — so
+       whatever hangs below the fold cannot be scrolled to at all. It scrolls
+       inside itself instead.
+
+       The cap is "the screen, less everything above the drawer", and what is
+       above it is not what the `top` says. .nav-links is inside .navbar,
+       which establishes a containing block for fixed descendants, so
+       `top: calc(var(--navbar-h) + var(--masthead-h))` is measured from the
+       navbar's own top edge — which is itself one masthead down the screen.
+       Measured on a 390x844 phone: the drawer lands at y=144, not y=104.
+       Hence the masthead counted twice.
+
+       Pages with no masthead (sign-in, claim account) resolve the token all
+       the same and get a cap 40px tighter than they need, which costs them
+       nothing — their drawer is far shorter. Erring tight is the safe
+       direction here: erring loose is the bug this is for. */
+    max-height: calc(100dvh - var(--navbar-h) - 2 * var(--masthead-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .nav-links.open li {
+    width: 100%;
+  }
+
+  .nav-links.open a,
+  .nav-links.open button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 48px;
+    padding: var(--space-3) var(--space-2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.9rem;
+  }
+
+  .nav-links.open li:last-child a,
+  .nav-links.open li:last-child button {
+    border-bottom: 0;
+  }
+
+  /* The gold underline sweep is a pointer affordance; on a row that fills the
+     drawer it reads as a stray rule under the text. */
+  .nav-links.open a::after {
+    display: none;
+  }
+}
+
+/* The two government-bar toggles (language, appearance) and the Sign In
+   button in the navbar. 26px and 17px respectively. */
+@media (max-width: 768px) {
+  .gov-tool {
+    min-height: 44px;
+    padding-inline: var(--space-3);
+  }
+
+  .btn-nav-signin {
+    min-height: 44px;
+  }
+
+  /* The hero's two calls to action sat side by side in half-width boxes, so
+     "Explore Services" and "View GIS Map" each wrapped onto two lines — the
+     first thing a resident sees on the site, broken in half. One under the
+     other, one line each. */
+  .hero-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-cta-row > .btn-hero {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   10 · CARD HEADERS
+   ═══════════════════════════════════════════════════
+
+   system.css already stacks .card-header below 600px. Two things it does not
+   do: a child with a flex-basis meant for a row becomes a tall box in a
+   column (see §8), and an action button that drops onto its own line keeps
+   whatever width its text needs. */
+@media (max-width: 600px) {
+  .card-header {
+    gap: var(--space-3);
+  }
+
+  /* Any direct child of a stacked header: the basis was written for the row
+     direction and means nothing as a height. */
+  .card-header > * {
+    flex-basis: auto;
+  }
+
+  .card-header .btn-group {
+    width: 100%;
+  }
+
+  .card-header .btn-group > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   11 · MODALS
+   ═══════════════════════════════════════════════════
+
+   The box itself is already max-width:100%. What a phone needs on top is room
+   for the browser's own chrome and the home indicator, and a footer whose
+   buttons are reachable with one hand. */
+@media (max-width: 600px) {
+  .modal-backdrop {
+    padding: var(--space-3);
+    /* Long forms (Add Resident, New Incident) are taller than the screen;
+       the backdrop scrolls so the box can be read from the top. */
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .modal-box {
+    max-height: calc(100dvh - var(--space-6));
+    margin-block: var(--space-3);
+  }
+
+  /* Cancel / Save side by side at 48% each is two half-width buttons; one
+     under the other is two full-width ones, with the confirming action
+     where the thumb already is. */
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .modal-footer > .btn {
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   12 · TEXT THAT WAS TRUNCATED RATHER THAN WRAPPED
+   ═══════════════════════════════════════════════════
+
+   A one-line ellipsis is a reasonable way to fit a long value into a table
+   column. It is not a reasonable way to fit one into a phone, where the
+   column is the whole screen and there is nothing below it competing for the
+   room: the text simply goes missing. Measured, worst first — 299px of a
+   feedback topic's keyword list, and the surnames of four of the barangay's
+   officials. These wrap instead. */
+@media (max-width: 760px) {
+  /* "clogged canal · creek flooding · drainage repair · …" — the keywords
+     the AI merged into one feedback topic, and the only place they are
+     shown. */
+  .fb-theme-merged {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  /* "Hon. Vilma F. Asi" came out as "Hon. Vilma F. …" in the Site Content
+     officials list — the name is the whole row. */
+  .sc-item-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   13 · THE PUBLIC SITE'S REMAINING LINKS
+   ═══════════════════════════════════════════════════
+
+   The footer is where a resident finds the hotline, the barangay's email and
+   the way into their account, and every one of them was a 17–20px line of
+   text. The service cards' calls to action were 15px. */
+@media (max-width: 768px) {
+  .footer-links a,
+  .footer-links button,
+  .footer-contact a,
+  .footer-privacy a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* The hotline and the email address are the two a resident taps to dial or
+     write, so they get the row rather than just the words. Same for the ones
+     in the hero and in "Visit or call the barangay hall", which are the same
+     numbers in the two other places a resident looks for them.
+
+     All three are underlined with a border-bottom, which sits at the bottom
+     of the box — grow the box and the rule drifts away from the words it
+     belongs to. Swapped for a text underline, which stays with the text. */
+  .footer-contact a,
+  .visit-list a,
+  .hero-meta-value a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    overflow-wrap: anywhere;
+    border-bottom: 0;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.3);
+    text-underline-offset: 4px;
+  }
+
+  .service-cta {
+    min-height: 44px;
+  }
+
+  .nav-logo {
+    min-height: 44px;
+  }
+
+  /* The link under the sign-in and account-claim forms, back to where the
+     person came from. A standalone link, not one inside a sentence. */
+  .login-back-link,
+  .claim-back-link,
+  .login-help a,
+  .claim-help a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* Deliberately NOT resized: a link inside a running sentence — "These
+   services are for residents with an account. Sign In · No account yet?
+   Apply for one". Growing those to 44px would push the words of the sentence
+   apart to make room for their own targets. WCAG 2.5.5 exempts inline links
+   for exactly this reason, and the sentence is easier to read and to hit as
+   a sentence. */
+
+/* ═══════════════════════════════════════════════════
+   14 · THE CONTROLS INSIDE PANELS AND MODALS
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* The account dropdown in the topbar — My Activity, Settings, Public
+     portal, Sign out. On every page of the MIS, and 33px tall. */
+  .nav-user-menu-item,
+  .topbar-module-item,
+  .notif-panel-list > * {
+    min-height: 44px;
+  }
+
+  /* A <summary> that folds a group of fields in the certificate modal, and
+     the briefing's "and 3 more" — both the full width of their panel and
+     both too short to hit confidently. */
+  summary.cert-field-group-title,
+  .brf-more,
+  .gis-locate-btn {
+    min-height: 44px;
+  }
+
+  /* The hint under the incident map was ellipsised 39px short of its last
+     word, which is the word that says what to click. */
+  .gis-report-hint {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   15 · NOTHING MAY BE WIDER THAN THE SCREEN
+   ═══════════════════════════════════════════════════
+
+   The backstop for §5's failure mode. One overflowing element anywhere makes
+   a phone browser zoom the entire document out, so the damage from the next
+   one is never local. This keeps the page itself from being the thing that
+   overflows while leaving the deliberate scrollers (tables, tab strips, the
+   map) free to scroll inside it. */
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Long unbroken strings — an email address, a reference number, a URL in an
+     audit entry — were the other way a cell pushed its table wide. */
+  .data-table td,
+  .audit-detail,
+  .sc-field-value,
+  .notif-panel-list {
+    overflow-wrap: anywhere;
+  }
+}
