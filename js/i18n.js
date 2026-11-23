@@ -239,10 +239,9 @@
       "Share comments and suggestions on barangay services",
       "Ibahagi ang inyong komento at mungkahi sa serbisyo ng barangay",
     ],
-    // The how-to video button at the foot of each service card, and its
-    // player (js/guide-videos.js). The video itself is in English; the words
-    // around it follow the page.
-    guideVideo: ["Video guide", "Gabay na video"],
+    // The how-to video button at the foot of each service card (its label is
+    // the video's title), and its player (js/guide-videos.js). The video
+    // itself is in English; the words around it follow the page.
     muteVideo: ["Mute", "I-mute"],
     unmuteVideo: ["Unmute", "I-unmute"],
     guideCertificates: [
@@ -541,6 +540,9 @@
       "Click on the map to drop a pin where it happened, or press Use my location.",
       "I-click ang mapa upang ilagay ang pin kung saan ito nangyari, o pindutin ang Gamitin ang aking lokasyon.",
     ],
+    // The map's loader while its layer files arrive (gisLoadingMarkup in
+    // js/gis-map.js) — the incident form's pin map and the landing map.
+    mapLoading: ["Drawing the barangay map…", "Iginuguhit ang mapa ng barangay…"],
     // Shown on the map itself (js/gis-map.js) while a pin is being placed.
     mapPickHint: [
       "Click the spot on the map where the incident happened.",

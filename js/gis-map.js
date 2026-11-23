@@ -1971,6 +1971,25 @@ async function initGisMap(targetId, opts = {}) {
   }
 }
 
+// The loader a map shows while its layer files arrive (styled by css/gis.css
+// in the MIS and by its copy in css/landing.css on the public page). A
+// resident's map — opts.anonymous: the landing page's map and the incident
+// form's pin map — says it in the page's language; the MIS's own maps stay
+// English with the rest of the MIS. incident-report.js also calls this, to
+// put the loader up the moment its form opens.
+function gisLoadingMarkup(translate) {
+  let text = "Drawing the barangay map…";
+  if (translate && typeof L !== "undefined" && L && typeof L.t === "function")
+    text = L.t("mapLoading") || text;
+  const span = document.createElement("span");
+  span.textContent = text;
+  return (
+    '<div class="gis-map-loading"><span class="gis-map-loading-bar"></span>' +
+    span.outerHTML +
+    "</div>"
+  );
+}
+
 async function gisBuildMap(targetId, opts = {}) {
   const container = document.getElementById(targetId);
   if (!container) return;
@@ -1982,9 +2001,7 @@ async function gisBuildMap(targetId, opts = {}) {
   // map, so there is nothing to clean up; a cached instance returns before
   // this, and so never flickers.
   if (!gisInstances[targetId] || !container.classList.contains("gis-custom-map")) {
-    container.innerHTML =
-      '<div class="gis-map-loading"><span class="gis-map-loading-bar"></span>' +
-      "<span>Drawing the barangay map…</span></div>";
+    container.innerHTML = gisLoadingMarkup(!!opts.anonymous);
   }
 
   // One-time write-back of any old-shape {category} building tags.

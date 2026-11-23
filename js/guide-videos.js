@@ -1,10 +1,10 @@
 // js/guide-videos.js — the how-to videos, played inside the site.
 //
 // Two ways in:
-//   • Landing page (index.html). Each Citizen Services card ends in a button
-//     named for its video ("How to request a certificate · 0:25"), and
+//   • Landing page (index.html). Each Citizen Services card ends in a gold
+//     button named for its video ("How to request a certificate"), and
 //     openGuideVideo('certificates' | 'incidents' | 'feedback') plays that
-//     service's chapter of the resident guide.
+//     service's chapter of the resident guide, closing when it ends.
 //   • MIS. "Guide Videos" at the foot of the sidebar (js/app-shell.js) loads
 //     this file on first use and calls GuideVideos.library(): all ten staff
 //     videos, one per module, each with its steps to jump to. It opens on the
@@ -206,6 +206,14 @@
     wireMute(el, video, {
       mute: tr("muteVideo", "Mute"),
       unmute: tr("unmuteVideo", "Unmute"),
+    });
+    // A service clip is one short how-to: when it ends, the window closes
+    // itself and leaves the resident back at the card, one press from the
+    // service. (The MIS library stays open — there is a next video to pick.)
+    video.addEventListener("ended", function () {
+      setTimeout(function () {
+        if (current && current.el === el) closeModal();
+      }, 600);
     });
     video.focus();
     play(video); // the click that opened this is the gesture that allows sound

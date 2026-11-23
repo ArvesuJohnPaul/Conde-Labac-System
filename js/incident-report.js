@@ -367,6 +367,14 @@ function openIncidentModal(opts) {
   // Built and refilled by script, so nothing has translated it yet.
   incidentApplyLanguage(modal);
 
+  // The map's loader goes up with the form, not 160 ms later when the map
+  // starts building — otherwise the first thing a resident sees under
+  // "Location of Incident" is an empty box. Only before the first build: a
+  // map already built in here is reused as it is.
+  const mapEl = document.getElementById("incident-map");
+  if (mapEl && !mapEl.classList.contains("gis-custom-map") && typeof gisLoadingMarkup === "function")
+    mapEl.innerHTML = gisLoadingMarkup(true);
+
   modal.classList.add("open");
 
   // Init the embedded map after the modal is visible (it needs layout to size),

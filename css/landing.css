@@ -3433,6 +3433,57 @@ html:not(.is-visitor) .services-footnote {
   font-size: 0.88rem;
 }
 
+/* The map while its layer files are still arriving: the same loader the MIS
+   map shows ("Drawing the barangay map…" over a moving gold bar). This page
+   does not load css/gis.css, where it lives, so until this copy the engine's
+   loader landed as bare text in the corner of an empty box — in the incident
+   form's pin map and in the map section. Kept identical to gis.css. */
+.gis-map-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--gis-land-outside, #d9ddcd);
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.gis-map-loading-bar {
+  width: 148px;
+  height: 6px;
+  border-radius: 100px;
+  background: rgba(27, 42, 74, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+.gis-map-loading-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: 100px;
+  background: var(--gold, #c9a227);
+  animation: gisMapLoading 1.1s ease-in-out infinite;
+}
+@keyframes gisMapLoading {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(345%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gis-map-loading-bar::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
+
 /* ─── LATEST ANNOUNCEMENTS ─────────────────────── */
 .section-announcements {
   background: var(--surface-raised);
