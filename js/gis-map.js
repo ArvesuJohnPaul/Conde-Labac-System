@@ -90,6 +90,8 @@ const GIS_ICON_PATHS = {
   trash: '<path d="M5 6.5h14"/><path d="M9 6.5V4.8A1.3 1.3 0 0 1 10.3 3.5h3.4A1.3 1.3 0 0 1 15 4.8v1.7"/><path d="m6.5 6.5.9 12a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12"/><path d="M10 10.5v6M14 10.5v6"/>',
   pin: '<path d="M12 21s7-6.5 7-11.6A7 7 0 0 0 5 9.4C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.4" r="2.4"/>',
   heart: '<path d="M12 20S5 15.4 5 10.6C5 8 7 6.2 9.2 6.2c1.2 0 2.2.6 2.8 1.5.6-.9 1.6-1.5 2.8-1.5C17 6.2 19 8 19 10.6 19 15.4 12 20 12 20Z"/>',
+  coins: '<ellipse cx="12" cy="6.8" rx="6" ry="2.6"/><path d="M6 6.8v4.1c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V6.8"/><path d="M6 10.9v4.1c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6v-4.1"/>',
+  plane: '<path d="M12 3.6c.6 0 1 .5 1 1.1v4.1l6 3.5v1.8l-6-1.9v3.8l2.2 1.6v1.3L12 18.3l-3.2.6v-1.3l2.2-1.6v-3.8l-6 1.9v-1.8l6-3.5V4.7c0-.6.4-1.1 1-1.1Z"/>',
   check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
   cancelX: '<path d="M5 5 19 19"/><path d="M19 5 5 19"/>',
   layers: '<path d="M12 3 3 8l9 5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/>',
@@ -160,6 +162,15 @@ const GIS_HOUSEHOLD_SUBCAT_META = {
   pwd: { label: "PWD", icon: "wheelchair", color: "#c6b6ec" },
   "solo-parent": { label: "Solo Parent", icon: "family", color: "#f3b1cc" },
   indigent: { label: "Indigent Family", icon: "heart", color: "#9ed9c8" },
+  // Colours chosen by perceptual distance, not by eye: every other fill on
+  // this map (the four above, the three building types, and the vegetation /
+  // land / water / untagged-building ground) was measured in CIELAB and these
+  // two sit furthest from all of it. The first coral tried for OFW was only
+  // dE 15.7 from Solo Parent pink -- below the dE 23.9 the tightest existing
+  // pair already sits at -- which is how two classifications end up looking
+  // like one.
+  "4ps": { label: "4Ps Beneficiary", icon: "coins", color: "#86c97a" },
+  ofw: { label: "OFW", icon: "plane", color: "#f09a7a" },
 };
 
 const GIS_VEGETATION_KIND_META = {

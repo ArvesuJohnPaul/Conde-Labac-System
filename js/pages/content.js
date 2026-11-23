@@ -942,6 +942,8 @@ window.CURRENT_PAGE = "content";
     ["pwd", "PWD"],
     ["solo-parent", "Solo parents"],
     ["indigent", "Indigent families"],
+    ["4ps", "4Ps beneficiaries"],
+    ["ofw", "OFWs"],
   ];
 
   var smsOf = function (uid) {

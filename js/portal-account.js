@@ -81,6 +81,8 @@
     pwd: "PWD",
     "solo-parent": "Solo Parent",
     indigent: "Indigent Family",
+    "4ps": "4Ps Beneficiary",
+    ofw: "OFW",
   };
 
   // The certificate list is loaded by js/certificate-types.js (before this

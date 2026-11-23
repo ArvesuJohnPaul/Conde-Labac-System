@@ -659,6 +659,8 @@ async function showCreateRecordForm() {
           <label><input type="checkbox" class="nr-cat" value="pwd"/> PWD</label>
           <label><input type="checkbox" class="nr-cat" value="solo-parent"/> Solo Parent</label>
           <label><input type="checkbox" class="nr-cat" value="indigent"/> Indigent Family</label>
+          <label><input type="checkbox" class="nr-cat" value="4ps"/> 4Ps Beneficiary</label>
+          <label><input type="checkbox" class="nr-cat" value="ofw"/> OFW</label>
         </div></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
         <button class="btn btn-outline" onclick="document.getElementById('app-create-form').innerHTML=''">Cancel</button>

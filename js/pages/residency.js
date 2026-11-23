@@ -42,6 +42,8 @@ const RESIDENT_CAT_LABELS = {
   pwd: "PWD",
   "solo-parent": "Solo Parent",
   indigent: "Indigent Family",
+  "4ps": "4Ps Beneficiary",
+  ofw: "OFW",
 };
 
 // Resident columns an edit request may touch → how they read in the review
@@ -319,6 +321,8 @@ function renderResidencyPage() {
               <label><input type="checkbox" class="add-cat" value="pwd"/> PWD</label>
               <label><input type="checkbox" class="add-cat" value="solo-parent"/> Solo Parent</label>
               <label><input type="checkbox" class="add-cat" value="indigent"/> Indigent Family</label>
+              <label><input type="checkbox" class="add-cat" value="4ps"/> 4Ps Beneficiary</label>
+              <label><input type="checkbox" class="add-cat" value="ofw"/> OFW</label>
             </div>
           </div>
           <!-- Text messages. Staff ask at registration or at the counter;
@@ -528,7 +532,7 @@ function renderResidentRows(list) {
           <td>${r.age == null ? '<span class="table-muted">—</span>' : r.age}</td>
           <td>${r.purok ? `<span class="badge badge-gray">${escapeHtml(r.purok)}</span>` : '<span class="table-muted">—</span>'}</td>
           <td>${cats || '<span class="table-muted">—</span>'}</td>
-          <td><span class="badge ${dead ? "badge-danger" : "badge-gray"}">${dead ? "Deceased" : "Moved out"}</span></td>
+          <td><span class="badge ${dead ? "badge-danger" : "badge-info"}">${dead ? "Deceased" : "Moved out"}</span></td>
           <td><div class="btn-group">
             <button class="btn btn-sm btn-outline" onclick="openViewResident(${Number(r.id)})">View</button>
             <button class="btn btn-sm btn-gold" onclick="openEditResident(${Number(r.id)})">Edit</button>
@@ -940,6 +944,8 @@ const HOUSEHOLD_CLASS_LABEL = {
   pwd: "PWD",
   "solo-parent": "Solo Parent",
   indigent: "Indigent Family",
+  "4ps": "4Ps Beneficiary",
+  ofw: "OFW",
 };
 
 // Purok list for the resident form. Small and static, so it is fetched once

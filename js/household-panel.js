@@ -38,6 +38,8 @@ const HH_CLASS_LABELS = {
   pwd: "PWD",
   "solo-parent": "Solo Parent",
   indigent: "Indigent",
+  "4ps": "4Ps Beneficiary",
+  ofw: "OFW",
 };
 
 // Connecting a resident to a house is its own row in the Role Access Matrix
@@ -191,6 +193,8 @@ function householdPanelHtml(d) {
       ${hhTile("PWD", s.pwd)}
       ${hhTile("Solo parents", s.solo_parent)}
       ${hhTile("Indigent", s.indigent)}
+      ${hhTile("4Ps", s.fourps)}
+      ${hhTile("OFW", s.ofw)}
       ${hhTile("Can be texted", s.with_contact, s.with_contact ? "" : "warn")}
       ${hhTile("Online accounts", s.claimed)}
     </div>
