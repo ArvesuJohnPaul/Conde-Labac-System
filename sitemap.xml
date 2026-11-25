@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The public pages, for search engines (Google Search Console → Sitemaps).
      Staff pages (pages/*.html) are left out and carry noindex.
-     If the site moves to a custom domain, change these addresses to it. -->
+     If the site moves to a custom domain, change these addresses to it.
+     NOTE the spelling: the repository is Conde-Labac-System with a C, so the
+     github.io address is too. The barangay itself is written Conde Labak with a
+     K everywhere else. These three URLs had the K and were 404s. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://arvesujohnpaul.github.io/Conde-Labak-System/</loc>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/</loc>
   </url>
   <url>
-    <loc>https://arvesujohnpaul.github.io/Conde-Labak-System/claim-account.html</loc>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/claim-account.html</loc>
   </url>
   <url>
-    <loc>https://arvesujohnpaul.github.io/Conde-Labak-System/system.html</loc>
+    <loc>https://arvesujohnpaul.github.io/Conde-Labac-System/system.html</loc>
   </url>
 </urlset>
