@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content-Security-Policy. Mirrors the header from
+         conde-labak-server/hardening.js, which does not reach these pages in
+         production because GitHub Pages serves them and cannot send headers.
+         connect-src has to name the API host here, so it must be changed in
+         step with PERMANENT_API_BASE in js/api-config.js. frame-ancestors is
+         absent because a <meta> CSP cannot carry it. Full reasoning: the same
+         tag in index.html, and SECURITY-PLAN.md section 5. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+               script-src-attr 'unsafe-inline';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src 'self' data: https://fonts.gstatic.com;
+               img-src 'self' data: blob:;
+               media-src 'self';
+               connect-src 'self' https://conde-labak.onrender.com;
+               object-src 'none';
+               base-uri 'self';
+               form-action 'self'"
+    />
     <meta name="robots" content="noindex" />
     <title>Brgy. Conde Labak – Audit Logs</title>
     <link rel="icon" type="image/x-icon" href="../img/conde_labak_icon.ico" />
