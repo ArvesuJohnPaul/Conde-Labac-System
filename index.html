@@ -3,6 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content-Security-Policy, mirroring the header helmet sends in
+         conde-labak-server/hardening.js. It is repeated here because the pages
+         are served by GitHub Pages in production, and a file host cannot send
+         headers — so without this tag the policy never reaches the browser for
+         the one kind of response that can run a script.
+
+         Two deliberate differences from the header:
+         * connect-src names the API host. The header can say 'self' because
+           Express serves the pages and the API together; here the pages and
+           the API are on different origins, so 'self' alone would block every
+           request the site makes. KEEP THIS IN STEP WITH PERMANENT_API_BASE in
+           js/api-config.js — changing one without the other takes the site off
+           the air.
+         * frame-ancestors is left out: a <meta> CSP cannot carry it. By the
+           time the parser reads this tag the page has already been framed, so
+           that decision can only be made by a real header. Clickjacking
+           protection therefore still depends on the header, and so covers only
+           what Express serves (SECURITY-PLAN.md section 5). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+               script-src-attr 'unsafe-inline';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src 'self' data: https://fonts.gstatic.com;
+               img-src 'self' data: blob:;
+               media-src 'self';
+               connect-src 'self' https://conde-labak.onrender.com;
+               object-src 'none';
+               base-uri 'self';
+               form-action 'self'"
+    />
     <!-- What search results and shared-link previews (Messenger, Facebook)
          show. og:image has to be a full address; the github.io one keeps
          working after a custom domain is added, since GitHub redirects it. -->
